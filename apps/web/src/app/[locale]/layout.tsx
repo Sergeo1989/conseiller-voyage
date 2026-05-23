@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
-import { locales, type Locale } from '../../i18n';
+import type { ReactNode } from 'react';
+import { type Locale, locales } from '../../i18n';
 
 // Layout racine pour le routing localisé.
 // Les balises hreflang complètes seront ajoutées en T030e.
