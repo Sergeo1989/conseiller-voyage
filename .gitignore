@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build artifacts
+dist/
+build/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Coverage
+coverage/
+*.lcov
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.example
+
+# IDE / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.nyc_output/
+playwright-report/
+playwright/.cache/
+test-results/
+
+# AWS CDK
+cdk.out/
+.cdk.staging/
+
+# Prisma
+prisma/migrations/.cache/
+
+# Sentry
+.sentryclirc
+
+# Local development
+*.local
+.DS_Store

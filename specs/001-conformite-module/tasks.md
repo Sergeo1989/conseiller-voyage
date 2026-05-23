@@ -40,18 +40,18 @@ description: "Tâches d'implémentation — Module Conformité"
 
 **Objet** : initialiser la structure monorepo, l'outillage et la stack v2.1.0. **Cette phase est partagée avec tous les futurs modules** — exécutée une seule fois.
 
-- [ ] T001 Create pnpm workspace structure (`pnpm-workspace.yaml`, `apps/`, `packages/`, `infra/`, racine `package.json`)
-- [ ] T002 [P] Configure Turborepo (`turbo.json` avec pipelines `dev`, `lint`, `typecheck`, `test`, `build`)
-- [ ] T003 [P] Configure Biome (`biome.json` avec formatter + linter + import boundaries rule)
-- [ ] T004 [P] Configure Husky + lint-staged (`.husky/pre-commit`, `package.json` lint-staged config)
-- [ ] T005 [P] Configure commitlint avec Conventional Commits (`commitlint.config.js`, hook `.husky/commit-msg`)
-- [ ] T006 [P] Configure TypeScript strict (`tsconfig.base.json` partagé + `tsconfig.json` par app/package)
-- [ ] T007 [P] Setup `docker-compose.dev.yml` (Postgres 16, Redis 7, LocalStack pour S3/SES/KMS/Secrets)
-- [ ] T008 Initialize NestJS app avec Fastify adapter dans `apps/api/` (`src/main.ts`, `src/app.module.ts`, `package.json`)
-- [ ] T009 Initialize Next.js 15 App Router dans `apps/web/` avec **structure routing localisé `[locale]`** (B6 du review itération 2 — Principe IV) : arborescence `src/app/[locale]/(conseiller)/...` et `src/app/[locale]/(admin)/...`, `next.config.ts` configuré pour next-intl, layout racine `src/app/[locale]/layout.tsx`. La configuration concrète next-intl provider/middleware est faite en T030d
-- [ ] T010 Initialize `packages/shared/` avec Zod, exports vides pour `conformite`, `auth` (`packages/shared/package.json`, `src/index.ts`)
-- [ ] T011 Configure GitHub Actions CI (`.github/workflows/ci.yml` — lint Biome, typecheck tsc, test Vitest, build Turbo, license check, **scan SCA (`pnpm audit` + Snyk avec seuil CVSS ≥ 7 bloquant)**, axe-core, Lighthouse CI)
-- [ ] T012 Configure Prisma avec multi-file schema dans `apps/api/prisma/` (`schema.prisma` principal + import `auth.prisma` depuis `packages/shared/auth/prisma/`, connexion `DATABASE_URL`)
+- [x] T001 Create pnpm workspace structure (`pnpm-workspace.yaml`, `apps/`, `packages/`, `infra/`, racine `package.json`)
+- [x] T002 [P] Configure Turborepo (`turbo.json` avec pipelines `dev`, `lint`, `typecheck`, `test`, `build`)
+- [x] T003 [P] Configure Biome (`biome.json` avec formatter + linter + import boundaries rule)
+- [x] T004 [P] Configure Husky + lint-staged (`.husky/pre-commit`, `package.json` lint-staged config)
+- [x] T005 [P] Configure commitlint avec Conventional Commits (`commitlint.config.js`, hook `.husky/commit-msg`)
+- [x] T006 [P] Configure TypeScript strict (`tsconfig.base.json` partagé + `tsconfig.json` par app/package)
+- [x] T007 [P] Setup `docker-compose.dev.yml` (Postgres 16, Redis 7, LocalStack pour S3/SES/KMS/Secrets)
+- [x] T008 Initialize NestJS app avec Fastify adapter dans `apps/api/` (`src/main.ts`, `src/app.module.ts`, `package.json`)
+- [x] T009 Initialize Next.js 15 App Router dans `apps/web/` avec **structure routing localisé `[locale]`** (B6 du review itération 2 — Principe IV) : arborescence `src/app/[locale]/(conseiller)/...` et `src/app/[locale]/(admin)/...`, `next.config.ts` configuré pour next-intl, layout racine `src/app/[locale]/layout.tsx`. La configuration concrète next-intl provider/middleware est faite en T030d
+- [x] T010 Initialize `packages/shared/` avec Zod, exports vides pour `conformite`, `auth` (`packages/shared/package.json`, `src/index.ts`)
+- [x] T011 Configure GitHub Actions CI (`.github/workflows/ci.yml` — lint Biome, typecheck tsc, test Vitest, build Turbo, license check, **scan SCA (`pnpm audit` + Snyk avec seuil CVSS ≥ 7 bloquant)**, axe-core, Lighthouse CI)
+- [x] T012 Configure Prisma avec multi-file schema dans `apps/api/prisma/` (`schema.prisma` principal + import `auth.prisma` depuis `packages/shared/auth/prisma/`, connexion `DATABASE_URL`)
 
 ---
 

@@ -1,0 +1,59 @@
+# Environnement de développement local pour Conseiller Voyage.
+# Lancer : docker compose -f docker-compose.dev.yml up -d
+# Services émulés (résidence canadienne en production via AWS ca-central-1).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cv-postgres-dev
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: cv_dev
+      POSTGRES_USER: cv_dev
+      POSTGRES_PASSWORD: cv_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U cv_dev']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: cv-redis-dev
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  localstack:
+    image: localstack/localstack:3
+    container_name: cv-localstack-dev
+    ports:
+      - '4566:4566'
+    environment:
+      SERVICES: s3,ses,kms,secretsmanager
+      DEFAULT_REGION: ca-central-1
+      AWS_DEFAULT_REGION: ca-central-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:4566/_localstack/health']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  redis_data:
+  localstack_data:
