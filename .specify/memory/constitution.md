@@ -1,6 +1,35 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.0.0 → 2.1.0 (MINEUR)
+
+Justification du bump MINEUR :
+  - Plusieurs composants de la *Stack canonique* sont ajoutés ou modifiés :
+    Biome remplace ESLint + Prettier ; Turborepo ajouté ;
+    Auth.js / Zustand / shadcn/ui / Tailwind v4 / next-intl / Fastify /
+    AWS SES / Pino / react-email / Testcontainers / MSW / date-fns /
+    lucide-react inscrits formellement.
+  - Nouvelle section *Infrastructure et opérations* (AWS ECS Fargate
+    ca-central-1, Grafana Cloud Canada, Sentry self-hosted, AWS Secrets
+    Manager, AWS CDK, CloudFront).
+  - Cinq ADRs créés en lot (ADR-0003 à ADR-0007) pour formaliser les
+    choix de fournisseurs.
+
+Principes : inchangés.
+
+Templates et fichiers dépendants — état :
+  ✅ docs/adr/0003-observabilite-grafana-cloud-ca.md      — créé
+  ✅ docs/adr/0004-auth-session-db-partagee.md            — créé
+  ✅ docs/adr/0005-deploiement-aws-ecs-fargate.md         — créé
+  ✅ docs/adr/0006-pivot-resend-vers-aws-ses.md           — créé
+  ✅ docs/adr/0007-sentry-self-hosted.md                  — créé
+  ✅ CLAUDE.md — mis à jour avec la stack étendue
+  ⏳ specs/001-conformite-module/plan.md — phase B (refonte avec
+     résolution des blockers B1-B6 + intégration stack confirmée)
+
+==================
+HISTORIQUE
+==================
 Version change: 1.0.0 → 2.0.0 (MAJEUR)
 
 Justification du bump MAJEUR :
@@ -364,27 +393,117 @@ La stack est figée par cette constitution. Tout changement de composant nommé
 ici constitue un amendement **MINEUR** au minimum et **DOIT** être motivé par
 un ADR.
 
-| Couche | Choix | Contraintes |
+### Fondations
+
+| Domaine | Choix | Contraintes / Note |
 |---|---|---|
 | Langage | **TypeScript ≥ 5** | `strict: true`, `noUncheckedIndexedAccess: true`, `noImplicitAny: true` |
-| Frontend | **Next.js (App Router)** | RSC par défaut ; client components seulement quand nécessaire |
-| Backend | **NestJS** | conteneur DI utilisé pour appliquer Principe VIII |
-| Monorepo | **pnpm workspaces** | `apps/web`, `apps/api`, `packages/shared` minimum |
-| ORM | **Prisma** | jamais de SQL brut sans ADR |
-| DB primaire | **PostgreSQL ≥ 16** | région canadienne (Principe II) |
-| Cache + file | **Redis ≥ 7** + **BullMQ** | région canadienne |
-| Validation | **Zod** | schémas partagés serveur/client via `packages/shared` |
-| Tests | **Vitest** (unit + intégration) + **Playwright** (e2e) | — |
-| Lint/format | **ESLint** + **Prettier** | erreur ESLint bloquante en CI |
+| Package manager | **pnpm** | workspaces : `apps/web`, `apps/api`, `packages/shared` minimum |
+| Orchestration monorepo | **Turborepo** | cache local + distant, pipelines parallèles |
+| Lint + format | **Biome** | erreur bloquante en CI |
+| Git hooks | **Husky** + **lint-staged** | enforce lint/format/typecheck pré-commit |
+| Convention commits | **Conventional Commits** + **commitlint** | `type(scope): description` |
+| Validation runtime | **Zod** | schémas partagés via `packages/shared` |
 | CI | **GitHub Actions** | pipelines obligatoires (cf. *Flux de développement*) |
-| LLM | derrière interface `LlmProvider` (Principe V) | fournisseur choisi par ADR avec résidence canadienne |
-| Hébergement | à fixer par ADR | région canadienne obligatoire (Principe II) |
-| Auth conseiller | TOTP via passkey ou app authenticator | Principe IX |
-| Observabilité | OpenTelemetry + tableau de bord avec alerting | Principe VII |
+| Documentation interne | **Markdown dans `docs/`** | versionné avec le code |
+
+### Frontend
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Framework | **Next.js (App Router)** | RSC par défaut ; client components seulement quand nécessaire |
+| State serveur | **Hybride RSC + TanStack Query** | RSC par défaut, TanStack pour client-heavy (file admin, dashboards live) |
+| State client | **Zustand** | hooks-based, sans provider |
+| Forms | **react-hook-form** + **@hookform/resolvers/zod** | adapté à l'intake multi-step |
+| UI components | **shadcn/ui** | Radix UI sous le capot, accessible WCAG par construction |
+| CSS | **Tailwind CSS v4** | imposé par shadcn/ui |
+| Icons | **lucide-react** | cohérent avec shadcn/ui |
+| Dates | **date-fns** | locale `fr-CA` (Principe IV) |
+| i18n | **next-intl** | App Router natif, ICU MessageFormat |
+| Auth web | **Auth.js v5 (NextAuth)** | sessions DB Postgres, passkeys + TOTP (cf. ADR-0004) |
+
+### Backend
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Framework | **NestJS** | conteneur DI pour appliquer Principe VIII |
+| HTTP adapter | **Fastify** via `@nestjs/platform-fastify` | 2-3× plus rapide qu'Express |
+| ORM | **Prisma** | jamais de SQL brut sans ADR |
+| Logging | **Pino** | JSON structuré, intégration OTel native |
+| API documentation | **@nestjs/swagger** | OpenAPI 3.x auto-généré depuis décorateurs |
+| Templates email | **react-email** | HTML statique + plain-text auto-généré |
+| Auth API | session DB Auth.js lue via Prisma | révocation instantanée (cf. ADR-0004) |
+| MFA conseiller | TOTP via passkey ou app authenticator | Principe IX, obligatoire avant accès aux leads |
+
+### Données et services externes
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| DB primaire | **PostgreSQL ≥ 16** | région canadienne (Principe II) |
+| Cache + file d'attente | **Redis ≥ 7** + **BullMQ** | région canadienne |
+| Stockage objet | **AWS S3 `ca-central-1`** | SSE-KMS, URLs signées (cf. ADR-0001) |
+| Email transactionnel | **AWS SES `ca-central-1`** | DKIM/SPF/DMARC (cf. ADR-0006) |
+| LLM | derrière interface `LlmProvider` (Principe V) | fournisseur précisé par ADR séparé, résidence canadienne |
+
+### Tests
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Unit + intégration | **Vitest** | TDD obligatoire sur logique métier (Principe VI) |
+| E2E | **Playwright** | parcours utilisateurs critiques |
+| Test DB | **Testcontainers** | Postgres + Redis isolés par suite |
+| Mock HTTP | **MSW** (Mock Service Worker) | intercepte au niveau réseau, mêmes handlers dev/test |
+| A11y | **axe-core** | bloquant en CI sur pages publiques (WCAG 2.1 AA) |
 
 Toute dépendance ajoutée au `package.json` **DOIT** être justifiée dans le
 plan d'implémentation et conforme à la politique de licence (cf. *Chaîne
 d'approvisionnement*).
+
+---
+
+## Infrastructure et opérations
+
+Cette section fixe les choix d'infrastructure et d'opérationnel. Comme la
+*Stack canonique*, tout changement de composant nommé ici constitue un
+amendement MINEUR de la constitution et **DOIT** être motivé par un ADR.
+
+Tous les services hébergeant ou traitant du PII **DOIVENT** être en région
+canadienne (Principe II, NON-NÉGOCIABLE).
+
+### Déploiement et infrastructure
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Plateforme de déploiement | **AWS ECS Fargate** dans `ca-central-1` | Next.js + NestJS + workers BullMQ (cf. ADR-0005) |
+| Infrastructure as Code | **AWS CDK** en TypeScript | même langage que la stack applicative |
+| CDN | **AWS CloudFront** | edge YYZ + YUL, signed URLs pour S3 privé |
+| Conteneurs | **Docker** (images distroless Node 22 LTS) | build multi-stage avec pnpm |
+| Dev local | **Docker Compose** + **LocalStack** | Postgres + Redis + S3/SES/KMS émulés |
+| Auto-scaling | sur CPU 70 % + p95 latency (CloudWatch) | autoscale 2-N par service |
+| Migrations DB | **Prisma Migrate** | forward-only, expand/contract (cf. *Migrations DB*) |
+
+### Observabilité et qualité de service
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Tracing + métriques + logs | **OpenTelemetry SDK** → **Grafana Cloud (région Canada)** | DPA Loi 25 signé (cf. ADR-0003) |
+| Error tracking | **Sentry self-hosted** sur AWS `ca-central-1` | scrubbing PII via `beforeSend` (cf. ADR-0007) |
+| Tableaux de bord | Grafana, versionnés en JSON dans `docs/dashboards/` | un par module au minimum |
+| Alerting | Grafana Alertmanager | routes Slack/Discord/courriel selon sévérité |
+| Health checks | `/healthz` (liveness) et `/readyz` (readiness) | par service (Principe X) |
+
+### Secrets et sécurité opérationnelle
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Secrets prod | **AWS Secrets Manager `ca-central-1`** | rotation auto, IAM granulaire |
+| Secrets dev | **1Password CLI** (`op run -- ...`) | jamais de `.env` en clair sur disque |
+| Secrets CI | GitHub Actions OIDC → IAM role | lit Secrets Manager au runtime |
+| Rotation | annuelle minimum, mensuelle pour clés LLM | (cf. Principe IX) |
+
+Toute introduction d'un nouveau service tiers (SaaS, fournisseur géré)
+**DOIT** vérifier la résidence canadienne **avant** sélection (cf.
+ADR-0006 pour la leçon retenue).
 
 ---
 
@@ -653,4 +772,4 @@ courant dans `specs/<feature>/plan.md` et aux ADR dans `docs/adr/`. Le
 fichier `CLAUDE.md` à la racine du dépôt résume la stack et les portes
 non-négociables pour les agents IA.
 
-**Version**: 2.0.0 | **Ratified**: 2026-05-22 | **Last Amended**: 2026-05-22
+**Version**: 2.1.0 | **Ratified**: 2026-05-22 | **Last Amended**: 2026-05-23
