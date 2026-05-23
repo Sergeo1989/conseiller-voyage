@@ -58,7 +58,7 @@ Stack figée par la constitution v2.1.0 — détails par domaine ci-dessous.
 | Type de projet | Application web modulaire (Next.js + NestJS, monorepo pnpm + Turborepo) |
 | Performance | p95 < 800 ms (Principe X) ; propagation statut < 60 s général / < 10 s négatives (FR-022) ; job quotidien d'expiration < 60 s pour 500 conseillers |
 | Contraintes | Région CA obligatoire ; aucune transaction de voyage ; audit append-only 7 ans ; documents 5 MB × 5 max (PDF/JPG/PNG/HEIC) |
-| Volumétrie année 1 | 50–500 conseillers, ~50 soumissions/mois en croissance, < 50 admins |
+| Volumétrie année 1 | 50–500 conseillers ; ~50 soumissions/mois en croissance ; < 10 admins ; ≈ 2500 documents cumulés au total année 1 (500 conseillers × max 5 documents par soumission, hors renouvellements) |
 
 Aucun item « NEEDS CLARIFICATION » — la stack est figée par la constitution
 v2.1.0 et toutes les décisions spécifiques à ce module sont documentées
