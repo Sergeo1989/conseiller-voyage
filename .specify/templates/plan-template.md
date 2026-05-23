@@ -38,9 +38,76 @@
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+*GATE: Doit passer avant Phase 0 (recherche). Re-vérifier après Phase 1 (design).*
 
-[Gates determined based on constitution file]
+Pour chaque principe pertinent à la feature, documenter explicitement la conformité.
+Les principes **NON-NÉGOCIABLES** (I, II, VI, IX) **DOIVENT** être adressés dans
+tous les plans, même brièvement. Source de vérité : `.specify/memory/constitution.md`.
+
+### I. Conformité réglementaire par conception (NON-NÉGOCIABLE)
+
+[Cette feature touche-t-elle, même indirectement, à une réservation, un encaissement
+client, un versement fournisseur, ou à l'affichage/notification d'un conseiller ?
+Si oui, comment respecte-t-elle la frontière transactionnelle ? Le filtrage du
+statut "vérifié" est-il appliqué en couche de données ?]
+
+### II. Vie privée et Loi 25 (NON-NÉGOCIABLE)
+
+[Quelles données personnelles sont collectées ou traitées ? Justification de
+chacune via minimisation. Résidence canadienne confirmée pour tout sous-traitant.
+Effacement implémenté de bout en bout ? Rétention conforme au tableau de la
+constitution ?]
+
+### III. Qualité de lead avant volume
+
+[Si la feature touche au matching ou à la notification : respect du plafond
+3 conseillers ? Traçabilité d'état du lead instrumentée dès J1 ?]
+
+### IV. Français d'abord
+
+[Copie utilisateur livrée en FR-CA ? Clés i18n en place pour l'EN futur ?
+Formats régionaux (date, monnaie CAD, adresse) corrects ?]
+
+### V. Architecture : monolithe modulaire
+
+[Module concerné. Interfaces publiques utilisées. Le LLM (si utilisé) passe-t-il
+bien par `LlmProvider` ? Coût LLM sous le plafond de 0,05 USD/requête ? Cache LLM
+en place ?]
+
+### VI. Logique métier déterministe et testée (NON-NÉGOCIABLE)
+
+[La feature introduit-elle de la logique métier sensible (scoring, validation,
+acceptation/refus) ? Si oui : tests écrits AVANT implémentation (commits séparés
+visibles), fonctions pures sans I/O caché, cas nominal ET cas d'erreur couverts.]
+
+### VII. Observabilité de la boucle économique
+
+[Quelles métriques de la boucle économique (intake completion / acceptation /
+conversion / churn) sont touchées ? Instrumentation prévue. Seuils d'alerte
+configurés. Tableau de bord lié dans le README du module.]
+
+### VIII. Clean Architecture et SOLID
+
+[Couches respectées (domaine pur, application, infrastructure, interface).
+Ports identifiés. Aucun import infrastructure dans domaine ou application.
+Application concrète des 5 lettres SOLID dans le découpage proposé.]
+
+### IX. Sécurité applicative (NON-NÉGOCIABLE)
+
+[RBAC vérifié en couche application. AuthN approprié (MFA conseiller).
+Validation Zod côté serveur. En-têtes HTTP en place. Checklist OWASP Top 10
+revue pour les changements d'endpoint. Aucun secret en clair. Aucun SQL brut.]
+
+### X. Fiabilité et résilience
+
+[SLO endpoints concernés (p95 < 800 ms). Idempotence implémentée pour les
+écritures publiques. Modes dégradés documentés pour chaque dépendance externe.
+Health checks exposés. Circuit breakers en place.]
+
+### Definition of Done
+
+[Confirmer que la DoD de la constitution (section *Flux de développement*)
+sera cochée intégralement avant merge.]
 
 ## Project Structure
 
