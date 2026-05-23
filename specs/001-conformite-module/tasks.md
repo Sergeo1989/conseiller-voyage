@@ -61,22 +61,22 @@ description: "Tâches d'implémentation — Module Conformité"
 
 **⚠ CRITIQUE** : aucun travail user story ne peut commencer tant que cette phase n'est pas finie.
 
-- [ ] T013 Setup Pino logger global pour NestJS via `nestjs-pino` dans `apps/api/src/common/logger.module.ts`
-- [ ] T014 [P] Setup OpenTelemetry SDK (traces, metrics, logs) avec OTLP exporter vers Grafana Cloud CA — `apps/api/src/common/observability/otel.ts`
-- [ ] T015 [P] Setup Sentry SDK avec `beforeSend` PII scrubbing (allowlist) — `apps/api/src/common/observability/sentry.ts` et `apps/web/sentry.client.config.ts`
-- [ ] T016 Create Zod env validation schema et load au boot (crash si manquant) — `apps/api/src/env.ts` et `apps/web/src/env.ts`
+- [x] T013 Setup Pino logger global pour NestJS via `nestjs-pino` dans `apps/api/src/common/logger.module.ts`
+- [x] T014 [P] Setup OpenTelemetry SDK (traces, metrics, logs) avec OTLP exporter vers Grafana Cloud CA — `apps/api/src/common/observability/otel.ts`
+- [x] T015 [P] Setup Sentry SDK avec `beforeSend` PII scrubbing (allowlist) — `apps/api/src/common/observability/sentry.ts` et `apps/web/sentry.client.config.ts`
+- [x] T016 Create Zod env validation schema et load au boot (crash si manquant) — `apps/api/src/env.ts` et `apps/web/src/env.ts`
 - [ ] T017 [P] Setup Auth.js v5 avec adapter Prisma — `apps/web/src/auth.ts` + migration Prisma pour tables `auth_users`, `auth_sessions`, `auth_accounts`, `auth_verification_tokens` (schéma dans `packages/shared/auth/prisma/auth.prisma`)
 - [ ] T018 [P] Create `AuthSessionReader` port et `PrismaAuthSessionReader` adapter dans `apps/api/src/modules/identite/{application/ports,infrastructure}/`
 - [ ] T019 [P] Create `AuthGuard` NestJS lisant `auth_sessions` via le reader + cache local 5-10s — `apps/api/src/modules/identite/interface/auth.guard.ts`
-- [ ] T020 [P] Implement `IdempotencyInterceptor` lisant header `Idempotency-Key`, persistant `(key, response)` 7j dans Redis — `apps/api/src/common/interceptors/idempotency.interceptor.ts`
-- [ ] T021 [P] Implement `CsrfProtectionMiddleware` (vérification header `X-Requested-By: web` sur mutations) — `apps/api/src/common/middleware/csrf.middleware.ts`
-- [ ] T022 [P] Configure security headers via Fastify hooks (CSP strict, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy) — `apps/api/src/common/security/headers.ts`
-- [ ] T023 [P] Create Zod validation pipe pour NestJS — `apps/api/src/common/pipes/zod-validation.pipe.ts`
+- [x] T020 [P] Implement `IdempotencyInterceptor` lisant header `Idempotency-Key`, persistant `(key, response)` 7j dans Redis — `apps/api/src/common/interceptors/idempotency.interceptor.ts`
+- [x] T021 [P] Implement `CsrfProtectionMiddleware` (vérification header `X-Requested-By: web` sur mutations) — `apps/api/src/common/middleware/csrf.middleware.ts`
+- [x] T022 [P] Configure security headers via Fastify hooks (CSP strict, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy) — `apps/api/src/common/security/headers.ts`
+- [x] T023 [P] Create Zod validation pipe pour NestJS — `apps/api/src/common/pipes/zod-validation.pipe.ts`
 - [ ] T024 [P] Configure `@nestjs/throttler` avec backing Redis (rate limiting global + per-route) — `apps/api/src/common/throttler.module.ts`
 - [ ] T025 [P] Setup BullMQ avec connexion ioredis + module NestJS — `apps/api/src/queue/bullmq.module.ts`
 - [ ] T026 [P] Setup AWS SDK clients (S3, SES, Secrets Manager) avec credentials IAM via task role — `apps/api/src/aws/clients.ts`
-- [ ] T027 [P] Define branded UUID types (`ConseillerComplianceId`, `CertificatId`, `AffiliationId`, etc.) dans `packages/shared/conformite/branded-ids.ts`
-- [ ] T028 [P] Define `Clock` port et `SystemClock` adapter — `apps/api/src/common/{ports,infrastructure}/clock.{port,ts}` (testabilité fonctions pures Principe VI)
+- [x] T027 [P] Define branded UUID types (`ConseillerComplianceId`, `CertificatId`, `AffiliationId`, etc.) dans `packages/shared/conformite/branded-ids.ts`
+- [x] T028 [P] Define `Clock` port et `SystemClock` adapter — `apps/api/src/common/{ports,infrastructure}/clock.{port,ts}` (testabilité fonctions pures Principe VI)
 - [ ] T029 Implement `/healthz` (liveness) et `/readyz` (readiness avec test PG + Redis + S3 PutObject) — `apps/api/src/health/health.controller.ts`
 - [ ] T030 Configure CDK stack initial (VPC, ECS Cluster, RDS, ElastiCache, S3 buckets, IAM roles) — `infra/cdk/cv-prod-stack.ts`
 - [ ] T030a [P] **Module-boundary enforcement CI test** (G1 du review — SC-008 / Principe V) : script `tools/check-module-boundaries.ts` qui parse les imports TS de `apps/api/src/modules/<X>/` et **fail le build** si un fichier importe un type Prisma ou un client SDK appartenant à un module `<Y>` différent. Wiring dans `.github/workflows/ci.yml` comme étape bloquante — `tools/check-module-boundaries.ts`

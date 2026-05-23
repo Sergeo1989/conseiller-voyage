@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { LoggerModule } from './common/logger.module';
 
 /**
  * Module racine NestJS.
@@ -7,7 +8,7 @@ import { Module } from '@nestjs/common';
  * Cf. constitution Principe V — monolithe modulaire.
  */
 @Module({
-  imports: [],
+  imports: [LoggerModule],
   controllers: [],
   providers: [],
 })

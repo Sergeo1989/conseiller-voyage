@@ -1,0 +1,49 @@
+// T013 — Logger Pino global pour NestJS via nestjs-pino.
+// JSON structuré en prod, pino-pretty en dev. Redaction défensive des
+// champs sensibles (Authorization, Cookie, PII probable dans les payloads).
+
+import { Module } from '@nestjs/common';
+import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
+import { env } from '../env';
+
+const PII_REDACT_PATHS = [
+  'req.headers.authorization',
+  'req.headers.cookie',
+  'req.headers["x-api-key"]',
+  'req.headers["idempotency-key"]',
+  '*.email',
+  '*.emailAddress',
+  '*.phone',
+  '*.phoneNumber',
+  '*.firstName',
+  '*.lastName',
+  '*.fullName',
+  '*.password',
+  '*.token',
+  '*.apiKey',
+];
+
+@Module({
+  imports: [
+    PinoLoggerModule.forRoot({
+      pinoHttp: {
+        level: env.LOG_LEVEL,
+        transport:
+          env.NODE_ENV === 'production'
+            ? undefined
+            : {
+                target: 'pino-pretty',
+                options: { colorize: true, singleLine: true, translateTime: 'HH:MM:ss' },
+              },
+        redact: { paths: PII_REDACT_PATHS, censor: '[REDACTED]' },
+        serializers: {
+          req(req: { method: string; url: string; id?: string }) {
+            return { method: req.method, url: req.url, id: req.id };
+          },
+        },
+      },
+    }),
+  ],
+  exports: [PinoLoggerModule],
+})
+export class LoggerModule {}
