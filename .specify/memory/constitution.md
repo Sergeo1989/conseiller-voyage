@@ -1,6 +1,40 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.1.0 → 2.2.0 (MINEUR)
+
+Justification du bump MINEUR :
+  - Ajout de deux nouveaux principes NON-NÉGOCIABLES (XI et XII)
+    en réponse à la demande explicite du porteur produit :
+      * Accessibilité WCAG 2.1 AA doit être strictement respectée.
+      * Optimisation SEO doit être strictement respectée — le site
+        repose sur le trafic organique comme valeur cœur.
+
+Principes — état :
+  I-X.   inchangés (cf. trail v2.1.0 ci-dessous)
+  XI.    Accessibilité WCAG 2.1 AA (NON-NÉGOCIABLE)            NOUVEAU
+  XII.   Optimisation SEO (NON-NÉGOCIABLE)                      NOUVEAU
+
+Sections modifiées :
+  - Patrons d'exécution et de scalabilité : sous-section Accessibilité
+    réduite à un renvoi vers Principe XI ; sous-section Performance
+    utilisateur réduite à un renvoi vers Principe XII (la matière reste
+    canonique dans les principes XI / XII).
+  - Flux de développement / Definition of Done : ajout de portes axe-core
+    + Lighthouse CI bloquantes pour toute page touchée.
+
+Templates et fichiers dépendants — état :
+  ✅ CLAUDE.md — référence v2.2.0 + 6 portes NON-NÉGOCIABLES (au lieu
+       de 4 précédemment : I, II, VI, IX → I, II, VI, IX, XI, XII)
+  ⚠  specs/001-conformite-module/plan.md — Constitution Check à
+       compléter avec sections Principle XI / XII lors du prochain
+       passage de revue.
+  ⚠  .specify/templates/plan-template.md — Constitution Check à
+       compléter avec sections Principe XI / XII pour les futurs plans.
+
+==================
+HISTORIQUE
+==================
 Version change: 2.0.0 → 2.1.0 (MINEUR)
 
 Justification du bump MINEUR :
@@ -385,6 +419,125 @@ Le client **DOIT** envoyer un header `Idempotency-Key` (UUID v4) ; le serveur
 **Health checks** : tout service expose `/healthz` (liveness, dépendances
 minimales) et `/readyz` (readiness, dépendances complètes y compris DB).
 
+### XI. Accessibilité WCAG 2.1 AA (NON-NÉGOCIABLE)
+
+L'accessibilité **DOIT** être strictement respectée sur l'ensemble des
+interfaces utilisateur de la plateforme (publiques et authentifiées).
+Cible : **WCAG 2.1 niveau AA** au minimum. Aucune dérogation tolérée —
+ni « plus tard », ni « pour les pages secondaires », ni « si le designer
+préfère ».
+
+**Critères techniques bloquants en CI** :
+
+- **`axe-core`** exécuté en CI sur **toutes** les pages publiques et
+  authentifiées via Playwright ; **toute erreur de niveau serious ou
+  critical bloque le merge**.
+- **Contraste de couleur** : minimum 4,5:1 pour texte normal, 3:1 pour
+  texte large (≥ 18pt ou ≥ 14pt bold), 3:1 pour composants UI et
+  graphiques significatifs.
+- **Navigation 100 % clavier** : tout parcours utilisateur **DOIT** être
+  réalisable sans souris. Focus visible obligatoire. Pas de « focus
+  trap » non intentionnel.
+- **Sémantique HTML** : structure de titres `h1 → h2 → h3` sans saut
+  hiérarchique, landmarks ARIA appropriés (`<main>`, `<nav>`,
+  `<header>`, `<footer>`), labels associés à tous les champs de
+  formulaire.
+- **Images** : `alt` descriptif obligatoire sur toute `<img>` porteuse
+  d'information ; `alt=""` explicite sur images décoratives.
+- **Mouvement et autoplay** : aucun contenu animé > 5 s sans contrôle
+  pause/stop ; respect de `prefers-reduced-motion`.
+- **Erreurs de formulaire** : annoncées via `aria-live`, associées au
+  champ via `aria-describedby`, message en clair (pas seulement la
+  couleur).
+
+**Critères humains** (à chaque release majeure) :
+
+- **Audit manuel au lecteur d'écran** (NVDA Windows ou VoiceOver macOS)
+  sur tous les parcours principaux. Compte-rendu dans
+  `docs/a11y/release-<NN>.md`.
+- **Test au zoom 200 %** : aucune perte de fonctionnalité.
+
+**Raison** : l'accessibilité est un droit, pas une option. Toute UI
+inaccessible exclut concrètement des conseillers, des voyageurs, et
+expose la plateforme à des recours individuels et collectifs (la LCDP
+fédérale et les chartes provinciales québécoise et ontarienne couvrent
+explicitement l'accessibilité numérique). C'est aussi un signal SEO
+positif (Google récompense les sites accessibles via Core Web Vitals et
+les heuristiques de qualité).
+
+### XII. Optimisation SEO (NON-NÉGOCIABLE)
+
+Le trafic organique est la **valeur cœur** de la plateforme — c'est
+ce qui rend les leads abordables et l'acquisition conseiller pérenne.
+Toute interface publique **DOIT** être optimisée SEO strictement, dès
+sa première mise en ligne. Aucun compromis « on optimisera plus tard »
+n'est toléré.
+
+**Cibles de performance utilisateur (Core Web Vitals)** mesurées sur
+P75 réel via CrUX :
+
+- **LCP** (Largest Contentful Paint) < 2,5 s
+- **INP** (Interaction to Next Paint) < 200 ms
+- **CLS** (Cumulative Layout Shift) < 0,1
+- Budget JS initial : < 200 kB compressé (gzip) sur toute page publique
+- Lighthouse CI bloquant en pipeline : **Performance ≥ 90**, **SEO ≥ 95**,
+  **Accessibility ≥ 95** (cf. Principe XI). Régression > 10 % sur l'une
+  de ces métriques **bloque le merge**.
+
+**Rendu et indexabilité** :
+
+- **SSR ou SSG obligatoire** pour toute page publique. Aucun contenu
+  porteur d'information rendu uniquement en JS côté client.
+- **Métadonnées complètes par page** : `<title>` unique, `meta
+  description` < 160 caractères, balises Open Graph (`og:title`,
+  `og:description`, `og:image`, `og:url`, `og:locale`), `twitter:card`,
+  JSON-LD `Schema.org` approprié (`WebPage`, `Person`,
+  `ProfessionalService`, `BreadcrumbList`).
+- **URLs canoniques** propres, sans paramètres de tracking ; rel="canonical"
+  obligatoire sur chaque page indexable.
+- **Hreflang** complet (`fr-CA`, `en`, `x-default`) — cf. Principe IV.
+- **robots.txt** explicite, **sitemap.xml** auto-généré et déclaré dans
+  robots.txt + Google Search Console, **llms.txt** pour la visibilité
+  AI search (GEO).
+- Aucune page publique avec `noindex` par défaut. Les routes admin et
+  authentifiées sont explicitement `noindex`.
+
+**Structure éditoriale et internal linking** :
+
+- Hiérarchie de titres `h1` unique par page, suivie de `h2`/`h3`
+  cohérents (Principe XI le requiert aussi pour l'a11y — alignement
+  naturel).
+- Internal linking explicite entre pages thématiques (annuaire ↔ pages
+  destinations ↔ profils conseillers).
+- Breadcrumbs visibles ET en JSON-LD `BreadcrumbList`.
+
+**Optimisation des images** :
+
+- Format moderne (WebP en priorité, AVIF si supporté), fallback JPG/PNG.
+- `<img>` toujours avec `width`, `height` et `alt` explicites (CLS = 0).
+- Lazy-loading natif (`loading="lazy"`) sauf pour l'image hero.
+
+**Crawling et indexation** :
+
+- Pas de bloqueur d'indexation involontaire (Cloudflare bot management,
+  etc.). robots.txt vérifié manuellement à chaque mise en production.
+- Le délai d'indexation des nouvelles pages publiques (création de
+  profil conseiller, nouvelle landing thématique) **DOIT** être inférieur
+  à 7 jours en moyenne (mesure via GSC + sitemap submission).
+
+**Mesure** :
+
+- Tableau de bord Search Console intégré dans Grafana (clics, impressions,
+  position moyenne, pages indexées). Variation > -20 % d'une semaine sur
+  l'autre **DOIT** déclencher une investigation immédiate (oncall SEO).
+
+**Raison** : le modèle économique repose sur le ratio
+(visiteurs organiques) / (coût d'acquisition). Une page lente, mal
+indexée, ou non optimisée Schema.org dégrade ce ratio de façon
+silencieuse — la mesure SEO arrive avec un délai de plusieurs semaines,
+donc le contrôle qualité **DOIT** être préventif (gates CI), pas
+réactif.
+
 ---
 
 ## Stack canonique
@@ -581,22 +734,15 @@ classes. TTL acceptable pour donnée publique non sensible.
 
 ### Performance utilisateur
 
-Cibles sur pages publiques (P75 mesuré via CrUX) :
-
-- **LCP** (Largest Contentful Paint) < 2,5 s
-- **INP** (Interaction to Next Paint) < 200 ms
-- **CLS** (Cumulative Layout Shift) < 0,1
-- Budget JS initial : < 200 kB compressé (gzip)
-
-Lighthouse CI en pipeline GitHub Actions ; dégradation > 10 % sur une de ces
-métriques **DOIT** bloquer le merge.
+→ Cf. **Principe XII — Optimisation SEO (NON-NÉGOCIABLE)** pour les cibles
+Core Web Vitals (LCP < 2,5 s, INP < 200 ms, CLS < 0,1), le budget JS, et
+les seuils Lighthouse CI bloquants.
 
 ### Accessibilité
 
-Toute interface publique **DOIT** être conforme **WCAG 2.1 niveau AA**. Test
-automatique via `axe-core` en CI (bloquant sur les erreurs critiques). Audit
-manuel par release majeure avec test au lecteur d'écran (NVDA ou VoiceOver).
-L'audit a11y fait partie de la Definition of Done pour toute modification UI.
+→ Cf. **Principe XI — Accessibilité WCAG 2.1 AA (NON-NÉGOCIABLE)** pour la
+politique complète (axe-core CI bloquant, contraste, navigation clavier,
+sémantique HTML, audit lecteur d'écran).
 
 ### Coût et cache LLM
 
@@ -772,4 +918,4 @@ courant dans `specs/<feature>/plan.md` et aux ADR dans `docs/adr/`. Le
 fichier `CLAUDE.md` à la racine du dépôt résume la stack et les portes
 non-négociables pour les agents IA.
 
-**Version**: 2.1.0 | **Ratified**: 2026-05-22 | **Last Amended**: 2026-05-23
+**Version**: 2.2.0 | **Ratified**: 2026-05-22 | **Last Amended**: 2026-05-23

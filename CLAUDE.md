@@ -1,6 +1,6 @@
 # Conseiller Voyage — Guide projet pour agents IA
 
-> Source de vérité contraignante : `.specify/memory/constitution.md` (v2.1.0).
+> Source de vérité contraignante : `.specify/memory/constitution.md` (v2.2.0).
 > Ce fichier en est un résumé opérationnel pour orienter rapidement les agents IA.
 
 ## Règle d'or
@@ -62,6 +62,8 @@ SOLID appliqué concrètement : voir Principe VIII de la constitution.
 | II | Vie privée / Loi 25 | Données personnelles en région canadienne. Consentement explicite. Effacement implémenté. Rétention selon le tableau de la constitution. |
 | VI | Logique métier testée | Scoring matching + validation brief = fonctions pures, tests écrits AVANT implémentation (commits séparés visibles dans git). |
 | IX | Sécurité applicative | RBAC en couche application. Validation Zod côté serveur. En-têtes HTTP en place. Aucun secret en clair. Aucun SQL brut sans ADR. |
+| XI | Accessibilité WCAG 2.1 AA | axe-core CI bloquant. Navigation clavier intégrale. Contraste ≥ 4.5:1. Audit lecteur d'écran à chaque release majeure. |
+| XII | Optimisation SEO | SSR/SSG obligatoire pour pages publiques. CWV LCP/INP/CLS strictement dans les budgets. Lighthouse CI bloquant (Perf ≥ 90, SEO ≥ 95, A11y ≥ 95). Métadonnées + Schema.org JSON-LD complets. Trafic organique = valeur cœur. |
 
 ## Avant tout merge : Definition of Done
 
