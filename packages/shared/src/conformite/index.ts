@@ -8,6 +8,7 @@
 //   T074 — fr-CA.json + en.json placeholder (i18n)            ⏳
 
 export * from './branded-ids';
+export * from './contracts';
 export * from './formatters';
 export * from './schemas';
 export * from './zod-errors';
