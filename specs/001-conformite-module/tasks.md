@@ -149,7 +149,7 @@ description: "Tâches d'implémentation — Module Conformité"
 
 ### Interface (HTTP + DI)
 
-- [ ] T067 [P] [US1] Zod schemas API (RequestUploadUrls, SubmitDossier, ApproveDossier, RefuseDossier) dans `packages/shared/conformite/schemas.ts`
+- [x] T067 [P] [US1] Zod schemas API (RequestUploadUrls, SubmitDossier, ApproveDossier, RefuseDossier) dans `packages/shared/conformite/schemas.ts`
 - [ ] T068 [P] [US1] DTOs `ConseillerConformiteController` dans `apps/api/src/modules/conformite/interface/http/dto/conseiller.dto.ts`
 - [ ] T069 [P] [US1] DTOs `AdminConformiteController` dans `apps/api/src/modules/conformite/interface/http/dto/admin.dto.ts`
 - [ ] T070 [US1] `ConseillerConformiteController` (POST `/me/upload-urls`, POST `/me/submissions`, GET `/me`) dans `apps/api/src/modules/conformite/interface/http/conseiller-conformite.controller.ts`
