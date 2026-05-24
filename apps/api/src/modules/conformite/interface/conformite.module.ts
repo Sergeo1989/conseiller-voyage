@@ -23,12 +23,16 @@ import { CLOCK } from '../../../common/ports/clock.port';
 import { UUID_GENERATOR } from '../../../common/ports/uuid-generator.port';
 import { IdentiteModule } from '../../identite/identite.module';
 import { AUDIT_LOG_WRITER } from '../application/ports/audit-log-writer.port';
+import { CONFORMITE_EVENT_PUBLISHER } from '../application/ports/conformite-event-publisher.port';
 import { CONFORMITE_READER } from '../application/ports/conformite-reader.port';
+import { CONFORMITE_STATUS_CACHE } from '../application/ports/conformite-status-cache.port';
 import { CONFORMITE_WRITER } from '../application/ports/conformite-writer.port';
 import { DOCUMENT_STORAGE } from '../application/ports/document-storage.port';
 import { NOTIFICATION_PORT } from '../application/ports/notification.port';
 import { OUTBOX_WRITER } from '../application/ports/outbox-writer.port';
 import { ApproveDossierUseCase } from '../application/use-cases/approve-dossier.use-case';
+import { DeclarePermitRevokedUseCase } from '../application/use-cases/declare-permit-revoked.use-case';
+import { GetVerificationStatusUseCase } from '../application/use-cases/get-verification-status.use-case';
 import { PropagateExpirationsUseCase } from '../application/use-cases/propagate-expirations.use-case';
 import { RefuseDossierUseCase } from '../application/use-cases/refuse-dossier.use-case';
 import { RequestUploadUrlsUseCase } from '../application/use-cases/request-upload-urls.use-case';
@@ -43,9 +47,12 @@ import { OutboxPublisherJob } from '../infrastructure/jobs/outbox-publisher.job'
 import { PrismaAuditLogWriter } from '../infrastructure/prisma-audit-log-writer';
 import { PrismaConformiteRepository } from '../infrastructure/prisma-conformite-repository';
 import { PrismaOutboxWriter } from '../infrastructure/prisma-outbox-writer';
+import { RedisConformiteEventPublisher } from '../infrastructure/redis-conformite-event-publisher';
+import { RedisConformiteStatusCache } from '../infrastructure/redis-conformite-status-cache';
 import { S3DocumentStorage } from '../infrastructure/s3-document-storage';
 import { AdminConformiteController } from './http/admin-conformite.controller';
 import { ConseillerConformiteController } from './http/conseiller-conformite.controller';
+import { ConformiteQueryFacade } from './public-api/conformite-query.facade';
 
 /** Intervalle drain outbox publisher (5 s — adaptable selon volumétrie). */
 const OUTBOX_DRAIN_INTERVAL_MS = 5_000;
@@ -66,6 +73,8 @@ const EXPIRATION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
     RefuseDossierUseCase,
     SendExpirationRemindersUseCase,
     PropagateExpirationsUseCase,
+    GetVerificationStatusUseCase,
+    DeclarePermitRevokedUseCase,
 
     // --- Ports → adapters ---
     // PrismaConformiteRepository implémente Reader + Writer → on
@@ -79,6 +88,11 @@ const EXPIRATION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
     { provide: AUDIT_LOG_WRITER, useClass: PrismaAuditLogWriter },
     { provide: OUTBOX_WRITER, useClass: PrismaOutboxWriter },
     { provide: NOTIFICATION_PORT, useClass: BullmqNotification },
+    { provide: CONFORMITE_STATUS_CACHE, useClass: RedisConformiteStatusCache },
+    { provide: CONFORMITE_EVENT_PUBLISHER, useClass: RedisConformiteEventPublisher },
+
+    // --- Public API facade (consommée par autres modules) ---
+    ConformiteQueryFacade,
 
     // --- Common (Clock + UuidGenerator) ---
     { provide: CLOCK, useClass: SystemClock },
@@ -89,9 +103,8 @@ const EXPIRATION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
     ExpirationSweepJob,
   ],
   exports: [
-    // Réservé aux futures intégrations cross-module (ex: matching aura
-    // besoin du ConformiteReader pour filtrer les verified). Pour
-    // l'instant US1 ne consomme rien d'externe.
+    // Public API : ConformiteQueryFacade pour matching/SEO (US3).
+    ConformiteQueryFacade,
   ],
 })
 export class ConformiteModule implements OnModuleInit, OnModuleDestroy {

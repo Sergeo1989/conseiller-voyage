@@ -268,3 +268,29 @@ export const SubmissionIdParamSchema = z
   })
   .strict();
 export type SubmissionIdParam = z.infer<typeof SubmissionIdParamSchema>;
+
+// --- US3 POST /admin/permits/revoke ---
+
+export const DeclarePermitRevokedSchema = z
+  .object({
+    agencyPermitNumber: z.string().min(1).max(50),
+    agencyProvince: ProvinceSchema,
+    reason: z
+      .string()
+      .min(
+        MIN_REFUSAL_REASON_CHARS,
+        `Motif obligatoire d'au moins ${MIN_REFUSAL_REASON_CHARS} caractères (FR-015).`,
+      )
+      .max(MAX_REFUSAL_REASON_CHARS),
+  })
+  .strict();
+export type DeclarePermitRevokedBody = z.infer<typeof DeclarePermitRevokedSchema>;
+
+export const DeclarePermitRevokedResponseSchema = z
+  .object({
+    permitRevocationId: z.string().uuid(),
+    affectedConseillerCount: z.number().int().nonnegative(),
+    conseillerSuspensionCount: z.number().int().nonnegative(),
+  })
+  .strict();
+export type DeclarePermitRevokedResponse = z.infer<typeof DeclarePermitRevokedResponseSchema>;

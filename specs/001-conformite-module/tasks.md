@@ -211,9 +211,9 @@ description: "Tâches d'implémentation — Module Conformité"
 - [x] T096 [P] [US3] `RedisConformiteEventPublisher` — impl Redis pub/sub du port `ConformiteEventPublisher` (défini en T045 ; consommé par `OutboxPublisherJob` T066 pour la livraison effective des événements ; publie sur canal `conformite.status.changed` pour l'invalidation des caches consommateurs) dans `apps/api/src/modules/conformite/infrastructure/redis-conformite-event-publisher.ts`
 - [x] T097 [US3] `ConformiteQueryFacade` implémentant `ConformiteQueryPort` (cache + strict bypass + subscribe) dans `apps/api/src/modules/conformite/interface/public-api/conformite-query.facade.ts`
 - [x] T098 [US3] Contract test : consommateur fictif vérifie la conformité au contrat publié dans `packages/shared/conformite/contracts.ts` — `apps/api/test/contract/conformite-query.contract.test.ts`
-- [ ] T099 [US3] AdminConformiteController POST `/admin/permits/revoke` endpoint dans `apps/api/src/modules/conformite/interface/http/admin-conformite.controller.ts` (UPDATE existant)
-- [ ] T100 [US3] Page admin déclaration retrait de permis (formulaire + preview impact) dans `apps/web/src/app/(admin)/conformite/permis/page.tsx`
-- [ ] T101 [US3] Playwright e2e : créer 3 conseillers affiliés à même permis → admin déclare retrait → 3 statuts basculés `suspended` en < 10 s dans `apps/api/test/e2e/conformite-us3-cascade.spec.ts`
+- [x] T099 [US3] AdminConformiteController POST `/admin/permits/revoke` endpoint dans `apps/api/src/modules/conformite/interface/http/admin-conformite.controller.ts` (UPDATE existant)
+- [x] T100 [US3] Page admin déclaration retrait de permis (formulaire + preview impact) dans `apps/web/src/app/(admin)/conformite/permis/page.tsx`
+- [x] T101 [US3] Playwright e2e : créer 3 conseillers affiliés à même permis → admin déclare retrait → 3 statuts basculés `suspended` en < 10 s dans `apps/api/test/e2e/conformite-us3-cascade.spec.ts`
 
 ---
 

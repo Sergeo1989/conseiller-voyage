@@ -13,6 +13,8 @@ import type { AdminId, SubmissionId } from '@cv/shared/conformite';
 import {
   AdminIdSchema,
   ApproveSubmissionSchema,
+  type DeclarePermitRevokedResponse,
+  DeclarePermitRevokedSchema,
   QueueQuerySchema,
   RefuseSubmissionSchema,
   SubmissionIdSchema,
@@ -47,6 +49,8 @@ import {
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
 import { ApproveDossierUseCase } from '../../application/use-cases/approve-dossier.use-case';
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
+import { DeclarePermitRevokedUseCase } from '../../application/use-cases/declare-permit-revoked.use-case';
+// biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
 import { RefuseDossierUseCase } from '../../application/use-cases/refuse-dossier.use-case';
 import type {
   ApproveSubmissionRequestDto,
@@ -69,6 +73,7 @@ export class AdminConformiteController {
     @Inject(DOCUMENT_STORAGE) private readonly storage: DocumentStoragePort,
     private readonly approveDossier: ApproveDossierUseCase,
     private readonly refuseDossier: RefuseDossierUseCase,
+    private readonly declarePermit: DeclarePermitRevokedUseCase,
   ) {}
 
   @ApiOperation({ summary: 'File de revue paginée (FR-003).' })
@@ -195,6 +200,26 @@ export class AdminConformiteController {
       reason: body.reason,
     });
     return { ok: true };
+  }
+
+  @ApiOperation({ summary: 'Déclare un retrait de permis avec cascade (FR-015 / US3).' })
+  @ApiResponse({ status: 200, description: 'Permis révoqué, cascade appliquée.' })
+  @ApiResponse({ status: 400, description: 'Motif < 20 caractères.' })
+  @ApiResponse({ status: 409, description: 'Permis déjà révoqué.' })
+  @Post('permits/revoke')
+  @HttpCode(HttpStatus.OK)
+  async revokePermit(
+    @Req() req: AuthenticatedRequest,
+    @Body(new ZodValidationPipe(DeclarePermitRevokedSchema))
+    body: import('@cv/shared/conformite').DeclarePermitRevokedBody,
+  ): Promise<DeclarePermitRevokedResponse> {
+    const admin = this.assertAdmin(req);
+    return this.declarePermit.execute({
+      requestedBy: { id: admin.id, role: 'admin' },
+      agencyPermitNumber: body.agencyPermitNumber,
+      agencyProvince: body.agencyProvince,
+      reason: body.reason,
+    });
   }
 
   // --- Helpers privés ---
