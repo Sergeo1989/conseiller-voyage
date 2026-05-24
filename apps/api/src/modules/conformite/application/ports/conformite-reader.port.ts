@@ -53,6 +53,13 @@ export interface ConformiteReader {
   listAffiliationsForSubmission(id: SubmissionId): Promise<ReadonlyArray<Affiliation>>;
 
   findUploadIntent(id: UploadIntentId): Promise<UploadIntent | null>;
+
+  /**
+   * US2 — Certificats valides (approved + non-superseded) dont
+   * expiresAt tombe dans la fenêtre [from, to[. Utilisé par les jobs
+   * d'expiration (rappels J-60/J-30/J-7 + bascule auto suspended).
+   */
+  listCertificatsExpiringInWindow(from: Date, to: Date): Promise<ReadonlyArray<Certificat>>;
 }
 
 export const CONFORMITE_READER = Symbol.for('ConformiteReader');

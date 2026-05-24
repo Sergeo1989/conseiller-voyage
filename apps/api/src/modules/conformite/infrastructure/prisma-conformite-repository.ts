@@ -137,6 +137,17 @@ export class PrismaConformiteRepository implements ConformiteReader, ConformiteW
     return row ? this.mapUploadIntent(row) : null;
   }
 
+  async listCertificatsExpiringInWindow(from: Date, to: Date): Promise<ReadonlyArray<Certificat>> {
+    const rows = await prisma.certificat.findMany({
+      where: {
+        decision: 'approved',
+        supersededById: null,
+        expiresAt: { gte: from, lt: to },
+      },
+    });
+    return rows.map((r) => this.mapCertificat(r));
+  }
+
   // --- WRITER ---
 
   async getOrCreateCompliance(args: GetOrCreateComplianceArgs): Promise<ConseillerCompliance> {

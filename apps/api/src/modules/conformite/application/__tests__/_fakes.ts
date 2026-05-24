@@ -149,6 +149,18 @@ export class FakeConformiteRepository implements ConformiteReader, ConformiteWri
     return Promise.resolve(this.uploadIntents.get(id) ?? null);
   }
 
+  listCertificatsExpiringInWindow(from: Date, to: Date): Promise<ReadonlyArray<Certificat>> {
+    return Promise.resolve(
+      [...this.certificats.values()].filter(
+        (c) =>
+          c.decision === 'approved' &&
+          c.supersededById === null &&
+          c.expiresAt >= from &&
+          c.expiresAt < to,
+      ),
+    );
+  }
+
   // --- Writer ---
 
   getOrCreateCompliance(args: GetOrCreateComplianceArgs): Promise<ConseillerCompliance> {
