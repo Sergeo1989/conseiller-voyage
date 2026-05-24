@@ -148,6 +148,20 @@ export class PrismaConformiteRepository implements ConformiteReader, ConformiteW
     return rows.map((r) => this.mapCertificat(r));
   }
 
+  async listExpiredUnconsumedUploadIntents(olderThan: Date): Promise<ReadonlyArray<UploadIntent>> {
+    const rows = await prisma.uploadIntent.findMany({
+      where: { consumedAt: null, expiresAt: { lt: olderThan } },
+    });
+    return rows.map((r) => this.mapUploadIntent(r));
+  }
+
+  async listCompliancesWithErasureRequested(): Promise<ReadonlyArray<ConseillerCompliance>> {
+    const rows = await prisma.conseillerCompliance.findMany({
+      where: { erasureRequestedAt: { not: null }, anonymizedAt: null },
+    });
+    return rows.map((r) => this.mapCompliance(r));
+  }
+
   async listAuditEntriesForCompliance(args: {
     conseillerComplianceId: ConseillerComplianceId;
     cursor: string | null;

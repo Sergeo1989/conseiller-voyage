@@ -204,6 +204,22 @@ export class FakeConformiteRepository implements ConformiteReader, ConformiteWri
     );
   }
 
+  listExpiredUnconsumedUploadIntents(olderThan: Date): Promise<ReadonlyArray<UploadIntent>> {
+    return Promise.resolve(
+      [...this.uploadIntents.values()].filter(
+        (i) => i.consumedAt === null && i.expiresAt < olderThan,
+      ),
+    );
+  }
+
+  listCompliancesWithErasureRequested(): Promise<ReadonlyArray<ConseillerCompliance>> {
+    return Promise.resolve(
+      [...this.compliances.values()].filter(
+        (c) => c.erasureRequestedAt !== null && c.anonymizedAt === null,
+      ),
+    );
+  }
+
   // --- Writer ---
 
   getOrCreateCompliance(args: GetOrCreateComplianceArgs): Promise<ConseillerCompliance> {

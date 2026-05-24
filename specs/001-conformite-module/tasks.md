@@ -253,8 +253,8 @@ description: "Tâches d'implémentation — Module Conformité"
 - [x] T112 [P] Test `EraseConseillerDataUseCase` (anonymisation profil + documents, conservation audit 7 ans) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/erase-conseiller-data.test.ts`
 - [x] T113 Implement `EraseConseillerDataUseCase` (job BullMQ asynchrone, transaction Prisma + S3 delete + audit `erasure.completed`) dans `apps/api/src/modules/conformite/application/use-cases/erase-conseiller-data.use-case.ts`
 - [x] T114 ConseillerConformiteController POST `/me/erasure-request` endpoint dans `apps/api/src/modules/conformite/interface/http/conseiller-conformite.controller.ts` (UPDATE existant)
-- [ ] T115 [P] `UploadIntentCleanupJob` BullMQ quotidien (delete intents expirés non consommés + objets S3 associés) dans `apps/api/src/modules/conformite/infrastructure/jobs/upload-intent-cleanup.job.ts`
-- [ ] T116 [P] `DataRetentionSweepJob` BullMQ quotidien (anonymise briefs > 24 mois, profils désactivés > 6 mois, etc. selon tableau constitution) dans `apps/api/src/modules/conformite/infrastructure/jobs/data-retention-sweep.job.ts`
+- [x] T115 [P] `UploadIntentCleanupJob` BullMQ quotidien (delete intents expirés non consommés + objets S3 associés) dans `apps/api/src/modules/conformite/infrastructure/jobs/upload-intent-cleanup.job.ts`
+- [x] T116 [P] `DataRetentionSweepJob` BullMQ quotidien (anonymise briefs > 24 mois, profils désactivés > 6 mois, etc. selon tableau constitution) dans `apps/api/src/modules/conformite/infrastructure/jobs/data-retention-sweep.job.ts`
 - [ ] T117 [P] S3 lifecycle policy CDK construct (abort incomplete multipart 1d, transition Glacier 24mo, supprime orphan intents) — édition `infra/cdk/cv-prod-stack.ts`
 - [ ] T118 [P] Grafana dashboard JSON pour métriques conformité (SLA admin, latence propagation, file pending, cascades, échecs job, profondeur outbox) dans `docs/dashboards/conformite.json`
 - [ ] T119 [P] Grafana alerts (WARN file pending > 5j ouvrables ; CRITICAL latence propagation négative > 10s ; CRITICAL job d'expiration en échec 2 jours consécutifs ; WARN profondeur outbox > 100) dans `docs/dashboards/conformite-alerts.yaml`

@@ -46,8 +46,10 @@ import {
   BullmqNotification,
   CONFORMITE_NOTIFICATIONS_QUEUE,
 } from '../infrastructure/bullmq-notification';
+import { DataRetentionSweepJob } from '../infrastructure/jobs/data-retention-sweep.job';
 import { ExpirationSweepJob } from '../infrastructure/jobs/expiration-sweep.job';
 import { OutboxPublisherJob } from '../infrastructure/jobs/outbox-publisher.job';
+import { UploadIntentCleanupJob } from '../infrastructure/jobs/upload-intent-cleanup.job';
 import { PrismaAuditLogWriter } from '../infrastructure/prisma-audit-log-writer';
 import { PrismaConformiteRepository } from '../infrastructure/prisma-conformite-repository';
 import { PrismaOutboxWriter } from '../infrastructure/prisma-outbox-writer';
@@ -62,6 +64,8 @@ import { ConformiteQueryFacade } from './public-api/conformite-query.facade';
 const OUTBOX_DRAIN_INTERVAL_MS = 5_000;
 /** Intervalle sweep expirations (24 h — production tournera via cron 02:00 ca-central-1). */
 const EXPIRATION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
+/** Phase N — Intervalles cleanup quotidiens. */
+const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 @Module({
   imports: [
@@ -109,6 +113,8 @@ const EXPIRATION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
     // --- Background jobs ---
     OutboxPublisherJob,
     ExpirationSweepJob,
+    UploadIntentCleanupJob,
+    DataRetentionSweepJob,
   ],
   exports: [
     // Public API : ConformiteQueryFacade pour matching/SEO (US3).
@@ -118,10 +124,14 @@ const EXPIRATION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 export class ConformiteModule implements OnModuleInit, OnModuleDestroy {
   private outboxInterval?: NodeJS.Timeout;
   private expirationInterval?: NodeJS.Timeout;
+  private uploadCleanupInterval?: NodeJS.Timeout;
+  private retentionSweepInterval?: NodeJS.Timeout;
 
   constructor(
     private readonly outboxJob: OutboxPublisherJob,
     private readonly expirationJob: ExpirationSweepJob,
+    private readonly uploadCleanupJob: UploadIntentCleanupJob,
+    private readonly retentionSweepJob: DataRetentionSweepJob,
   ) {}
 
   onModuleInit(): void {
@@ -131,10 +141,18 @@ export class ConformiteModule implements OnModuleInit, OnModuleDestroy {
     this.expirationInterval = setInterval(() => {
       void this.expirationJob.sweep();
     }, EXPIRATION_SWEEP_INTERVAL_MS);
+    this.uploadCleanupInterval = setInterval(() => {
+      void this.uploadCleanupJob.sweep();
+    }, CLEANUP_INTERVAL_MS);
+    this.retentionSweepInterval = setInterval(() => {
+      void this.retentionSweepJob.sweep();
+    }, CLEANUP_INTERVAL_MS);
   }
 
   onModuleDestroy(): void {
     if (this.outboxInterval) clearInterval(this.outboxInterval);
     if (this.expirationInterval) clearInterval(this.expirationInterval);
+    if (this.uploadCleanupInterval) clearInterval(this.uploadCleanupInterval);
+    if (this.retentionSweepInterval) clearInterval(this.retentionSweepInterval);
   }
 }

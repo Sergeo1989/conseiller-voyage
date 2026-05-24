@@ -81,6 +81,12 @@ export interface ConformiteReader {
     }>;
     readonly nextCursor: string | null;
   }>;
+
+  /** Phase N T115 — uploadIntents expirés non consommés. */
+  listExpiredUnconsumedUploadIntents(olderThan: Date): Promise<ReadonlyArray<UploadIntent>>;
+
+  /** Phase N T116 — compliances avec demande effacement en attente. */
+  listCompliancesWithErasureRequested(): Promise<ReadonlyArray<ConseillerCompliance>>;
 }
 
 export const CONFORMITE_READER = Symbol.for('ConformiteReader');
