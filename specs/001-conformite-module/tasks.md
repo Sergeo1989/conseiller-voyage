@@ -150,8 +150,8 @@ description: "Tâches d'implémentation — Module Conformité"
 ### Interface (HTTP + DI)
 
 - [x] T067 [P] [US1] Zod schemas API (RequestUploadUrls, SubmitDossier, ApproveDossier, RefuseDossier) dans `packages/shared/conformite/schemas.ts`
-- [ ] T068 [P] [US1] DTOs `ConseillerConformiteController` dans `apps/api/src/modules/conformite/interface/http/dto/conseiller.dto.ts`
-- [ ] T069 [P] [US1] DTOs `AdminConformiteController` dans `apps/api/src/modules/conformite/interface/http/dto/admin.dto.ts`
+- [x] T068 [P] [US1] DTOs `ConseillerConformiteController` dans `apps/api/src/modules/conformite/interface/http/dto/conseiller.dto.ts`
+- [x] T069 [P] [US1] DTOs `AdminConformiteController` dans `apps/api/src/modules/conformite/interface/http/dto/admin.dto.ts`
 - [ ] T070 [US1] `ConseillerConformiteController` (POST `/me/upload-urls`, POST `/me/submissions`, GET `/me`) dans `apps/api/src/modules/conformite/interface/http/conseiller-conformite.controller.ts`
 - [ ] T071 [US1] `AdminConformiteController` (GET `/admin/queue`, GET `/admin/submissions/:id`, POST `approve`, POST `refuse`) dans `apps/api/src/modules/conformite/interface/http/admin-conformite.controller.ts`
 - [ ] T072 [US1] `ConformiteModule` NestJS DI wiring (use cases ↔ ports ↔ adapters) dans `apps/api/src/modules/conformite/interface/conformite.module.ts`
