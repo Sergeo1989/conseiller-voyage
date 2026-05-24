@@ -128,8 +128,8 @@ description: "Tâches d'implémentation — Module Conformité"
 - [x] T049 [US1] Implement `RequestUploadUrlsUseCase` créant N `UploadIntent` + N URLs signées (B2) dans `apps/api/src/modules/conformite/application/use-cases/request-upload-urls.use-case.ts`
 - [x] T050 [US1] Test `SubmitDossierUseCase` avec fakes (validation `UploadIntent`, écriture transactionnelle + outbox) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/submit-dossier.test.ts`
 - [x] T051 [US1] Implement `SubmitDossierUseCase` (transaction Prisma unique : ConseillerCompliance + Certificat + Affiliation + AuditEntry + OutboxEntry) dans `apps/api/src/modules/conformite/application/use-cases/submit-dossier.use-case.ts`
-- [ ] T052 [US1] Test `ApproveDossierUseCase` (transition vers `verified`, OutboxEntry, AuditEntry) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/approve-dossier.test.ts`
-- [ ] T053 [US1] Implement `ApproveDossierUseCase` dans `apps/api/src/modules/conformite/application/use-cases/approve-dossier.use-case.ts`
+- [x] T052 [US1] Test `ApproveDossierUseCase` (transition vers `verified`, OutboxEntry, AuditEntry) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/approve-dossier.test.ts`
+- [x] T053 [US1] Implement `ApproveDossierUseCase` dans `apps/api/src/modules/conformite/application/use-cases/approve-dossier.use-case.ts`
 - [ ] T054 [US1] Test `RefuseDossierUseCase` (reason ≥ 20 chars, statut reste `pending`) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/refuse-dossier.test.ts`
 - [ ] T055 [US1] Implement `RefuseDossierUseCase` dans `apps/api/src/modules/conformite/application/use-cases/refuse-dossier.use-case.ts`
 
