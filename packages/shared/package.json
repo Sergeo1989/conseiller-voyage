@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./conformite": "./src/conformite/index.ts",
     "./conformite/*": "./src/conformite/*.ts",
-    "./auth": "./src/auth/index.ts"
+    "./auth": "./src/auth/index.ts",
+    "./email/conformite": "./src/email/templates/conformite/index.ts"
   },
   "scripts": {
     "lint": "biome check --error-on-warnings src",
