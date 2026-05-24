@@ -24,6 +24,7 @@ const EnvSchema = z.object({
   // Stockage objet (AWS S3 ca-central-1 ou LocalStack en dev — ADR-0001)
   AWS_REGION: z.string().default('ca-central-1'),
   AWS_S3_ENDPOINT: z.string().url().optional(),
+  AWS_S3_BUCKET_CONFORMITE: z.string().default('cv-conformite-dev'),
 
   // Idempotence (Principe X)
   IDEMPOTENCY_KEY_TTL_SECONDS: z.coerce.number().int().positive().default(604_800),
