@@ -316,7 +316,28 @@ export class FakeConformiteRepository implements ConformiteReader, ConformiteWri
       args.adminId,
       null,
     );
-    this.applyStatusTransition(args.statusTransition);
+    this.applyApproveTransition(args.statusTransition);
+    return Promise.resolve();
+  }
+
+  /** Audit + outbox entries écrits via les writers métier (submit, approve, refuse, applyStatusTransition). */
+  public readonly writerAuditEntries: AuditEntryToCreate[] = [];
+  public readonly writerOutboxEntries: OutboxEntryToCreate[] = [];
+
+  applyStatusTransition(
+    args: import('../ports/conformite-writer.port').ApplyStatusTransitionWriteArgs,
+  ): Promise<void> {
+    const t = args.transition;
+    const compliance = this.compliances.get(t.conseillerComplianceId);
+    if (!compliance) return Promise.resolve();
+    this.compliances.set(compliance.id, {
+      ...compliance,
+      status: t.to,
+      lastStatusChangeAt: t.transitionedAt,
+      lastVerifiedAt: t.newLastVerifiedAt ?? compliance.lastVerifiedAt,
+    });
+    this.writerAuditEntries.push(...args.auditEntries);
+    this.writerOutboxEntries.push(...args.outboxEntries);
     return Promise.resolve();
   }
 
@@ -393,7 +414,7 @@ export class FakeConformiteRepository implements ConformiteReader, ConformiteWri
     }
   }
 
-  private applyStatusTransition(transition: ApproveSubmissionWriteArgs['statusTransition']): void {
+  private applyApproveTransition(transition: ApproveSubmissionWriteArgs['statusTransition']): void {
     if (!transition) return;
     const compliance = this.compliances.get(transition.conseillerComplianceId);
     if (!compliance) return;

@@ -114,6 +114,14 @@ export interface RefuseSubmissionWriteArgs {
   readonly outboxEntries: ReadonlyArray<OutboxEntryToCreate>;
 }
 
+// --- transition de statut système (US2 expiration, US4 révocation) ---
+
+export interface ApplyStatusTransitionWriteArgs {
+  readonly transition: StatusTransition;
+  readonly auditEntries: ReadonlyArray<AuditEntryToCreate>;
+  readonly outboxEntries: ReadonlyArray<OutboxEntryToCreate>;
+}
+
 // --- port interface ---
 
 export interface ConformiteWriter {
@@ -129,6 +137,9 @@ export interface ConformiteWriter {
   approveSubmission(args: ApproveSubmissionWriteArgs): Promise<void>;
 
   refuseSubmission(args: RefuseSubmissionWriteArgs): Promise<void>;
+
+  /** Bascule système (expiration auto, cascade permit, révocation admin). */
+  applyStatusTransition(args: ApplyStatusTransitionWriteArgs): Promise<void>;
 }
 
 export const CONFORMITE_WRITER = Symbol.for('ConformiteWriter');

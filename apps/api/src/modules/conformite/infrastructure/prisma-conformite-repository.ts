@@ -312,6 +312,24 @@ export class PrismaConformiteRepository implements ConformiteReader, ConformiteW
     });
   }
 
+  async applyStatusTransition(
+    args: import('../application/ports/conformite-writer.port').ApplyStatusTransitionWriteArgs,
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const t = args.transition;
+      await tx.conseillerCompliance.update({
+        where: { id: t.conseillerComplianceId },
+        data: {
+          status: t.to,
+          lastStatusChangeAt: t.transitionedAt,
+          ...(t.newLastVerifiedAt !== null && { lastVerifiedAt: t.newLastVerifiedAt }),
+        },
+      });
+      await this.writeAuditEntries(tx, args.auditEntries);
+      await this.writeOutboxEntries(tx, args.outboxEntries);
+    });
+  }
+
   async refuseSubmission(args: RefuseSubmissionWriteArgs): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await tx.submission.update({
