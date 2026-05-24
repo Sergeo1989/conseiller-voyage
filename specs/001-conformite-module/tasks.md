@@ -103,7 +103,7 @@ description: "Tâches d'implémentation — Module Conformité"
 
 - [x] T031 [P] [US1] Test `isTransitionAllowed` (cas nominal + cas d'erreur pour chaque transition de la machine d'état) dans `apps/api/src/modules/conformite/domain/services/__tests__/is-transition-allowed.test.ts`
 - [x] T032 [P] [US1] Test `computeConformiteStatus` (cas nominal, cas d'erreur, conseiller sans cert, multi-affiliation, cert expiré) dans `apps/api/src/modules/conformite/domain/services/__tests__/compute-conformite-status.test.ts`
-- [ ] T033 [P] [US1] Test `validateDossierSubmission` (Zod + règles métier : ≥1 certificat, ≥1 affiliation, consentement obligatoire) dans `apps/api/src/modules/conformite/application/__tests__/validate-dossier-submission.test.ts`
+- [x] T033 [P] [US1] Test `validateDossierSubmission` (Zod + règles métier : ≥1 certificat, ≥1 affiliation, consentement obligatoire) dans `apps/api/src/modules/conformite/application/__tests__/validate-dossier-submission.test.ts`
 
 ### Domain (couche pure — zéro framework)
 
@@ -120,12 +120,12 @@ description: "Tâches d'implémentation — Module Conformité"
 
 ### Application (ports + cas d'usage)
 
-- [ ] T044 [P] [US1] Define ports `ConformiteReader`, `ConformiteWriter` dans `apps/api/src/modules/conformite/application/ports/conformite-{reader,writer}.port.ts`
-- [ ] T045 [P] [US1] Define ports `DocumentStoragePort`, `AuditLogWriter`, `NotificationPort`, `ConformiteEventPublisher` dans `apps/api/src/modules/conformite/application/ports/`
-- [ ] T046 [P] [US1] Define audit payload Zod schemas par `eventType` (B5 du review) dans `apps/api/src/modules/conformite/application/audit/payload-schemas.ts`
-- [ ] T047 [P] [US1] Implement `validateDossierSubmission` fonction pure (GREEN contre T033) dans `apps/api/src/modules/conformite/application/validate-dossier-submission.ts`
-- [ ] T048 [US1] Test `RequestUploadUrlsUseCase` avec fakes (B2) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/request-upload-urls.test.ts`
-- [ ] T049 [US1] Implement `RequestUploadUrlsUseCase` créant N `UploadIntent` + N URLs signées (B2) dans `apps/api/src/modules/conformite/application/use-cases/request-upload-urls.use-case.ts`
+- [x] T044 [P] [US1] Define ports `ConformiteReader`, `ConformiteWriter` dans `apps/api/src/modules/conformite/application/ports/conformite-{reader,writer}.port.ts`
+- [x] T045 [P] [US1] Define ports `DocumentStoragePort`, `AuditLogWriter`, `NotificationPort`, `ConformiteEventPublisher` dans `apps/api/src/modules/conformite/application/ports/`
+- [x] T046 [P] [US1] Define audit payload Zod schemas par `eventType` (B5 du review) dans `apps/api/src/modules/conformite/application/audit/payload-schemas.ts`
+- [x] T047 [P] [US1] Implement `validateDossierSubmission` fonction pure (GREEN contre T033) dans `apps/api/src/modules/conformite/application/validate-dossier-submission.ts`
+- [x] T048 [US1] Test `RequestUploadUrlsUseCase` avec fakes (B2) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/request-upload-urls.test.ts`
+- [x] T049 [US1] Implement `RequestUploadUrlsUseCase` créant N `UploadIntent` + N URLs signées (B2) dans `apps/api/src/modules/conformite/application/use-cases/request-upload-urls.use-case.ts`
 - [ ] T050 [US1] Test `SubmitDossierUseCase` avec fakes (validation `UploadIntent`, écriture transactionnelle + outbox) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/submit-dossier.test.ts`
 - [ ] T051 [US1] Implement `SubmitDossierUseCase` (transaction Prisma unique : ConseillerCompliance + Certificat + Affiliation + AuditEntry + OutboxEntry) dans `apps/api/src/modules/conformite/application/use-cases/submit-dossier.use-case.ts`
 - [ ] T052 [US1] Test `ApproveDossierUseCase` (transition vers `verified`, OutboxEntry, AuditEntry) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/approve-dossier.test.ts`
