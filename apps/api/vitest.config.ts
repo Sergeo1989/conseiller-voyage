@@ -4,7 +4,10 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
-    include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+    // Pattern relatif au répertoire courant (configurable via `--dir`).
+    // Combiné à `vitest run` (racine), il capte src/**/*.test.ts ET
+    // test/**/*.test.ts. Combiné à `--dir src`, il restreint à src/.
+    include: ['**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     reporters: ['default'],
     coverage: {
