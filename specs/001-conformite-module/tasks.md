@@ -126,8 +126,8 @@ description: "Tâches d'implémentation — Module Conformité"
 - [x] T047 [P] [US1] Implement `validateDossierSubmission` fonction pure (GREEN contre T033) dans `apps/api/src/modules/conformite/application/validate-dossier-submission.ts`
 - [x] T048 [US1] Test `RequestUploadUrlsUseCase` avec fakes (B2) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/request-upload-urls.test.ts`
 - [x] T049 [US1] Implement `RequestUploadUrlsUseCase` créant N `UploadIntent` + N URLs signées (B2) dans `apps/api/src/modules/conformite/application/use-cases/request-upload-urls.use-case.ts`
-- [ ] T050 [US1] Test `SubmitDossierUseCase` avec fakes (validation `UploadIntent`, écriture transactionnelle + outbox) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/submit-dossier.test.ts`
-- [ ] T051 [US1] Implement `SubmitDossierUseCase` (transaction Prisma unique : ConseillerCompliance + Certificat + Affiliation + AuditEntry + OutboxEntry) dans `apps/api/src/modules/conformite/application/use-cases/submit-dossier.use-case.ts`
+- [x] T050 [US1] Test `SubmitDossierUseCase` avec fakes (validation `UploadIntent`, écriture transactionnelle + outbox) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/submit-dossier.test.ts`
+- [x] T051 [US1] Implement `SubmitDossierUseCase` (transaction Prisma unique : ConseillerCompliance + Certificat + Affiliation + AuditEntry + OutboxEntry) dans `apps/api/src/modules/conformite/application/use-cases/submit-dossier.use-case.ts`
 - [ ] T052 [US1] Test `ApproveDossierUseCase` (transition vers `verified`, OutboxEntry, AuditEntry) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/approve-dossier.test.ts`
 - [ ] T053 [US1] Implement `ApproveDossierUseCase` dans `apps/api/src/modules/conformite/application/use-cases/approve-dossier.use-case.ts`
 - [ ] T054 [US1] Test `RefuseDossierUseCase` (reason ≥ 20 chars, statut reste `pending`) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/refuse-dossier.test.ts`
