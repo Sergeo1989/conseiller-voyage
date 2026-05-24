@@ -1,0 +1,131 @@
+{
+  "annotations": { "list": [] },
+  "description": "Module Conformité — SLA admin, propagation statuts, files d'attente, jobs, outbox.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "SLA admin — soumissions pending > 5j ouvrables",
+      "id": 1,
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "count(conformite_submission_age_business_days{status=\"pending\"} > 5)",
+          "legendFormat": "Dossiers retardés"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latence propagation status.changed (p95)",
+      "description": "Délai entre publication outbox et invalidation cache cible (FR-022 < 10s négative, < 60s positive).",
+      "id": 2,
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, conformite_status_propagation_seconds_bucket)",
+          "legendFormat": "p95 propagation (s)"
+        },
+        {
+          "expr": "histogram_quantile(0.99, conformite_status_propagation_seconds_bucket)",
+          "legendFormat": "p99 propagation (s)"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "File pending admin (count)",
+      "id": 3,
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "conformite_submissions_pending_total",
+          "legendFormat": "En attente"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Outbox — profondeur (publishedAt IS NULL)",
+      "description": "Doit rester proche de 0 ; pic indique un publisher bloqué.",
+      "id": 4,
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "conformite_outbox_unpublished_total",
+          "legendFormat": "Outbox non publié"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Échecs de jobs (24h)",
+      "id": 5,
+      "gridPos": { "h": 8, "w": 18, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "increase(conformite_job_failures_total[24h])",
+          "legendFormat": "{{job_name}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Cascades retrait permis (30d)",
+      "id": 6,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "increase(conformite_permit_cascade_total[30d])",
+          "legendFormat": "Cascades"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Erasures Loi 25 (30d)",
+      "id": 7,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "increase(conformite_erasures_completed_total[30d])",
+          "legendFormat": "Effacements"
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["conformite", "module-001"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "America/Toronto",
+  "title": "Conformité — Module Health",
+  "uid": "cv-conformite-health",
+  "version": 1,
+  "weekStart": "monday"
+}

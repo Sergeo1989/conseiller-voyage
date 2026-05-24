@@ -70,6 +70,17 @@ export class CvProdStack extends Stack {
             },
           ],
         },
+        {
+          // T117 — filet de sécurité pour les objets uploadés via
+          // presigned URL mais jamais référencés par une submission
+          // (UploadIntent expiré non consommé). Le job
+          // UploadIntentCleanupJob (T115) supprime au bout de 7j ;
+          // cette règle expire à 30j en plus pour catch les S3 deletes
+          // qui auraient échoué.
+          id: 'ExpireOrphanUploads',
+          expiration: Duration.days(30),
+          tagFilters: { 'cv:lifecycle': 'orphan-upload' },
+        },
       ],
       serverAccessLogsPrefix: 's3-access-logs/',
       removalPolicy: RemovalPolicy.RETAIN,
