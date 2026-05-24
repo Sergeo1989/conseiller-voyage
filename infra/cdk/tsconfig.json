@@ -8,7 +8,12 @@
     "rootDir": "./",
     "lib": ["ES2022"],
     "verbatimModuleSyntax": false,
-    "isolatedModules": false
+    "isolatedModules": false,
+    // AWS CDK types ne sont pas écrits pour exactOptionalPropertyTypes
+    // (ils utilisent `string | undefined` au lieu de `?: string`). Désactivé
+    // localement uniquement pour ce paquet ; le reste du monorepo conserve
+    // le mode strict.
+    "exactOptionalPropertyTypes": false
   },
   "include": ["bin/**/*.ts", "lib/**/*.ts"],
   "exclude": ["dist", "node_modules", "cdk.out"]

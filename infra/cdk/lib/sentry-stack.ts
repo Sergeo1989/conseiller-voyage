@@ -4,11 +4,11 @@
 // topologie ; EC2 single-node avec docker-compose est le pattern recommandé
 // par Sentry. Pour HA véritable, migrer vers Kubernetes (hors scope MVP).
 
-import { type IVpc, Stack, type StackProps, aws_ec2 as ec2 } from 'aws-cdk-lib';
+import { Stack, type StackProps, aws_ec2 as ec2 } from 'aws-cdk-lib';
 import type { Construct } from 'constructs';
 
 interface SentryStackProps extends StackProps {
-  vpc: IVpc;
+  vpc: ec2.IVpc;
 }
 
 export class SentryStack extends Stack {
