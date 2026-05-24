@@ -17,6 +17,7 @@ import type { ReactNode } from 'react';
 import { auth } from '../../../../auth';
 import type { Locale } from '../../../../i18n';
 import { apiClient } from '../../../_lib/api-client';
+import { HistorySection } from './history-section';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;
@@ -156,7 +157,21 @@ export default async function ConseillerOverviewPage({ params }: PageProps): Pro
           {t('conseiller.overview.ctaRenew')}
         </Link>
       </p>
+
+      <HistorySection locale={locale} nextRenewalDate={getEarliestExpiry(dossier.certificates)} />
     </main>
+  );
+}
+
+function getEarliestExpiry(certs: DossierApiShape['certificates']): Date | null {
+  const validCerts = certs.filter((c) => c.decision === 'approved');
+  if (validCerts.length === 0) return null;
+  return validCerts.reduce<Date>(
+    (earliest, c) => {
+      const exp = new Date(c.expiresAt);
+      return exp < earliest ? exp : earliest;
+    },
+    new Date(validCerts[0]?.expiresAt ?? Date.now()),
   );
 }
 

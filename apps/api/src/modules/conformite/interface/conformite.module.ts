@@ -39,6 +39,7 @@ import { RequestUploadUrlsUseCase } from '../application/use-cases/request-uploa
 import { RevokeConseillerUseCase } from '../application/use-cases/revoke-conseiller.use-case';
 import { SendExpirationRemindersUseCase } from '../application/use-cases/send-expiration-reminders.use-case';
 import { SubmitDossierUseCase } from '../application/use-cases/submit-dossier.use-case';
+import { ViewConseillerDossierUseCase } from '../application/use-cases/view-conseiller-dossier.use-case';
 import {
   BullmqNotification,
   CONFORMITE_NOTIFICATIONS_QUEUE,
@@ -77,6 +78,7 @@ const EXPIRATION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
     GetVerificationStatusUseCase,
     DeclarePermitRevokedUseCase,
     RevokeConseillerUseCase,
+    ViewConseillerDossierUseCase,
 
     // --- Ports → adapters ---
     // PrismaConformiteRepository implémente Reader + Writer → on

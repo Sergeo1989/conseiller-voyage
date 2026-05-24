@@ -303,3 +303,31 @@ export const RevokeConseillerSchema = z
   })
   .strict();
 export type RevokeConseillerBody = z.infer<typeof RevokeConseillerSchema>;
+
+// --- US5 GET /me/audit ---
+
+export const AuditQuerySchema = z
+  .object({
+    cursor: z.string().uuid().nullable().optional(),
+    pageSize: z.coerce.number().int().min(1).max(50).default(20),
+  })
+  .strict();
+export type AuditQuery = z.infer<typeof AuditQuerySchema>;
+
+export const AuditEntryViewSchema = z
+  .object({
+    id: z.string().uuid(),
+    eventType: z.string(),
+    actorRole: z.enum(['conseiller', 'admin', 'system']),
+    occurredAt: z.string().datetime(),
+    payload: z.record(z.unknown()),
+  })
+  .strict();
+
+export const AuditPageResponseSchema = z
+  .object({
+    items: z.array(AuditEntryViewSchema),
+    nextCursor: z.string().uuid().nullable(),
+  })
+  .strict();
+export type AuditPageResponse = z.infer<typeof AuditPageResponseSchema>;

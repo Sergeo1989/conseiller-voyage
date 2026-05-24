@@ -15,8 +15,9 @@
 //
 // Cf. specs/001-conformite-module/contracts/http-endpoints.md.
 
-import type { ConseillerId } from '@cv/shared/conformite';
+import type { AuditPageResponse, ConseillerId } from '@cv/shared/conformite';
 import {
+  AuditQuerySchema,
   ConseillerIdSchema,
   RequestUploadUrlsSchema,
   SubmitDossierSchema,
@@ -30,6 +31,7 @@ import {
   Inject,
   NotFoundException,
   Post,
+  Query,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -46,6 +48,8 @@ import {
 import { RequestUploadUrlsUseCase } from '../../application/use-cases/request-upload-urls.use-case';
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
 import { SubmitDossierUseCase } from '../../application/use-cases/submit-dossier.use-case';
+// biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
+import { ViewConseillerDossierUseCase } from '../../application/use-cases/view-conseiller-dossier.use-case';
 import type {
   GetConseillerDossierResponseDto,
   RequestUploadUrlsRequestDto,
@@ -65,6 +69,7 @@ export class ConseillerConformiteController {
   constructor(
     private readonly requestUploadUrls: RequestUploadUrlsUseCase,
     private readonly submitDossier: SubmitDossierUseCase,
+    private readonly viewDossier: ViewConseillerDossierUseCase,
     @Inject(CONFORMITE_READER) private readonly reader: ConformiteReader,
   ) {}
 
@@ -168,6 +173,32 @@ export class ConseillerConformiteController {
         decision: a.decision,
         inactivatedAt: a.inactivatedAt?.toISOString() ?? null,
       })),
+    };
+  }
+
+  @ApiOperation({ summary: 'Historique audit paginé (US5 FR-013).' })
+  @ApiResponse({ status: 200, description: 'Page audit antichronologique avec nextCursor.' })
+  @Get('audit')
+  async getAudit(
+    @Req() req: AuthenticatedRequest,
+    @Query(new ZodValidationPipe(AuditQuerySchema))
+    query: import('@cv/shared/conformite').AuditQuery,
+  ): Promise<AuditPageResponse> {
+    const user = this.assertConseiller(req);
+    const result = await this.viewDossier.execute({
+      requestedBy: { id: user.id, role: user.role },
+      auditCursor: query.cursor ?? null,
+      auditPageSize: query.pageSize,
+    });
+    return {
+      items: result.audit.items.map((e) => ({
+        id: e.id,
+        eventType: e.eventType,
+        actorRole: e.actorRole,
+        occurredAt: e.occurredAt.toISOString(),
+        payload: e.payload,
+      })),
+      nextCursor: result.audit.nextCursor,
     };
   }
 
