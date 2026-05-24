@@ -12,7 +12,7 @@ if (dsn) {
     sendDefaultPii: false,
     beforeSend(event) {
       if (event.user) {
-        event.user = { id: event.user.id };
+        event.user = event.user.id !== undefined ? { id: event.user.id } : {};
       }
       return event;
     },

@@ -4,7 +4,7 @@
 // modules équivalents pour partage front/back.
 
 import { type ArgumentMetadata, BadRequestException, type PipeTransform } from '@nestjs/common';
-import type { ZodError, ZodSchema } from 'zod';
+import type { ZodError, ZodType } from 'zod';
 
 export interface ZodValidationError {
   path: string;
@@ -12,10 +12,10 @@ export interface ZodValidationError {
   code: string;
 }
 
-export class ZodValidationPipe<TInput, TOutput = TInput> implements PipeTransform<TInput, TOutput> {
-  constructor(private readonly schema: ZodSchema<TOutput, TInput>) {}
+export class ZodValidationPipe<TOutput> implements PipeTransform<unknown, TOutput> {
+  constructor(private readonly schema: ZodType<TOutput>) {}
 
-  transform(value: TInput, _metadata: ArgumentMetadata): TOutput {
+  transform(value: unknown, _metadata: ArgumentMetadata): TOutput {
     const result = this.schema.safeParse(value);
     if (!result.success) {
       throw new BadRequestException({

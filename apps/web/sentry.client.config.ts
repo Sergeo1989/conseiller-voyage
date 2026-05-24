@@ -18,7 +18,7 @@ if (dsn) {
     beforeSend(event) {
       // Ne jamais transmettre l'IP, le User-Agent réel n'est pas un problème.
       if (event.user) {
-        event.user = { id: event.user.id };
+        event.user = event.user.id !== undefined ? { id: event.user.id } : {};
       }
       return event;
     },

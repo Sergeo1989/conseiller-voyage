@@ -4,8 +4,8 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "noEmit": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "lib": ["ES2023"]
   },
   "include": ["src/**/*"],

@@ -2,6 +2,7 @@
 // Zod FR-CA (T030f).
 
 import { applyFrCAZodErrorMap } from '@cv/shared/conformite';
+import type { AbstractIntlMessages } from 'next-intl';
 import { getRequestConfig } from 'next-intl/server';
 
 export const locales = ['fr-CA', 'en'] as const;
@@ -17,7 +18,7 @@ export default getRequestConfig(async ({ locale }) => {
     : defaultLocale;
 
   const messages = (
-    (await import(`./i18n/messages/${resolvedLocale}.json`)) as { default: Record<string, unknown> }
+    (await import(`./i18n/messages/${resolvedLocale}.json`)) as { default: AbstractIntlMessages }
   ).default;
 
   return {

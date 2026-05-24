@@ -16,8 +16,11 @@ if (env.OTEL_EXPORTER_OTLP_ENDPOINT) {
   initOtel({
     serviceName: env.OTEL_SERVICE_NAME,
     endpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT,
-    headers: env.OTEL_EXPORTER_OTLP_HEADERS,
     environment: env.NODE_ENV,
+    // Conditional spread : exactOptionalPropertyTypes refuse `undefined` explicite.
+    ...(env.OTEL_EXPORTER_OTLP_HEADERS !== undefined && {
+      headers: env.OTEL_EXPORTER_OTLP_HEADERS,
+    }),
   });
 }
 

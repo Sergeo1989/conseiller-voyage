@@ -28,13 +28,13 @@ const PII_REDACT_PATHS = [
     PinoLoggerModule.forRoot({
       pinoHttp: {
         level: env.LOG_LEVEL,
-        transport:
-          env.NODE_ENV === 'production'
-            ? undefined
-            : {
-                target: 'pino-pretty',
-                options: { colorize: true, singleLine: true, translateTime: 'HH:MM:ss' },
-              },
+        // conditional spread : exactOptionalPropertyTypes refuse `undefined` explicite
+        ...(env.NODE_ENV !== 'production' && {
+          transport: {
+            target: 'pino-pretty',
+            options: { colorize: true, singleLine: true, translateTime: 'HH:MM:ss' },
+          },
+        }),
         redact: { paths: PII_REDACT_PATHS, censor: '[REDACTED]' },
         serializers: {
           req(req: { method: string; url: string; id?: string }) {

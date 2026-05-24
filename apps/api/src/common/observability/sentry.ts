@@ -49,27 +49,43 @@ interface SentryConfig {
   release?: string;
 }
 
+// Scrubbers extraits pour respecter complexité cyclomatique Biome max 10
+// (chaque if compte ; les 4 ifs + casts de beforeSend la dépassaient).
+
+function scrubRequestData(event: Sentry.ErrorEvent): void {
+  if (event.request?.data) {
+    event.request.data = scrubPii(event.request.data);
+  }
+}
+
+function scrubExtraAndContexts(event: Sentry.ErrorEvent): void {
+  if (event.extra) {
+    event.extra = scrubPii(event.extra) as typeof event.extra;
+  }
+  if (event.contexts) {
+    event.contexts = scrubPii(event.contexts) as typeof event.contexts;
+  }
+}
+
+function scrubUser(event: Sentry.ErrorEvent): void {
+  if (event.user) {
+    // On ne garde que l'ID (UUID non-identifiant direct) — drop email, ip, name.
+    event.user = event.user.id !== undefined ? { id: event.user.id } : {};
+  }
+}
+
 export function initSentry(config: SentryConfig): void {
   Sentry.init({
     dsn: config.dsn,
     environment: config.environment,
-    release: config.release,
+    // conditional spread (exactOptionalPropertyTypes refuse `undefined` explicite)
+    ...(config.release !== undefined && { release: config.release }),
     tracesSampleRate: config.environment === 'production' ? 0.1 : 1.0,
     sendDefaultPii: false,
     beforeSend(event) {
-      if (event.request?.data) {
-        event.request.data = scrubPii(event.request.data);
-      }
-      if (event.extra) {
-        event.extra = scrubPii(event.extra) as typeof event.extra;
-      }
-      if (event.contexts) {
-        event.contexts = scrubPii(event.contexts) as typeof event.contexts;
-      }
-      if (event.user) {
-        // On ne garde que l'ID (UUID non-identifiant direct) — drop email, ip, name.
-        event.user = { id: event.user.id };
-      }
+      scrubRequestData(event);
+      scrubExtraAndContexts(event);
+      scrubUser(event);
       return event;
     },
   });
