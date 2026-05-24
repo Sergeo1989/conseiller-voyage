@@ -367,6 +367,42 @@ export class FakeConformiteRepository implements ConformiteReader, ConformiteWri
   public readonly writerAuditEntries: AuditEntryToCreate[] = [];
   public readonly writerOutboxEntries: OutboxEntryToCreate[] = [];
 
+  markErasureRequested(args: {
+    conseillerComplianceId: ConseillerComplianceId;
+    requestedAt: Date;
+    auditEntries: ReadonlyArray<AuditEntryToCreate>;
+    outboxEntries: ReadonlyArray<OutboxEntryToCreate>;
+  }): Promise<void> {
+    const compliance = this.compliances.get(args.conseillerComplianceId);
+    if (compliance) {
+      this.compliances.set(compliance.id, {
+        ...compliance,
+        erasureRequestedAt: args.requestedAt,
+      });
+    }
+    this.writerAuditEntries.push(...args.auditEntries);
+    this.writerOutboxEntries.push(...args.outboxEntries);
+    return Promise.resolve();
+  }
+
+  anonymizeCompliance(args: {
+    conseillerComplianceId: ConseillerComplianceId;
+    anonymizedAt: Date;
+    auditEntries: ReadonlyArray<AuditEntryToCreate>;
+    outboxEntries: ReadonlyArray<OutboxEntryToCreate>;
+  }): Promise<void> {
+    const compliance = this.compliances.get(args.conseillerComplianceId);
+    if (compliance) {
+      this.compliances.set(compliance.id, {
+        ...compliance,
+        anonymizedAt: args.anonymizedAt,
+      });
+    }
+    this.writerAuditEntries.push(...args.auditEntries);
+    this.writerOutboxEntries.push(...args.outboxEntries);
+    return Promise.resolve();
+  }
+
   declarePermitRevoked(
     args: import('../ports/conformite-writer.port').DeclarePermitRevokedWriteArgs,
   ): Promise<void> {

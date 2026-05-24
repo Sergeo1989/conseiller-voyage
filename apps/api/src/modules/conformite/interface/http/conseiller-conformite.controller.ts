@@ -19,6 +19,7 @@ import type { AuditPageResponse, ConseillerId } from '@cv/shared/conformite';
 import {
   AuditQuerySchema,
   ConseillerIdSchema,
+  ErasureRequestSchema,
   RequestUploadUrlsSchema,
   SubmitDossierSchema,
 } from '@cv/shared/conformite';
@@ -45,6 +46,8 @@ import {
   type ConformiteReader,
 } from '../../application/ports/conformite-reader.port';
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
+import { RequestErasureUseCase } from '../../application/use-cases/request-erasure.use-case';
+// biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
 import { RequestUploadUrlsUseCase } from '../../application/use-cases/request-upload-urls.use-case';
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
 import { SubmitDossierUseCase } from '../../application/use-cases/submit-dossier.use-case';
@@ -70,6 +73,7 @@ export class ConseillerConformiteController {
     private readonly requestUploadUrls: RequestUploadUrlsUseCase,
     private readonly submitDossier: SubmitDossierUseCase,
     private readonly viewDossier: ViewConseillerDossierUseCase,
+    private readonly requestErasure: RequestErasureUseCase,
     @Inject(CONFORMITE_READER) private readonly reader: ConformiteReader,
   ) {}
 
@@ -199,6 +203,27 @@ export class ConseillerConformiteController {
         payload: e.payload,
       })),
       nextCursor: result.audit.nextCursor,
+    };
+  }
+
+  @ApiOperation({ summary: 'Demande effacement Loi 25 (FR-017).' })
+  @ApiResponse({ status: 202, description: 'Demande enregistrée, traitement asynchrone.' })
+  @ApiResponse({ status: 409, description: 'Déjà demandé ou déjà anonymisé.' })
+  @Post('erasure-request')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async postErasureRequest(
+    @Req() req: AuthenticatedRequest,
+    @Body(new ZodValidationPipe(ErasureRequestSchema))
+    _body: import('@cv/shared/conformite').ErasureRequestBody,
+  ): Promise<{ status: 'pending'; message: string }> {
+    const user = this.assertConseiller(req);
+    await this.requestErasure.execute({
+      requestedBy: { id: user.id, role: user.role },
+    });
+    return {
+      status: 'pending',
+      message:
+        "Demande d'effacement enregistrée. Le traitement asynchrone sera complété sous 30 jours (Loi 25).",
     };
   }
 

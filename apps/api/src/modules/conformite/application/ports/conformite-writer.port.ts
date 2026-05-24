@@ -164,6 +164,22 @@ export interface ConformiteWriter {
    * une seule transaction.
    */
   declarePermitRevoked(args: DeclarePermitRevokedWriteArgs): Promise<void>;
+
+  /** Loi 25 — Marque erasureRequestedAt + audit + outbox. */
+  markErasureRequested(args: {
+    readonly conseillerComplianceId: ConseillerComplianceId;
+    readonly requestedAt: Date;
+    readonly auditEntries: ReadonlyArray<AuditEntryToCreate>;
+    readonly outboxEntries: ReadonlyArray<OutboxEntryToCreate>;
+  }): Promise<void>;
+
+  /** Loi 25 — Anonymise la compliance (job async EraseConseillerData). */
+  anonymizeCompliance(args: {
+    readonly conseillerComplianceId: ConseillerComplianceId;
+    readonly anonymizedAt: Date;
+    readonly auditEntries: ReadonlyArray<AuditEntryToCreate>;
+    readonly outboxEntries: ReadonlyArray<OutboxEntryToCreate>;
+  }): Promise<void>;
 }
 
 export const CONFORMITE_WRITER = Symbol.for('ConformiteWriter');

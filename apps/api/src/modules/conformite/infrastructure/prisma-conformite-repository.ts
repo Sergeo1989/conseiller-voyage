@@ -367,6 +367,38 @@ export class PrismaConformiteRepository implements ConformiteReader, ConformiteW
     });
   }
 
+  async markErasureRequested(args: {
+    conseillerComplianceId: ConseillerComplianceId;
+    requestedAt: Date;
+    auditEntries: ReadonlyArray<AuditEntryToCreate>;
+    outboxEntries: ReadonlyArray<OutboxEntryToCreate>;
+  }): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await tx.conseillerCompliance.update({
+        where: { id: args.conseillerComplianceId },
+        data: { erasureRequestedAt: args.requestedAt },
+      });
+      await this.writeAuditEntries(tx, args.auditEntries);
+      await this.writeOutboxEntries(tx, args.outboxEntries);
+    });
+  }
+
+  async anonymizeCompliance(args: {
+    conseillerComplianceId: ConseillerComplianceId;
+    anonymizedAt: Date;
+    auditEntries: ReadonlyArray<AuditEntryToCreate>;
+    outboxEntries: ReadonlyArray<OutboxEntryToCreate>;
+  }): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await tx.conseillerCompliance.update({
+        where: { id: args.conseillerComplianceId },
+        data: { anonymizedAt: args.anonymizedAt },
+      });
+      await this.writeAuditEntries(tx, args.auditEntries);
+      await this.writeOutboxEntries(tx, args.outboxEntries);
+    });
+  }
+
   async declarePermitRevoked(
     args: import('../application/ports/conformite-writer.port').DeclarePermitRevokedWriteArgs,
   ): Promise<void> {

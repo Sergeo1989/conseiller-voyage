@@ -250,9 +250,9 @@ description: "Tâches d'implémentation — Module Conformité"
 
 **Objet** : tâches transversales qui touchent plusieurs user stories ou qui sont des prérequis à la production.
 
-- [ ] T112 [P] Test `EraseConseillerDataUseCase` (anonymisation profil + documents, conservation audit 7 ans) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/erase-conseiller-data.test.ts`
-- [ ] T113 Implement `EraseConseillerDataUseCase` (job BullMQ asynchrone, transaction Prisma + S3 delete + audit `erasure.completed`) dans `apps/api/src/modules/conformite/application/use-cases/erase-conseiller-data.use-case.ts`
-- [ ] T114 ConseillerConformiteController POST `/me/erasure-request` endpoint dans `apps/api/src/modules/conformite/interface/http/conseiller-conformite.controller.ts` (UPDATE existant)
+- [x] T112 [P] Test `EraseConseillerDataUseCase` (anonymisation profil + documents, conservation audit 7 ans) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/erase-conseiller-data.test.ts`
+- [x] T113 Implement `EraseConseillerDataUseCase` (job BullMQ asynchrone, transaction Prisma + S3 delete + audit `erasure.completed`) dans `apps/api/src/modules/conformite/application/use-cases/erase-conseiller-data.use-case.ts`
+- [x] T114 ConseillerConformiteController POST `/me/erasure-request` endpoint dans `apps/api/src/modules/conformite/interface/http/conseiller-conformite.controller.ts` (UPDATE existant)
 - [ ] T115 [P] `UploadIntentCleanupJob` BullMQ quotidien (delete intents expirés non consommés + objets S3 associés) dans `apps/api/src/modules/conformite/infrastructure/jobs/upload-intent-cleanup.job.ts`
 - [ ] T116 [P] `DataRetentionSweepJob` BullMQ quotidien (anonymise briefs > 24 mois, profils désactivés > 6 mois, etc. selon tableau constitution) dans `apps/api/src/modules/conformite/infrastructure/jobs/data-retention-sweep.job.ts`
 - [ ] T117 [P] S3 lifecycle policy CDK construct (abort incomplete multipart 1d, transition Glacier 24mo, supprime orphan intents) — édition `infra/cdk/cv-prod-stack.ts`
@@ -263,7 +263,7 @@ description: "Tâches d'implémentation — Module Conformité"
 - [ ] T122 README du module conformité + lien vers dashboard Grafana + lien vers spec/plan/research dans `apps/api/src/modules/conformite/README.md`
 - [ ] T123 Validate `quickstart.md` end-to-end manuellement (suivre le parcours sur staging)
 - [ ] T124 Run `/speckit.analyze` pour vérifier la cohérence cross-artefacts (spec ↔ plan ↔ tasks)
-- [ ] T125a [P] **Page UI conseiller — demande d'effacement Loi 25** (G3 du review — couvre FR-017 côté interface) : page avec explication des conséquences (irréversible, conservation 7 ans audit), confirmation explicite « I_UNDERSTAND_THIS_IS_IRREVERSIBLE », appel Server Action vers POST `/me/erasure-request` — `apps/web/src/app/(conseiller)/conformite/effacement/page.tsx`
+- [x] T125a [P] **Page UI conseiller — demande d'effacement Loi 25** (G3 du review — couvre FR-017 côté interface) : page avec explication des conséquences (irréversible, conservation 7 ans audit), confirmation explicite « I_UNDERSTAND_THIS_IS_IRREVERSIBLE », appel Server Action vers POST `/me/erasure-request` — `apps/web/src/app/(conseiller)/conformite/effacement/page.tsx`
 - [ ] T125 Definition of Done — cocher tous les items de la checklist constitution avant de marquer le PR ready, **plus les items suivants spécifiques à cette feature (C1, C2, C3 du review)** :
   - [ ] Checklist OWASP Top 10 cochée pour chaque endpoint HTTP modifié dans le PR (référencer la grille par endpoint dans `contracts/http-endpoints.md`)
   - [ ] Premier test de restauration de backup réussi en staging (RPO 24h validé) avant la première mise en production

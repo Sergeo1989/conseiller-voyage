@@ -304,6 +304,15 @@ export const RevokeConseillerSchema = z
   .strict();
 export type RevokeConseillerBody = z.infer<typeof RevokeConseillerSchema>;
 
+// --- Phase N POST /me/erasure-request (Loi 25 FR-017) ---
+
+export const ErasureRequestSchema = z
+  .object({
+    confirmation: z.literal('I_UNDERSTAND_THIS_IS_IRREVERSIBLE'),
+  })
+  .strict();
+export type ErasureRequestBody = z.infer<typeof ErasureRequestSchema>;
+
 // --- US5 GET /me/audit ---
 
 export const AuditQuerySchema = z

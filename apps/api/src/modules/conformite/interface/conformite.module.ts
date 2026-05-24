@@ -32,9 +32,11 @@ import { NOTIFICATION_PORT } from '../application/ports/notification.port';
 import { OUTBOX_WRITER } from '../application/ports/outbox-writer.port';
 import { ApproveDossierUseCase } from '../application/use-cases/approve-dossier.use-case';
 import { DeclarePermitRevokedUseCase } from '../application/use-cases/declare-permit-revoked.use-case';
+import { EraseConseillerDataUseCase } from '../application/use-cases/erase-conseiller-data.use-case';
 import { GetVerificationStatusUseCase } from '../application/use-cases/get-verification-status.use-case';
 import { PropagateExpirationsUseCase } from '../application/use-cases/propagate-expirations.use-case';
 import { RefuseDossierUseCase } from '../application/use-cases/refuse-dossier.use-case';
+import { RequestErasureUseCase } from '../application/use-cases/request-erasure.use-case';
 import { RequestUploadUrlsUseCase } from '../application/use-cases/request-upload-urls.use-case';
 import { RevokeConseillerUseCase } from '../application/use-cases/revoke-conseiller.use-case';
 import { SendExpirationRemindersUseCase } from '../application/use-cases/send-expiration-reminders.use-case';
@@ -79,6 +81,8 @@ const EXPIRATION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
     DeclarePermitRevokedUseCase,
     RevokeConseillerUseCase,
     ViewConseillerDossierUseCase,
+    RequestErasureUseCase,
+    EraseConseillerDataUseCase,
 
     // --- Ports → adapters ---
     // PrismaConformiteRepository implémente Reader + Writer → on
