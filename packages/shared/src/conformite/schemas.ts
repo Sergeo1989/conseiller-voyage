@@ -294,3 +294,12 @@ export const DeclarePermitRevokedResponseSchema = z
   })
   .strict();
 export type DeclarePermitRevokedResponse = z.infer<typeof DeclarePermitRevokedResponseSchema>;
+
+// --- US4 POST /admin/conseillers/:id/revoke ---
+
+export const RevokeConseillerSchema = z
+  .object({
+    reason: z.string().min(MIN_REFUSAL_REASON_CHARS).max(MAX_REFUSAL_REASON_CHARS),
+  })
+  .strict();
+export type RevokeConseillerBody = z.infer<typeof RevokeConseillerSchema>;

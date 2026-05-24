@@ -36,6 +36,7 @@ import { GetVerificationStatusUseCase } from '../application/use-cases/get-verif
 import { PropagateExpirationsUseCase } from '../application/use-cases/propagate-expirations.use-case';
 import { RefuseDossierUseCase } from '../application/use-cases/refuse-dossier.use-case';
 import { RequestUploadUrlsUseCase } from '../application/use-cases/request-upload-urls.use-case';
+import { RevokeConseillerUseCase } from '../application/use-cases/revoke-conseiller.use-case';
 import { SendExpirationRemindersUseCase } from '../application/use-cases/send-expiration-reminders.use-case';
 import { SubmitDossierUseCase } from '../application/use-cases/submit-dossier.use-case';
 import {
@@ -75,6 +76,7 @@ const EXPIRATION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
     PropagateExpirationsUseCase,
     GetVerificationStatusUseCase,
     DeclarePermitRevokedUseCase,
+    RevokeConseillerUseCase,
 
     // --- Ports → adapters ---
     // PrismaConformiteRepository implémente Reader + Writer → on

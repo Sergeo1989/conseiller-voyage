@@ -17,6 +17,7 @@ import {
   DeclarePermitRevokedSchema,
   QueueQuerySchema,
   RefuseSubmissionSchema,
+  RevokeConseillerSchema,
   SubmissionIdSchema,
 } from '@cv/shared/conformite';
 import {
@@ -52,6 +53,8 @@ import { ApproveDossierUseCase } from '../../application/use-cases/approve-dossi
 import { DeclarePermitRevokedUseCase } from '../../application/use-cases/declare-permit-revoked.use-case';
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
 import { RefuseDossierUseCase } from '../../application/use-cases/refuse-dossier.use-case';
+// biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
+import { RevokeConseillerUseCase } from '../../application/use-cases/revoke-conseiller.use-case';
 import type {
   ApproveSubmissionRequestDto,
   QueueQueryDto,
@@ -74,6 +77,7 @@ export class AdminConformiteController {
     private readonly approveDossier: ApproveDossierUseCase,
     private readonly refuseDossier: RefuseDossierUseCase,
     private readonly declarePermit: DeclarePermitRevokedUseCase,
+    private readonly revokeConseiller: RevokeConseillerUseCase,
   ) {}
 
   @ApiOperation({ summary: 'File de revue paginée (FR-003).' })
@@ -220,6 +224,29 @@ export class AdminConformiteController {
       agencyProvince: body.agencyProvince,
       reason: body.reason,
     });
+  }
+
+  @ApiOperation({ summary: 'Révoque manuellement un conseiller (US4 FR-010).' })
+  @ApiResponse({ status: 200, description: 'Conseiller révoqué (état final).' })
+  @ApiResponse({ status: 400, description: 'Motif < 20 caractères ou > 2000.' })
+  @ApiResponse({ status: 403, description: 'Transition non autorisée.' })
+  @ApiResponse({ status: 404, description: 'Compliance introuvable.' })
+  @ApiResponse({ status: 409, description: 'Déjà révoqué.' })
+  @Post('conseillers/:complianceId/revoke')
+  @HttpCode(HttpStatus.OK)
+  async revoke(
+    @Req() req: AuthenticatedRequest,
+    @Param('complianceId') complianceId: string,
+    @Body(new ZodValidationPipe(RevokeConseillerSchema))
+    body: import('@cv/shared/conformite').RevokeConseillerBody,
+  ): Promise<{ ok: true }> {
+    const admin = this.assertAdmin(req);
+    await this.revokeConseiller.execute({
+      requestedBy: { id: admin.id, role: 'admin' },
+      conseillerComplianceId: complianceId,
+      reason: body.reason,
+    });
+    return { ok: true };
   }
 
   // --- Helpers privés ---
