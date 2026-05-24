@@ -3,10 +3,10 @@
 // admin actions) appliqueront un @Throttle() plus strict — défini dans
 // http-endpoints.md.
 
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { Module } from '@nestjs/common';
 import { ThrottlerModule as NestThrottlerModule } from '@nestjs/throttler';
 import { Redis } from 'ioredis';
-import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 import { env } from '../env';
 
 @Module({
