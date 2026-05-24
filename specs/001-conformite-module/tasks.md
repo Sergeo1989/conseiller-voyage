@@ -164,8 +164,8 @@ description: "Tâches d'implémentation — Module Conformité"
 - [x] T075 [P] [US1] Templates react-email (résultat de revue : approuvé, refusé) **avec signature `({ locale, ...props })`** (B3 du review itération 2 — Principe IV) : messages via clés i18n du catalogue partagé (`fr-CA.json` initialement, `en.json` placeholder), formats de date via `formatDate(d, locale)` de T030g, dans `packages/shared/email/templates/conformite/`
 - [x] T076 [US1] Page conseiller soumission multi-step (5 étapes, react-hook-form + Zod + shadcn/ui + autosave) dans `apps/web/src/app/(conseiller)/conformite/soumettre/page.tsx`
 - [x] T077 [US1] Page conseiller dossier overview (statut actuel + résumé) dans `apps/web/src/app/(conseiller)/conformite/page.tsx`
-- [ ] T078 [US1] Page admin file paginée (20/page, filtre par statut) dans `apps/web/src/app/(admin)/conformite/page.tsx`
-- [ ] T079 [US1] Page admin détail soumission + modal approve/refuse dans `apps/web/src/app/(admin)/conformite/[dossierId]/page.tsx`
+- [x] T078 [US1] Page admin file paginée (20/page, filtre par statut) dans `apps/web/src/app/(admin)/conformite/page.tsx`
+- [x] T079 [US1] Page admin détail soumission + modal approve/refuse dans `apps/web/src/app/(admin)/conformite/[dossierId]/page.tsx`
 - [x] T080 [US1] Server Actions wrappers avec header `X-Requested-By: web` + `Idempotency-Key` dans `apps/web/src/app/_lib/api-client.ts`
 
 ### Tests E2E
