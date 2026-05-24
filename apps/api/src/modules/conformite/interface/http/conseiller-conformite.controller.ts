@@ -41,8 +41,10 @@ import {
   CONFORMITE_READER,
   type ConformiteReader,
 } from '../../application/ports/conformite-reader.port';
-import type { RequestUploadUrlsUseCase } from '../../application/use-cases/request-upload-urls.use-case';
-import type { SubmitDossierUseCase } from '../../application/use-cases/submit-dossier.use-case';
+// biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
+import { RequestUploadUrlsUseCase } from '../../application/use-cases/request-upload-urls.use-case';
+// biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
+import { SubmitDossierUseCase } from '../../application/use-cases/submit-dossier.use-case';
 import type {
   GetConseillerDossierResponseDto,
   RequestUploadUrlsRequestDto,
