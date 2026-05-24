@@ -12,6 +12,7 @@ import type {
   CertificatId,
   ConseillerComplianceId,
   ConseillerId,
+  PermitRevocationId,
   SubmissionId,
   UploadIntentId,
 } from '@cv/shared/conformite';
@@ -122,6 +123,21 @@ export interface ApplyStatusTransitionWriteArgs {
   readonly outboxEntries: ReadonlyArray<OutboxEntryToCreate>;
 }
 
+// --- déclaration retrait de permis (US3 cascade FR-015) ---
+
+export interface DeclarePermitRevokedWriteArgs {
+  readonly permitRevocationId: PermitRevocationId;
+  readonly agencyPermitNumber: string;
+  readonly agencyProvince: Province;
+  readonly revokedAt: Date;
+  readonly declaredByAdminId: AdminId;
+  readonly reason: string;
+  readonly affectedAffiliationIds: ReadonlyArray<AffiliationId>;
+  readonly statusTransitions: ReadonlyArray<StatusTransition>;
+  readonly auditEntries: ReadonlyArray<AuditEntryToCreate>;
+  readonly outboxEntries: ReadonlyArray<OutboxEntryToCreate>;
+}
+
 // --- port interface ---
 
 export interface ConformiteWriter {
@@ -140,6 +156,14 @@ export interface ConformiteWriter {
 
   /** Bascule système (expiration auto, cascade permit, révocation admin). */
   applyStatusTransition(args: ApplyStatusTransitionWriteArgs): Promise<void>;
+
+  /**
+   * US3 — Insère le PermitRevocation, marque toutes les affiliations
+   * affectées inactivatedBy='permit_revocation', et applique les
+   * transitions de statut éventuelles (verified→suspended). Tout en
+   * une seule transaction.
+   */
+  declarePermitRevoked(args: DeclarePermitRevokedWriteArgs): Promise<void>;
 }
 
 export const CONFORMITE_WRITER = Symbol.for('ConformiteWriter');

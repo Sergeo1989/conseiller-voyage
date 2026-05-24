@@ -320,9 +320,45 @@ export class FakeConformiteRepository implements ConformiteReader, ConformiteWri
     return Promise.resolve();
   }
 
-  /** Audit + outbox entries écrits via les writers métier (submit, approve, refuse, applyStatusTransition). */
+  /** Audit + outbox entries écrits via les writers métier (submit, approve, refuse, applyStatusTransition, declarePermitRevoked). */
   public readonly writerAuditEntries: AuditEntryToCreate[] = [];
   public readonly writerOutboxEntries: OutboxEntryToCreate[] = [];
+
+  declarePermitRevoked(
+    args: import('../ports/conformite-writer.port').DeclarePermitRevokedWriteArgs,
+  ): Promise<void> {
+    this.permitRevocations.push({
+      id: args.permitRevocationId,
+      agencyPermitNumber: args.agencyPermitNumber,
+      agencyProvince: args.agencyProvince,
+      revokedAt: args.revokedAt,
+      declaredByAdminId: args.declaredByAdminId,
+      reason: args.reason,
+    });
+    for (const affilId of args.affectedAffiliationIds) {
+      const affil = this.affiliations.get(affilId);
+      if (affil) {
+        this.affiliations.set(affilId, {
+          ...affil,
+          inactivatedAt: args.revokedAt,
+          inactivatedBy: 'permit_revocation',
+        });
+      }
+    }
+    for (const t of args.statusTransitions) {
+      const compliance = this.compliances.get(t.conseillerComplianceId);
+      if (compliance) {
+        this.compliances.set(compliance.id, {
+          ...compliance,
+          status: t.to,
+          lastStatusChangeAt: t.transitionedAt,
+        });
+      }
+    }
+    this.writerAuditEntries.push(...args.auditEntries);
+    this.writerOutboxEntries.push(...args.outboxEntries);
+    return Promise.resolve();
+  }
 
   applyStatusTransition(
     args: import('../ports/conformite-writer.port').ApplyStatusTransitionWriteArgs,

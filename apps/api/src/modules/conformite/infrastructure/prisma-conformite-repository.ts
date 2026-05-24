@@ -330,6 +330,40 @@ export class PrismaConformiteRepository implements ConformiteReader, ConformiteW
     });
   }
 
+  async declarePermitRevoked(
+    args: import('../application/ports/conformite-writer.port').DeclarePermitRevokedWriteArgs,
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await tx.permitRevocation.create({
+        data: {
+          id: args.permitRevocationId,
+          agencyPermitNumber: args.agencyPermitNumber,
+          agencyProvince: args.agencyProvince,
+          revokedAt: args.revokedAt,
+          declaredByAdminId: args.declaredByAdminId,
+          reason: args.reason,
+        },
+      });
+      if (args.affectedAffiliationIds.length > 0) {
+        await tx.affiliation.updateMany({
+          where: { id: { in: [...args.affectedAffiliationIds] } },
+          data: {
+            inactivatedAt: args.revokedAt,
+            inactivatedBy: 'permit_revocation',
+          },
+        });
+      }
+      for (const t of args.statusTransitions) {
+        await tx.conseillerCompliance.update({
+          where: { id: t.conseillerComplianceId },
+          data: { status: t.to, lastStatusChangeAt: t.transitionedAt },
+        });
+      }
+      await this.writeAuditEntries(tx, args.auditEntries);
+      await this.writeOutboxEntries(tx, args.outboxEntries);
+    });
+  }
+
   async refuseSubmission(args: RefuseSubmissionWriteArgs): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await tx.submission.update({
