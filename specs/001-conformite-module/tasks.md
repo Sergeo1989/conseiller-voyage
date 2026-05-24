@@ -143,9 +143,9 @@ description: "Tâches d'implémentation — Module Conformité"
 - [x] T061 [P] [US1] `S3DocumentStorage` adapter (signed URLs PUT + GET, HEAD verification post-upload) dans `apps/api/src/modules/conformite/infrastructure/s3-document-storage.ts`
 - [x] T062 [P] [US1] `PrismaAuditLogWriter` (valide chaque payload contre les Zod schemas T046 avant insert) dans `apps/api/src/modules/conformite/infrastructure/prisma-audit-log-writer.ts`
 - [x] T063 [P] [US1] Test invariant : aucun appel `AuditLogWriter.write` n'inclut clés interdites (email, phone, firstName, lastName) — `apps/api/src/modules/conformite/infrastructure/__tests__/audit-payload-invariant.test.ts`
-- [ ] T064 [P] [US1] `BullmqNotification` adapter (enqueue un job par destinataire — Principe X) dans `apps/api/src/modules/conformite/infrastructure/bullmq-notification.ts`
-- [ ] T065 [P] [US1] `OutboxWriter` port + `PrismaOutboxWriter` adapter (B1 : utilisé par les use cases pour écrire un événement de domaine dans `conformite_outbox` **dans la même transaction Prisma** que la mutation métier ; **ne publie pas** l'événement — c'est `OutboxPublisherJob` T066 qui appelle ensuite `ConformiteEventPublisher` T096) — port dans `apps/api/src/modules/conformite/application/ports/outbox-writer.port.ts`, adapter dans `apps/api/src/modules/conformite/infrastructure/prisma-outbox-writer.ts`
-- [ ] T066 [US1] `OutboxPublisherJob` BullMQ worker (lit outbox, publie via `@nestjs/event-emitter`, marque `publishedAt`, backoff exponentiel) dans `apps/api/src/modules/conformite/infrastructure/jobs/outbox-publisher.job.ts`
+- [x] T064 [P] [US1] `BullmqNotification` adapter (enqueue un job par destinataire — Principe X) dans `apps/api/src/modules/conformite/infrastructure/bullmq-notification.ts`
+- [x] T065 [P] [US1] `OutboxWriter` port + `PrismaOutboxWriter` adapter (B1 : utilisé par les use cases pour écrire un événement de domaine dans `conformite_outbox` **dans la même transaction Prisma** que la mutation métier ; **ne publie pas** l'événement — c'est `OutboxPublisherJob` T066 qui appelle ensuite `ConformiteEventPublisher` T096) — port dans `apps/api/src/modules/conformite/application/ports/outbox-writer.port.ts`, adapter dans `apps/api/src/modules/conformite/infrastructure/prisma-outbox-writer.ts`
+- [x] T066 [US1] `OutboxPublisherJob` BullMQ worker (lit outbox, publie via `@nestjs/event-emitter`, marque `publishedAt`, backoff exponentiel) dans `apps/api/src/modules/conformite/infrastructure/jobs/outbox-publisher.job.ts`
 
 ### Interface (HTTP + DI)
 
