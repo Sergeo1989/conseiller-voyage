@@ -60,6 +60,27 @@ export interface ConformiteReader {
    * d'expiration (rappels J-60/J-30/J-7 + bascule auto suspended).
    */
   listCertificatsExpiringInWindow(from: Date, to: Date): Promise<ReadonlyArray<Certificat>>;
+
+  /**
+   * US5 — Audit paginé curseur pour le conseiller (FR-013).
+   * Retourne les entrées de la compliance en ordre antichronologique.
+   * Cursor = id de la dernière entry de la page précédente ; null pour
+   * la première page.
+   */
+  listAuditEntriesForCompliance(args: {
+    readonly conseillerComplianceId: ConseillerComplianceId;
+    readonly cursor: string | null;
+    readonly pageSize: number;
+  }): Promise<{
+    readonly items: ReadonlyArray<{
+      readonly id: string;
+      readonly eventType: string;
+      readonly actorRole: 'conseiller' | 'admin' | 'system';
+      readonly occurredAt: Date;
+      readonly payload: Record<string, unknown>;
+    }>;
+    readonly nextCursor: string | null;
+  }>;
 }
 
 export const CONFORMITE_READER = Symbol.for('ConformiteReader');

@@ -148,6 +148,43 @@ export class PrismaConformiteRepository implements ConformiteReader, ConformiteW
     return rows.map((r) => this.mapCertificat(r));
   }
 
+  async listAuditEntriesForCompliance(args: {
+    conseillerComplianceId: ConseillerComplianceId;
+    cursor: string | null;
+    pageSize: number;
+  }): Promise<{
+    items: ReadonlyArray<{
+      id: string;
+      eventType: string;
+      actorRole: 'conseiller' | 'admin' | 'system';
+      occurredAt: Date;
+      payload: Record<string, unknown>;
+    }>;
+    nextCursor: string | null;
+  }> {
+    const rows = await prisma.auditEntry.findMany({
+      where: { conseillerComplianceId: args.conseillerComplianceId },
+      orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+      take: args.pageSize + 1,
+      ...(args.cursor !== null && {
+        cursor: { id: args.cursor },
+        skip: 1,
+      }),
+    });
+    const hasMore = rows.length > args.pageSize;
+    const items = rows.slice(0, args.pageSize);
+    return {
+      items: items.map((r) => ({
+        id: r.id,
+        eventType: r.eventType,
+        actorRole: r.actorRole,
+        occurredAt: r.occurredAt,
+        payload: r.payload as Record<string, unknown>,
+      })),
+      nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,
+    };
+  }
+
   // --- WRITER ---
 
   async getOrCreateCompliance(args: GetOrCreateComplianceArgs): Promise<ConseillerCompliance> {

@@ -238,8 +238,8 @@ description: "Tâches d'implémentation — Module Conformité"
 
 **Independent Test** : conseiller authentifié accède à son espace → voit statut + dates d'expiration + historique paginé.
 
-- [ ] T107 [P] [US5] Test `ViewConseillerDossierUseCase` (audit paginé curseur, dates en `fr-CA`, certificats avec dates d'expiration) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/view-conseiller-dossier.test.ts`
-- [ ] T108 [US5] Implement `ViewConseillerDossierUseCase` dans `apps/api/src/modules/conformite/application/use-cases/view-conseiller-dossier.use-case.ts`
+- [x] T107 [P] [US5] Test `ViewConseillerDossierUseCase` (audit paginé curseur, dates en `fr-CA`, certificats avec dates d'expiration) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/view-conseiller-dossier.test.ts`
+- [x] T108 [US5] Implement `ViewConseillerDossierUseCase` dans `apps/api/src/modules/conformite/application/use-cases/view-conseiller-dossier.use-case.ts`
 - [ ] T109 [US5] ConseillerConformiteController GET `/me/audit` paginé curseur dans `apps/api/src/modules/conformite/interface/http/conseiller-conformite.controller.ts` (UPDATE existant)
 - [ ] T110 [US5] Composant historique d'événements avec dates FR-CA + avertissement renouvellement si J-30 — édition `apps/web/src/app/(conseiller)/conformite/page.tsx`
 - [ ] T111 [US5] Playwright e2e : conseiller voit statut + 5 derniers événements + avertissement si cert expire J-30 dans `apps/api/test/e2e/conformite-us5.spec.ts`

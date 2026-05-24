@@ -149,6 +149,49 @@ export class FakeConformiteRepository implements ConformiteReader, ConformiteWri
     return Promise.resolve(this.uploadIntents.get(id) ?? null);
   }
 
+  /** Audit entries seeded directement par les tests (in-memory). */
+  public readonly auditEntries: Array<{
+    id: string;
+    conseillerComplianceId: ConseillerComplianceId | null;
+    eventType: string;
+    actorRole: 'conseiller' | 'admin' | 'system';
+    occurredAt: Date;
+    payload: Record<string, unknown>;
+  }> = [];
+
+  listAuditEntriesForCompliance(args: {
+    conseillerComplianceId: ConseillerComplianceId;
+    cursor: string | null;
+    pageSize: number;
+  }): Promise<{
+    items: ReadonlyArray<{
+      id: string;
+      eventType: string;
+      actorRole: 'conseiller' | 'admin' | 'system';
+      occurredAt: Date;
+      payload: Record<string, unknown>;
+    }>;
+    nextCursor: string | null;
+  }> {
+    const filtered = this.auditEntries
+      .filter((e) => e.conseillerComplianceId === args.conseillerComplianceId)
+      .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
+    const startIdx = args.cursor ? filtered.findIndex((e) => e.id === args.cursor) + 1 : 0;
+    const items = filtered.slice(startIdx, startIdx + args.pageSize);
+    const nextCursor =
+      startIdx + items.length < filtered.length ? (items[items.length - 1]?.id ?? null) : null;
+    return Promise.resolve({
+      items: items.map(({ id, eventType, actorRole, occurredAt, payload }) => ({
+        id,
+        eventType,
+        actorRole,
+        occurredAt,
+        payload,
+      })),
+      nextCursor,
+    });
+  }
+
   listCertificatsExpiringInWindow(from: Date, to: Date): Promise<ReadonlyArray<Certificat>> {
     return Promise.resolve(
       [...this.certificats.values()].filter(
