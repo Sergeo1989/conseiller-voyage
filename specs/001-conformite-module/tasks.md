@@ -170,7 +170,7 @@ description: "Tâches d'implémentation — Module Conformité"
 
 ### Tests E2E
 
-- [ ] T081 [US1] Playwright e2e : conseiller soumet → admin approuve → statut `verified` consultable via port public dans `apps/api/test/e2e/conformite-us1.spec.ts`
+- [x] T081 [US1] Playwright e2e : conseiller soumet → admin approuve → statut `verified` consultable via port public dans `apps/api/test/e2e/conformite-us1.spec.ts`
 - [x] T081a [P] [US1] **Test invariant filtrage matériel FR-007 / U1 du review** : test d'intégration `PrismaConformiteRepository` qui crée 3 conseillers (statuts `verified` / `suspended` / `revoked`) et vérifie que la méthode `findVerified()` retourne uniquement le premier. Couvre aussi le cas où `anonymizedAt` est non-null (filtré comme non-trouvé) — `apps/api/test/integration/conformite/prisma-repository-filter.test.ts`
 - [x] T081b [P] [US1] **Test trigger audit append-only FR-019 / U2 du review** : test d'intégration qui tente un `UPDATE` puis un `DELETE` sur une row `conformite_audit_entries` et vérifie que les deux lèvent une exception PostgreSQL (`audit log is append-only`). Test aussi que le rôle `app_conformite` n'a pas les privilèges UPDATE/DELETE — `apps/api/test/integration/conformite/audit-trigger.test.ts`
 - [x] T081c [P] [US1] **Test attribution admin nominatif FR-018 / U3 du review** : test unitaire `PrismaAuditLogWriter` qui rejette toute entrée avec `actorRole === 'admin'` mais `actorId === null`. Garantit la traçabilité opérationnelle — `apps/api/src/modules/conformite/infrastructure/__tests__/prisma-audit-log-writer.test.ts`
