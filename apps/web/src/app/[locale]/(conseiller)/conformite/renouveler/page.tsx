@@ -6,7 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../auth';
-import type { Locale } from '../../../../../i18n';
+import { type Locale, toUrlLocale } from '../../../../../i18n';
 import { SubmitDossierForm } from '../soumettre/submit-dossier-form';
 
 interface PageProps {
@@ -15,9 +15,10 @@ interface PageProps {
 
 export default async function RenewDossierPage({ params }: PageProps): Promise<ReactNode> {
   const { locale } = await params;
+  const urlLocale = toUrlLocale(locale);
   const session = await auth();
   if (!session?.user) {
-    redirect(`/${locale}/login?callbackUrl=/${locale}/conseiller/conformite/renouveler`);
+    redirect(`/${urlLocale}/login?callbackUrl=/${urlLocale}/conseiller/conformite/renouveler`);
   }
 
   const t = await getTranslations({ locale, namespace: 'conformite.conseiller.submit' });

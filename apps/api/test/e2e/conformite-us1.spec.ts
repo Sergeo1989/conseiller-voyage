@@ -55,7 +55,7 @@ test.describe('US1 — Vérification initiale du conseiller', () => {
     const conseillerPage = await conseillerContext.newPage();
 
     // Page overview : pas de dossier → CTA "Soumettre mon dossier"
-    await conseillerPage.goto('/fr-CA/conseiller/conformite');
+    await conseillerPage.goto('/fr/conseiller/conformite');
     await expect(
       conseillerPage.getByRole('heading', { name: /Mon dossier de conformité/ }),
     ).toBeVisible();
@@ -113,7 +113,7 @@ test.describe('US1 — Vérification initiale du conseiller', () => {
     });
     const adminPage = await adminContext.newPage();
 
-    await adminPage.goto('/fr-CA/admin/conformite');
+    await adminPage.goto('/fr/admin/conformite');
     await expect(adminPage.getByRole('heading', { name: /File de revue/ })).toBeVisible();
 
     // Le premier "Examiner" ouvre le dossier qu'on vient de soumettre
@@ -148,7 +148,7 @@ test.describe('US1 — Vérification initiale du conseiller', () => {
       },
     });
     const conseillerPage2 = await conseillerContext2.newPage();
-    await conseillerPage2.goto('/fr-CA/conseiller/conformite');
+    await conseillerPage2.goto('/fr/conseiller/conformite');
     await expect(conseillerPage2.getByText(/Vérifié/)).toBeVisible();
 
     await conseillerContext2.close();

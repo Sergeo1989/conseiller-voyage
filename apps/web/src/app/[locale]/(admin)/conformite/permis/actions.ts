@@ -4,6 +4,7 @@
 
 import { DeclarePermitRevokedSchema } from '@cv/shared/conformite';
 import { revalidatePath } from 'next/cache';
+import { toUrlLocale } from '../../../../../i18n';
 import { apiClient } from '../../../../_lib/api-client';
 
 export type DeclarePermitActionResult =
@@ -21,6 +22,7 @@ export async function declarePermitRevokedAction(
   rawBody: unknown,
   locale: string,
 ): Promise<DeclarePermitActionResult> {
+  const urlLocale = toUrlLocale(locale);
   const parsed = DeclarePermitRevokedSchema.safeParse(rawBody);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation échouée.' };
@@ -33,6 +35,6 @@ export async function declarePermitRevokedAction(
     const body = res.errorBody as { message?: string } | undefined;
     return { ok: false, error: body?.message ?? `Erreur API (${res.status}).` };
   }
-  revalidatePath(`/${locale}/admin/conformite`);
+  revalidatePath(`/${urlLocale}/admin/conformite`);
   return { ok: true, data: res.data };
 }

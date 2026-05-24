@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../auth';
-import type { Locale } from '../../../../i18n';
+import { type Locale, toUrlLocale } from '../../../../i18n';
 import { apiClient } from '../../../_lib/api-client';
 
 interface PageProps {
@@ -34,11 +34,12 @@ export default async function AdminQueuePage({
   searchParams,
 }: PageProps): Promise<ReactNode> {
   const { locale } = await params;
+  const urlLocale = toUrlLocale(locale);
   const sp = await searchParams;
 
   const session = await auth();
   if (!session?.user) {
-    redirect(`/${locale}/login?callbackUrl=/${locale}/admin/conformite`);
+    redirect(`/${urlLocale}/login?callbackUrl=/${urlLocale}/admin/conformite`);
   }
 
   const t = await getTranslations({ locale, namespace: 'conformite.admin.queue' });
@@ -109,7 +110,7 @@ export default async function AdminQueuePage({
                 <td style={tdStyle}>{renderStatus(item.status, tShared)}</td>
                 <td style={tdStyle}>
                   <Link
-                    href={`/${locale}/admin/conformite/${item.submissionId}`}
+                    href={`/${urlLocale}/admin/conformite/${item.submissionId}`}
                     style={linkButtonStyle}
                   >
                     {t('viewDetails')}

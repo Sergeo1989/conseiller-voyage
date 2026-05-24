@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../auth';
-import type { Locale } from '../../../../i18n';
+import { type Locale, toUrlLocale } from '../../../../i18n';
 import { apiClient } from '../../../_lib/api-client';
 import { HistorySection } from './history-section';
 
@@ -49,9 +49,10 @@ interface DossierApiShape {
 
 export default async function ConseillerOverviewPage({ params }: PageProps): Promise<ReactNode> {
   const { locale } = await params;
+  const urlLocale = toUrlLocale(locale);
   const session = await auth();
   if (!session?.user) {
-    redirect(`/${locale}/login?callbackUrl=/${locale}/conseiller/conformite`);
+    redirect(`/${urlLocale}/login?callbackUrl=/${urlLocale}/conseiller/conformite`);
   }
 
   const t = await getTranslations({ locale, namespace: 'conformite' });
@@ -66,7 +67,7 @@ export default async function ConseillerOverviewPage({ params }: PageProps): Pro
         <h1>{t('conseiller.overview.title')}</h1>
         <p>{t('conseiller.overview.noDossier')}</p>
         <p>
-          <Link href={`/${locale}/conseiller/conformite/soumettre`} style={ctaStyle}>
+          <Link href={`/${urlLocale}/conseiller/conformite/soumettre`} style={ctaStyle}>
             {t('conseiller.overview.ctaSubmit')}
           </Link>
         </p>
@@ -153,7 +154,7 @@ export default async function ConseillerOverviewPage({ params }: PageProps): Pro
       </section>
 
       <p>
-        <Link href={`/${locale}/conseiller/conformite/soumettre`} style={ctaStyle}>
+        <Link href={`/${urlLocale}/conseiller/conformite/soumettre`} style={ctaStyle}>
           {t('conseiller.overview.ctaRenew')}
         </Link>
       </p>

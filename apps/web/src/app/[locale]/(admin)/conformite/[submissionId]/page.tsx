@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../auth';
-import type { Locale } from '../../../../../i18n';
+import { type Locale, toUrlLocale } from '../../../../../i18n';
 import { apiClient } from '../../../../_lib/api-client';
 import { DecisionPanel } from './decision-panel';
 
@@ -44,9 +44,10 @@ interface SubmissionDetailApi {
 
 export default async function AdminSubmissionDetailPage({ params }: PageProps): Promise<ReactNode> {
   const { locale, submissionId } = await params;
+  const urlLocale = toUrlLocale(locale);
   const session = await auth();
   if (!session?.user) {
-    redirect(`/${locale}/login?callbackUrl=/${locale}/admin/conformite/${submissionId}`);
+    redirect(`/${urlLocale}/login?callbackUrl=/${urlLocale}/admin/conformite/${submissionId}`);
   }
 
   const t = await getTranslations({ locale, namespace: 'conformite.admin.detail' });
@@ -73,7 +74,7 @@ export default async function AdminSubmissionDetailPage({ params }: PageProps): 
   return (
     <main style={mainStyle}>
       <p>
-        <Link href={`/${locale}/admin/conformite`} style={{ color: '#2563eb' }}>
+        <Link href={`/${urlLocale}/admin/conformite`} style={{ color: '#2563eb' }}>
           ← {t('backToQueue')}
         </Link>
       </p>

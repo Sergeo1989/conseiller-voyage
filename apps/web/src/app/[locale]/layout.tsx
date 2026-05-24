@@ -23,14 +23,22 @@ export async function generateMetadata({
   return {
     metadataBase: new URL(SITE_URL),
     alternates: {
-      canonical: `${SITE_URL}/${locale}`,
+      // URLs courtes : /fr et /en (le locale interne fr-CA est mappé
+      // via next-intl localePrefix.prefixes dans middleware.ts).
+      canonical: `${SITE_URL}/${urlPrefixFromLocale(locale)}`,
       languages: {
-        'fr-CA': `${SITE_URL}/fr-CA`,
+        'fr-CA': `${SITE_URL}/fr`,
         en: `${SITE_URL}/en`,
-        'x-default': `${SITE_URL}/fr-CA`,
+        'x-default': `${SITE_URL}/fr`,
       },
     },
   };
+}
+
+function urlPrefixFromLocale(locale: string): string {
+  if (locale === 'fr-CA') return 'fr';
+  if (locale === 'en') return 'en';
+  return 'fr';
 }
 
 export default async function LocaleLayout({

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../../auth';
-import type { Locale } from '../../../../../../i18n';
+import { type Locale, toUrlLocale } from '../../../../../../i18n';
 import { RevokeModal } from './revoke-modal';
 
 interface PageProps {
@@ -13,10 +13,11 @@ interface PageProps {
 
 export default async function AdminConseillerDetailPage({ params }: PageProps): Promise<ReactNode> {
   const { locale, complianceId } = await params;
+  const urlLocale = toUrlLocale(locale);
   const session = await auth();
   if (!session?.user) {
     redirect(
-      `/${locale}/login?callbackUrl=/${locale}/admin/conformite/conseillers/${complianceId}`,
+      `/${urlLocale}/login?callbackUrl=/${urlLocale}/admin/conformite/conseillers/${complianceId}`,
     );
   }
 
@@ -30,7 +31,7 @@ export default async function AdminConseillerDetailPage({ params }: PageProps): 
       }}
     >
       <p>
-        <Link href={`/${locale}/admin/conformite`} style={{ color: '#2563eb' }}>
+        <Link href={`/${urlLocale}/admin/conformite`} style={{ color: '#2563eb' }}>
           ← File de revue
         </Link>
       </p>

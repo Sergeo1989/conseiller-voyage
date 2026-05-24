@@ -70,7 +70,7 @@ export function buildDossierRefusedEmail(props: DossierRefusedEmailProps): Rende
   const bodyText = interpolate(messages.body, { submittedAt: submittedDate });
   const ctaUrl = interpolate(messages.ctaUrl, {
     baseUrl: props.baseUrl,
-    locale: props.locale,
+    locale: props.locale === 'fr-CA' ? 'fr' : 'en',
   });
 
   const text = [

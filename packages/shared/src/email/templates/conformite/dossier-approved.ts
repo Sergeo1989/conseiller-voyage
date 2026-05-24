@@ -100,7 +100,7 @@ export function buildDossierApprovedEmail(props: DossierApprovedEmailProps): Ren
   });
   const ctaUrl = interpolate(messages.ctaUrl, {
     baseUrl: props.baseUrl,
-    locale: props.locale,
+    locale: props.locale === 'fr-CA' ? 'fr' : 'en',
   });
 
   const text = [

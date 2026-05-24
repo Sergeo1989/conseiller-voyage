@@ -40,7 +40,7 @@ test.describe('US4 — Révocation manuelle admin', () => {
       },
     });
     const adminPage = await adminContext.newPage();
-    await adminPage.goto(`/fr-CA/admin/conformite/conseillers/${COMPLIANCE_ID}`);
+    await adminPage.goto(`/fr/admin/conformite/conseillers/${COMPLIANCE_ID}`);
     await adminPage.getByRole('button', { name: /Révoquer ce conseiller/ }).click();
     await adminPage
       .getByLabel(/Motif/)
@@ -68,7 +68,7 @@ test.describe('US4 — Révocation manuelle admin', () => {
       },
     });
     const conseillerPage = await conseillerContext.newPage();
-    await conseillerPage.goto('/fr-CA/conseiller/conformite');
+    await conseillerPage.goto('/fr/conseiller/conformite');
     await expect(conseillerPage.getByText(/Révoqué/)).toBeVisible({ timeout: 10_000 });
     await conseillerContext.close();
   });

@@ -32,7 +32,7 @@ test.describe('US5 — Espace personnel conseiller', () => {
       },
     });
     const page = await conseillerContext.newPage();
-    await page.goto('/fr-CA/conseiller/conformite');
+    await page.goto('/fr/conseiller/conformite');
 
     // Statut visible
     await expect(page.getByRole('heading', { name: /Mon dossier/ })).toBeVisible();

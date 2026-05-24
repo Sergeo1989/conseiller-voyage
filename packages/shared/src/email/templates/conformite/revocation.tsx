@@ -79,8 +79,9 @@ export function buildRevocationEmail(props: RevocationEmailProps): RenderedEmail
     props.locale,
   );
   const body = interpolate(messages.body, { revokedAt: revokedDate });
+  const urlLocale = props.locale === 'fr-CA' ? 'fr' : 'en';
   const resubmitUrl =
-    props.resubmitLink ?? `${props.baseUrl}/${props.locale}/conseiller/conformite/soumettre`;
+    props.resubmitLink ?? `${props.baseUrl}/${urlLocale}/conseiller/conformite/soumettre`;
 
   const text = [
     messages.greeting,

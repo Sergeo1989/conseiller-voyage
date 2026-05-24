@@ -53,7 +53,7 @@ test.describe('US2 — Expiration automatique', () => {
       },
     });
     const conseillerPage = await conseillerContext.newPage();
-    await conseillerPage.goto('/fr-CA/conseiller/conformite');
+    await conseillerPage.goto('/fr/conseiller/conformite');
     await expect(conseillerPage.getByText(/Suspendu/)).toBeVisible();
 
     await conseillerContext.close();

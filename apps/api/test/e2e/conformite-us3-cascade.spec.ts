@@ -40,7 +40,7 @@ test.describe('US3 — Cascade retrait de permis', () => {
     });
     const adminPage = await adminContext.newPage();
 
-    await adminPage.goto('/fr-CA/admin/conformite/permis');
+    await adminPage.goto('/fr/admin/conformite/permis');
     await adminPage.getByLabel(/Numéro de permis/).fill('OPC-CASCADE');
     await adminPage.getByLabel(/Motif/).fill('Permis retiré suite à enquête réglementaire OPC.');
     await adminPage.getByRole('button', { name: /Déclarer le retrait/ }).click();
@@ -71,7 +71,7 @@ test.describe('US3 — Cascade retrait de permis', () => {
         },
       });
       const page = await ctx.newPage();
-      await page.goto('/fr-CA/conseiller/conformite');
+      await page.goto('/fr/conseiller/conformite');
       await expect(page.getByText(/Suspendu/)).toBeVisible({ timeout: 10_000 });
       await ctx.close();
     }

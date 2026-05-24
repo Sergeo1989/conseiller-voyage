@@ -6,6 +6,7 @@
 
 import { ApproveSubmissionSchema, RefuseSubmissionSchema } from '@cv/shared/conformite';
 import { revalidatePath } from 'next/cache';
+import { toUrlLocale } from '../../../../../i18n';
 import { apiClient } from '../../../../_lib/api-client';
 
 export type ApproveActionResult = { ok: true } | { ok: false; error: string };
@@ -16,6 +17,7 @@ export async function approveSubmissionAction(
   rawBody: unknown,
   locale: string,
 ): Promise<ApproveActionResult> {
+  const urlLocale = toUrlLocale(locale);
   const parsed = ApproveSubmissionSchema.safeParse(rawBody);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation échouée.' };
@@ -27,8 +29,8 @@ export async function approveSubmissionAction(
   if (!res.ok) {
     return { ok: false, error: extractApiError(res.errorBody) };
   }
-  revalidatePath(`/${locale}/admin/conformite`);
-  revalidatePath(`/${locale}/admin/conformite/${submissionId}`);
+  revalidatePath(`/${urlLocale}/admin/conformite`);
+  revalidatePath(`/${urlLocale}/admin/conformite/${submissionId}`);
   return { ok: true };
 }
 
@@ -37,6 +39,7 @@ export async function refuseSubmissionAction(
   rawBody: unknown,
   locale: string,
 ): Promise<RefuseActionResult> {
+  const urlLocale = toUrlLocale(locale);
   const parsed = RefuseSubmissionSchema.safeParse(rawBody);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Validation échouée.' };
@@ -48,8 +51,8 @@ export async function refuseSubmissionAction(
   if (!res.ok) {
     return { ok: false, error: extractApiError(res.errorBody) };
   }
-  revalidatePath(`/${locale}/admin/conformite`);
-  revalidatePath(`/${locale}/admin/conformite/${submissionId}`);
+  revalidatePath(`/${urlLocale}/admin/conformite`);
+  revalidatePath(`/${urlLocale}/admin/conformite/${submissionId}`);
   return { ok: true };
 }
 

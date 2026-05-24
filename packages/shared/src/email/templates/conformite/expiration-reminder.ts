@@ -90,7 +90,7 @@ export function buildExpirationReminderEmail(props: ExpirationReminderEmailProps
   });
   const ctaUrl = interpolate(messages.ctaUrl, {
     baseUrl: props.baseUrl,
-    locale: props.locale,
+    locale: props.locale === 'fr-CA' ? 'fr' : 'en',
   });
 
   const isUrgent = props.daysRemaining === 7;

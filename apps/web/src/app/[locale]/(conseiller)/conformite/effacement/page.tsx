@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../auth';
-import type { Locale } from '../../../../../i18n';
+import { type Locale, toUrlLocale } from '../../../../../i18n';
 import { ErasureForm } from './erasure-form';
 
 interface PageProps {
@@ -15,9 +15,10 @@ interface PageProps {
 
 export default async function ErasureRequestPage({ params }: PageProps): Promise<ReactNode> {
   const { locale } = await params;
+  const urlLocale = toUrlLocale(locale);
   const session = await auth();
   if (!session?.user) {
-    redirect(`/${locale}/login?callbackUrl=/${locale}/conseiller/conformite/effacement`);
+    redirect(`/${urlLocale}/login?callbackUrl=/${urlLocale}/conseiller/conformite/effacement`);
   }
   return (
     <main
@@ -29,7 +30,7 @@ export default async function ErasureRequestPage({ params }: PageProps): Promise
       }}
     >
       <p>
-        <Link href={`/${locale}/conseiller/conformite`} style={{ color: '#2563eb' }}>
+        <Link href={`/${urlLocale}/conseiller/conformite`} style={{ color: '#2563eb' }}>
           ← Mon dossier
         </Link>
       </p>
