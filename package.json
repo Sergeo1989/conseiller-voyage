@@ -18,6 +18,11 @@
     "test:unit": "turbo run test:unit",
     "test:integration": "turbo run test:integration",
     "test:e2e": "turbo run test:e2e",
+    "db:migrate": "pnpm --filter @cv/db migrate",
+    "db:generate": "pnpm --filter @cv/db generate",
+    "db:studio": "pnpm --filter @cv/db studio",
+    "db:seed:dev": "pnpm --filter @cv/db seed:dev",
+    "check:boundaries": "tsx tools/check-module-boundaries.ts",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -26,6 +31,7 @@
     "@commitlint/config-conventional": "^19.6.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
+    "tsx": "^4.19.0",
     "turbo": "^2.3.0",
     "typescript": "^5.6.3"
   },

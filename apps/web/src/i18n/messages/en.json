@@ -1,0 +1,27 @@
+{
+  "common": {
+    "appName": "Conseiller Voyage",
+    "tagline": "Your travel project, in good hands."
+  },
+  "navigation": {
+    "home": "Home",
+    "howItWorks": "How it works",
+    "advisors": "Our advisors",
+    "login": "Sign in"
+  },
+  "home": {
+    "ctaPrimary": "Describe my project",
+    "ctaSecondary": "See how it works",
+    "trust": {
+      "verifiedAdvisors": "{count, plural, =0 {No verified advisors yet} =1 {1 verified advisor} other {# verified advisors}}",
+      "certificates": "CCV (Quebec) and TICO (Ontario) certificates",
+      "dataResidency": "Data hosted in Canada (Law 25)",
+      "freeForTravelers": "Free for travelers"
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "unauthorized": "You must be signed in to access this page.",
+    "notFound": "Page not found."
+  }
+}

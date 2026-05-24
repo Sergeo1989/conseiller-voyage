@@ -1,0 +1,80 @@
+// T017 — Schéma Auth.js v5 (NextAuth) pour Prisma Adapter.
+// Cf. ADR-0004 (session DB partagée Next.js / NestJS).
+//
+// Ces tables sont lues par :
+//   - apps/web via Auth.js (création/lecture de session, magic links)
+//   - apps/api via PrismaAuthSessionReader (validation côté API)
+//
+// Modèle aligné sur https://authjs.dev/reference/adapter/prisma
+
+model AuthUser {
+  id              String    @id @default(cuid())
+  email           String?   @unique
+  emailVerified   DateTime?
+  name            String?
+  image           String?
+  // Rôle métier — RBAC Principe IX. Ajouté par cette feature.
+  role            AuthRole  @default(conseiller)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  accounts        AuthAccount[]
+  sessions        AuthSession[]
+
+  @@map("auth_users")
+}
+
+enum AuthRole {
+  voyageur
+  conseiller
+  admin
+}
+
+model AuthAccount {
+  id                       String    @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String?   @db.Text
+  access_token             String?   @db.Text
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?   @db.Text
+  session_state            String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  user                     AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("auth_accounts")
+}
+
+model AuthSession {
+  id              String    @id @default(cuid())
+  sessionToken    String    @unique
+  userId          String
+  expires         DateTime
+  // Élévation MFA (Principe IX) — non-null après vérification TOTP/passkey
+  mfaVerifiedAt   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expires])
+  @@map("auth_sessions")
+}
+
+model AuthVerificationToken {
+  identifier      String
+  token           String    @unique
+  expires         DateTime
+
+  @@unique([identifier, token])
+  @@map("auth_verification_tokens")
+}

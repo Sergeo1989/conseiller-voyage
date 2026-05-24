@@ -15,8 +15,12 @@
     "test:a11y": "playwright test --grep @a11y"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.7.0",
+    "@cv/db": "workspace:*",
+    "@cv/shared": "workspace:*",
     "@sentry/nextjs": "^8.40.0",
     "next": "^15.0.0",
+    "next-auth": "5.0.0-beta.25",
     "next-intl": "^3.21.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

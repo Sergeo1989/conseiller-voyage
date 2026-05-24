@@ -1,19 +1,27 @@
-// Configuration next-intl — squelette créé en T009.
-// La configuration complète (chargement dynamique des catalogues, fallback, etc.)
-// sera mise en place en T030d (next-intl provider + middleware Next.js).
+// T030d — Configuration next-intl complète + application de la map d'erreurs
+// Zod FR-CA (T030f).
+
+import { applyFrCAZodErrorMap } from '@cv/shared/conformite';
 import { getRequestConfig } from 'next-intl/server';
 
 export const locales = ['fr-CA', 'en'] as const;
 export const defaultLocale = 'fr-CA' as const;
 export type Locale = (typeof locales)[number];
 
+// Application de la map d'erreurs Zod FR-CA — exécutée une seule fois au boot.
+applyFrCAZodErrorMap();
+
 export default getRequestConfig(async ({ locale }) => {
   const resolvedLocale = (locales as readonly string[]).includes(locale ?? '')
     ? (locale as Locale)
     : defaultLocale;
 
+  const messages = (
+    (await import(`./i18n/messages/${resolvedLocale}.json`)) as { default: Record<string, unknown> }
+  ).default;
+
   return {
     locale: resolvedLocale,
-    messages: {},
+    messages,
   };
 });

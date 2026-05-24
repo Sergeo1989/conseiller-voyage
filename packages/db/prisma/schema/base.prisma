@@ -1,0 +1,18 @@
+// Schéma Prisma racine — Conseiller Voyage
+// Multi-file schema activé (preview feature). Les schémas par module
+// (auth, conformité, intake, matching, facturation) sont co-localisés
+// dans ce répertoire et concaténés par Prisma au moment de generate/migrate.
+//
+// Ce paquet @cv/db est partagé par apps/api et apps/web — il abrite la
+// source unique de vérité du schéma de données et expose un PrismaClient
+// singleton consommable par les deux apps.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

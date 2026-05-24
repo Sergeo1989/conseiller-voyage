@@ -1,0 +1,27 @@
+{
+  "common": {
+    "appName": "Conseiller Voyage",
+    "tagline": "Votre projet de voyage, en de bonnes mains."
+  },
+  "navigation": {
+    "home": "Accueil",
+    "howItWorks": "Comment ça marche",
+    "advisors": "Nos conseillers",
+    "login": "Connexion"
+  },
+  "home": {
+    "ctaPrimary": "Décrire mon projet",
+    "ctaSecondary": "Voir comment ça marche",
+    "trust": {
+      "verifiedAdvisors": "{count, plural, =0 {Aucun conseiller vérifié pour l'instant} =1 {1 conseiller vérifié} other {# conseillers vérifiés}}",
+      "certificates": "Certificats CCV (Québec) et TICO (Ontario)",
+      "dataResidency": "Données hébergées au Canada (Loi 25)",
+      "freeForTravelers": "Gratuit pour les voyageurs"
+    }
+  },
+  "errors": {
+    "generic": "Une erreur est survenue. Veuillez réessayer.",
+    "unauthorized": "Vous devez être connecté pour accéder à cette page.",
+    "notFound": "Page introuvable."
+  }
+}
