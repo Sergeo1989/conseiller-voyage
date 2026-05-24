@@ -22,6 +22,143 @@
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "unauthorized": "You must be signed in to access this page.",
-    "notFound": "Page not found."
+    "forbidden": "You do not have permission to perform this action.",
+    "notFound": "Page not found.",
+    "validationFailed": "The form contains errors.",
+    "networkError": "The server is not responding. Please try again shortly."
+  },
+  "conformite": {
+    "shared": {
+      "statusPending": "Pending review",
+      "statusVerified": "Verified",
+      "statusSuspended": "Suspended",
+      "statusRevoked": "Revoked",
+      "decisionPending": "Pending",
+      "decisionApproved": "Approved",
+      "decisionRefused": "Refused",
+      "provinceQC": "Quebec (CCV)",
+      "provinceON": "Ontario (TICO)"
+    },
+    "conseiller": {
+      "overview": {
+        "title": "My compliance file",
+        "subtitle": "Current status and submitted documents.",
+        "currentStatus": "Current status",
+        "lastVerified": "Last verified",
+        "lastVerifiedNever": "Never (file pending)",
+        "consentGivenOn": "Consent given on {date}",
+        "consentMissing": "Consent not yet given",
+        "noDossier": "No compliance file has been opened yet. Start by submitting your documents.",
+        "ctaSubmit": "Submit my file",
+        "ctaRenew": "Submit a new file",
+        "certificatesSection": "My certificates",
+        "affiliationsSection": "My affiliations",
+        "certificateExpires": "Expires on {date}",
+        "expiringSoon": "Renewal required before {date}",
+        "noCertificates": "No certificates submitted.",
+        "noAffiliations": "No affiliations declared."
+      },
+      "submit": {
+        "title": "Submit my compliance file",
+        "intro": "Upload your provincial certificate (CCV or TICO) and proof of affiliation with an agency holding a valid permit.",
+        "step1Title": "1. Consent",
+        "step1Description": "Per Law 25 (Quebec), we require your explicit consent to process your compliance documents.",
+        "consentLabel": "I consent to Conseiller Voyage processing my compliance documents for verification.",
+        "step2Title": "2. Provincial certificate",
+        "addCertificate": "Add a certificate",
+        "removeCertificate": "Remove this certificate",
+        "certificateNumber": "Certificate number",
+        "issuedAt": "Issue date",
+        "expiresAt": "Expiry date",
+        "documentFile": "Document (PDF, JPG, PNG, HEIC, max 5 MB)",
+        "step3Title": "3. Agency affiliation",
+        "addAffiliation": "Add an affiliation",
+        "removeAffiliation": "Remove this affiliation",
+        "agencyName": "Agency name",
+        "agencyPermitNumber": "Agency permit number",
+        "agencyProvince": "Permit province",
+        "proofFile": "Affiliation proof (PDF, JPG, PNG, HEIC, max 5 MB)",
+        "role": "Your role (optional)",
+        "activeSince": "Affiliated since (optional)",
+        "step4Title": "4. Confirmation",
+        "step4Description": "Verify the information before submission. Once submitted, an administrator will review your file within 5 business days.",
+        "submitButton": "Submit my file",
+        "submittingButton": "Submitting...",
+        "successTitle": "File submitted",
+        "successMessage": "Your file has been received. You will be notified by email once an administrator has reviewed it.",
+        "errorConsentRequired": "You must consent before submitting.",
+        "errorMinCertificates": "At least one certificate is required.",
+        "errorMinAffiliations": "At least one affiliation is required.",
+        "errorFileTooLarge": "File exceeds the 5 MB limit.",
+        "errorInvalidFileType": "Unsupported file type. Use PDF, JPG, PNG or HEIC.",
+        "errorExpiresBeforeIssued": "Expiry date must be after the issue date."
+      }
+    },
+    "admin": {
+      "queue": {
+        "title": "Review queue",
+        "subtitle": "Submissions awaiting administrative decision.",
+        "filterByStatus": "Filter by status",
+        "tableHeaders": {
+          "submissionId": "Identifier",
+          "conseiller": "Advisor",
+          "submittedAt": "Submitted on",
+          "status": "Status",
+          "actions": "Actions"
+        },
+        "viewDetails": "Review",
+        "noResults": "No submissions match this filter.",
+        "pagination": {
+          "previous": "Previous",
+          "next": "Next",
+          "showing": "Showing {from}-{to} of {total}",
+          "page": "Page {current} of {total}"
+        }
+      },
+      "detail": {
+        "title": "Submission {submissionId}",
+        "submittedAt": "Submitted on {date}",
+        "certificatesSection": "Certificates",
+        "affiliationsSection": "Affiliations",
+        "viewDocument": "View document",
+        "viewProof": "View proof",
+        "currentDecision": "Current decision",
+        "noDecisionYet": "Awaiting decision",
+        "decisionReasonLabel": "Reason",
+        "actionsTitle": "Actions",
+        "approveButton": "Approve submission",
+        "approveCommentLabel": "Comment (optional)",
+        "approveCommentPlaceholder": "Internal notes on this decision...",
+        "approveCommentHelp": "500 characters maximum.",
+        "approveSuccess": "Submission approved. The advisor will move to verified status.",
+        "refuseButton": "Refuse submission",
+        "refuseReasonLabel": "Refusal reason",
+        "refuseReasonHelp": "At least 20 characters. Will be communicated to the advisor.",
+        "refuseReasonTooShort": "Reason must contain at least 20 characters.",
+        "refuseSuccess": "Submission refused. The advisor can re-submit.",
+        "alreadyDecided": "This submission has already been decided.",
+        "backToQueue": "Back to queue"
+      }
+    }
+  },
+  "email": {
+    "approved": {
+      "subject": "Your compliance file has been approved",
+      "greeting": "Hello,",
+      "body": "Your compliance file submitted on {submittedAt} has been approved by our team.",
+      "bodyWithComment": "Your compliance file submitted on {submittedAt} has been approved by our team. Administrator comment: {comment}",
+      "ctaText": "View my advisor dashboard",
+      "ctaUrl": "{baseUrl}/{locale}/conseiller/conformite",
+      "footer": "Conseiller Voyage — all your data is hosted in Canada (Law 25)."
+    },
+    "refused": {
+      "subject": "Your compliance file requires corrections",
+      "greeting": "Hello,",
+      "body": "Your compliance file submitted on {submittedAt} cannot be validated as-is.",
+      "reasonLabel": "Reason from the administrator:",
+      "ctaText": "Submit a corrected file",
+      "ctaUrl": "{baseUrl}/{locale}/conseiller/conformite/soumettre",
+      "footer": "Conseiller Voyage — all your data is hosted in Canada (Law 25)."
+    }
   }
 }

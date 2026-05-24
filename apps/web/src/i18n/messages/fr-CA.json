@@ -22,6 +22,143 @@
   "errors": {
     "generic": "Une erreur est survenue. Veuillez réessayer.",
     "unauthorized": "Vous devez être connecté pour accéder à cette page.",
-    "notFound": "Page introuvable."
+    "forbidden": "Vous n'avez pas la permission d'effectuer cette action.",
+    "notFound": "Page introuvable.",
+    "validationFailed": "Le formulaire contient des erreurs.",
+    "networkError": "Le serveur ne répond pas. Réessayez dans un instant."
+  },
+  "conformite": {
+    "shared": {
+      "statusPending": "En attente de revue",
+      "statusVerified": "Vérifié",
+      "statusSuspended": "Suspendu",
+      "statusRevoked": "Révoqué",
+      "decisionPending": "En attente",
+      "decisionApproved": "Approuvé",
+      "decisionRefused": "Refusé",
+      "provinceQC": "Québec (CCV)",
+      "provinceON": "Ontario (TICO)"
+    },
+    "conseiller": {
+      "overview": {
+        "title": "Mon dossier de conformité",
+        "subtitle": "Statut actuel et documents soumis.",
+        "currentStatus": "Statut courant",
+        "lastVerified": "Dernière vérification",
+        "lastVerifiedNever": "Jamais (dossier en attente)",
+        "consentGivenOn": "Consentement donné le {date}",
+        "consentMissing": "Consentement non encore donné",
+        "noDossier": "Aucun dossier de conformité n'a encore été ouvert. Commencez par soumettre vos documents.",
+        "ctaSubmit": "Soumettre mon dossier",
+        "ctaRenew": "Soumettre un nouveau dossier",
+        "certificatesSection": "Mes certificats",
+        "affiliationsSection": "Mes affiliations",
+        "certificateExpires": "Expire le {date}",
+        "expiringSoon": "Renouvellement requis avant le {date}",
+        "noCertificates": "Aucun certificat soumis.",
+        "noAffiliations": "Aucune affiliation déclarée."
+      },
+      "submit": {
+        "title": "Soumettre mon dossier de conformité",
+        "intro": "Téléversez votre certificat provincial (CCV ou TICO) et une preuve d'affiliation à une agence titulaire d'un permis valide.",
+        "step1Title": "1. Consentement",
+        "step1Description": "Conformément à la Loi 25 (Québec), nous avons besoin de votre consentement explicite pour traiter vos documents de conformité.",
+        "consentLabel": "Je consens au traitement de mes documents de conformité par Conseiller Voyage pour vérification.",
+        "step2Title": "2. Certificat provincial",
+        "addCertificate": "Ajouter un certificat",
+        "removeCertificate": "Retirer ce certificat",
+        "certificateNumber": "Numéro de certificat",
+        "issuedAt": "Date d'émission",
+        "expiresAt": "Date d'expiration",
+        "documentFile": "Document (PDF, JPG, PNG, HEIC, max 5 Mo)",
+        "step3Title": "3. Affiliation à une agence",
+        "addAffiliation": "Ajouter une affiliation",
+        "removeAffiliation": "Retirer cette affiliation",
+        "agencyName": "Nom de l'agence",
+        "agencyPermitNumber": "Numéro de permis de l'agence",
+        "agencyProvince": "Province du permis",
+        "proofFile": "Preuve d'affiliation (PDF, JPG, PNG, HEIC, max 5 Mo)",
+        "role": "Votre rôle (optionnel)",
+        "activeSince": "Affiliation depuis (optionnel)",
+        "step4Title": "4. Confirmation",
+        "step4Description": "Vérifiez les informations avant la soumission. Une fois envoyé, un administrateur examinera votre dossier sous 5 jours ouvrables.",
+        "submitButton": "Soumettre mon dossier",
+        "submittingButton": "Envoi en cours...",
+        "successTitle": "Dossier soumis",
+        "successMessage": "Votre dossier a bien été reçu. Vous serez notifié par courriel dès qu'un administrateur l'aura examiné.",
+        "errorConsentRequired": "Vous devez consentir avant de soumettre.",
+        "errorMinCertificates": "Au moins un certificat est requis.",
+        "errorMinAffiliations": "Au moins une affiliation est requise.",
+        "errorFileTooLarge": "Le fichier dépasse la limite de 5 Mo.",
+        "errorInvalidFileType": "Type de fichier non supporté. Utilisez PDF, JPG, PNG ou HEIC.",
+        "errorExpiresBeforeIssued": "La date d'expiration doit être postérieure à la date d'émission."
+      }
+    },
+    "admin": {
+      "queue": {
+        "title": "File de revue",
+        "subtitle": "Dossiers soumis en attente de décision administrative.",
+        "filterByStatus": "Filtrer par statut",
+        "tableHeaders": {
+          "submissionId": "Identifiant",
+          "conseiller": "Conseiller",
+          "submittedAt": "Soumis le",
+          "status": "Statut",
+          "actions": "Actions"
+        },
+        "viewDetails": "Examiner",
+        "noResults": "Aucun dossier ne correspond à ce filtre.",
+        "pagination": {
+          "previous": "Précédent",
+          "next": "Suivant",
+          "showing": "Affichage {from}-{to} sur {total}",
+          "page": "Page {current} sur {total}"
+        }
+      },
+      "detail": {
+        "title": "Dossier {submissionId}",
+        "submittedAt": "Soumis le {date}",
+        "certificatesSection": "Certificats",
+        "affiliationsSection": "Affiliations",
+        "viewDocument": "Voir le document",
+        "viewProof": "Voir la preuve",
+        "currentDecision": "Décision actuelle",
+        "noDecisionYet": "En attente de décision",
+        "decisionReasonLabel": "Motif",
+        "actionsTitle": "Actions",
+        "approveButton": "Approuver le dossier",
+        "approveCommentLabel": "Commentaire (optionnel)",
+        "approveCommentPlaceholder": "Notes internes sur cette décision...",
+        "approveCommentHelp": "500 caractères maximum.",
+        "approveSuccess": "Dossier approuvé. Le conseiller passera en statut vérifié.",
+        "refuseButton": "Refuser le dossier",
+        "refuseReasonLabel": "Motif du refus",
+        "refuseReasonHelp": "Minimum 20 caractères. Sera communiqué au conseiller.",
+        "refuseReasonTooShort": "Le motif doit contenir au moins 20 caractères.",
+        "refuseSuccess": "Dossier refusé. Le conseiller pourra re-soumettre.",
+        "alreadyDecided": "Ce dossier a déjà été décidé.",
+        "backToQueue": "Retour à la file"
+      }
+    }
+  },
+  "email": {
+    "approved": {
+      "subject": "Votre dossier de conformité a été approuvé",
+      "greeting": "Bonjour,",
+      "body": "Votre dossier de conformité soumis le {submittedAt} a été approuvé par notre équipe.",
+      "bodyWithComment": "Votre dossier de conformité soumis le {submittedAt} a été approuvé par notre équipe. Commentaire de l'administrateur : {comment}",
+      "ctaText": "Consulter mon espace conseiller",
+      "ctaUrl": "{baseUrl}/{locale}/conseiller/conformite",
+      "footer": "Conseiller Voyage — toutes vos données sont hébergées au Canada (Loi 25)."
+    },
+    "refused": {
+      "subject": "Votre dossier de conformité requiert des corrections",
+      "greeting": "Bonjour,",
+      "body": "Votre dossier de conformité soumis le {submittedAt} ne peut être validé en l'état.",
+      "reasonLabel": "Motif communiqué par l'administrateur :",
+      "ctaText": "Soumettre un dossier corrigé",
+      "ctaUrl": "{baseUrl}/{locale}/conseiller/conformite/soumettre",
+      "footer": "Conseiller Voyage — toutes vos données sont hébergées au Canada (Loi 25)."
+    }
   }
 }
