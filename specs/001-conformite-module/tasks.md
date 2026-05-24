@@ -135,7 +135,7 @@ description: "Tâches d'implémentation — Module Conformité"
 
 ### Infrastructure (adaptateurs)
 
-- [ ] T056 [P] [US1] Prisma schema entities (ConseillerCompliance, Certificat, Affiliation, PermitRevocation, AuditEntry, UploadIntent, OutboxEntry) — édition `apps/api/prisma/schema.prisma`
+- [x] T056 [P] [US1] Prisma schema entities (ConseillerCompliance, Certificat, Affiliation, PermitRevocation, AuditEntry, UploadIntent, OutboxEntry) — édition `apps/api/prisma/schema.prisma`
 - [ ] T057 [US1] Migration Prisma initiale (créer toutes les tables `conformite_*`) — `apps/api/prisma/migrations/0001_init_conformite/migration.sql`
 - [ ] T058 [P] [US1] Migration SQL pour rôle DB `app_conformite` (privilèges restreints, REVOKE UPDATE/DELETE sur `conformite_audit_entries`) — `apps/api/prisma/migrations/0000_setup_db_roles/migration.sql`
 - [ ] T059 [US1] Migration SQL pour trigger PostgreSQL `conformite_audit_block_modifications` (audit append-only — R2) — `apps/api/prisma/migrations/0002_audit_append_only/migration.sql`
