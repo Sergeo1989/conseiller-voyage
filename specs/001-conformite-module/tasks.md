@@ -258,8 +258,8 @@ description: "Tâches d'implémentation — Module Conformité"
 - [x] T117 [P] S3 lifecycle policy CDK construct (abort incomplete multipart 1d, transition Glacier 24mo, supprime orphan intents) — édition `infra/cdk/cv-prod-stack.ts`
 - [x] T118 [P] Grafana dashboard JSON pour métriques conformité (SLA admin, latence propagation, file pending, cascades, échecs job, profondeur outbox) dans `docs/dashboards/conformite.json`
 - [x] T119 [P] Grafana alerts (WARN file pending > 5j ouvrables ; CRITICAL latence propagation négative > 10s ; CRITICAL job d'expiration en échec 2 jours consécutifs ; WARN profondeur outbox > 100) dans `docs/dashboards/conformite-alerts.yaml`
-- [ ] T120 [P] axe-core tests automatiques sur pages conseiller + admin (WCAG 2.1 AA) dans `apps/web/test/a11y/conformite.spec.ts`
-- [ ] T121 [P] Lighthouse CI config + baseline pour pages conseiller + admin (LCP, INP, CLS, JS budget) dans `lighthouserc.json`
+- [x] T120 [P] axe-core tests automatiques sur pages conseiller + admin (WCAG 2.1 AA) dans `apps/web/test/a11y/conformite.spec.ts`
+- [x] T121 [P] Lighthouse CI config + baseline pour pages conseiller + admin (LCP, INP, CLS, JS budget) dans `lighthouserc.json`
 - [ ] T122 README du module conformité + lien vers dashboard Grafana + lien vers spec/plan/research dans `apps/api/src/modules/conformite/README.md`
 - [ ] T123 Validate `quickstart.md` end-to-end manuellement (suivre le parcours sur staging)
 - [ ] T124 Run `/speckit.analyze` pour vérifier la cohérence cross-artefacts (spec ↔ plan ↔ tasks)
