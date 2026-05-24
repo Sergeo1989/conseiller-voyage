@@ -223,8 +223,8 @@ description: "Tâches d'implémentation — Module Conformité"
 
 **Independent Test** : admin déclenche révocation → statut bascule à `revoked`, notification conseiller, événement journalisé, conseiller invisible des matchings.
 
-- [ ] T102 [P] [US4] Test `RevokeConseillerUseCase` (motif ≥ 20 chars, transition vers `revoked`, irréversible, OutboxEntry) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/revoke-conseiller.test.ts`
-- [ ] T103 [US4] Implement `RevokeConseillerUseCase` dans `apps/api/src/modules/conformite/application/use-cases/revoke-conseiller.use-case.ts`
+- [x] T102 [P] [US4] Test `RevokeConseillerUseCase` (motif ≥ 20 chars, transition vers `revoked`, irréversible, OutboxEntry) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/revoke-conseiller.test.ts`
+- [x] T103 [US4] Implement `RevokeConseillerUseCase` dans `apps/api/src/modules/conformite/application/use-cases/revoke-conseiller.use-case.ts`
 - [ ] T104 [US4] AdminConformiteController POST `/admin/conseillers/:id/revoke` endpoint dans `apps/api/src/modules/conformite/interface/http/admin-conformite.controller.ts` (UPDATE existant)
 - [ ] T105 [US4] Page admin détail conseiller avec action « Révoquer » (modal avec textarea motif ≥ 20 chars) dans `apps/web/src/app/(admin)/conformite/conseillers/[id]/page.tsx`
 - [ ] T106 [US4] Playwright e2e : admin révoque conseiller `verified` → statut `revoked` + invisible du port public en < 10 s dans `apps/api/test/e2e/conformite-us4.spec.ts`
