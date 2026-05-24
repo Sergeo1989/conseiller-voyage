@@ -32,6 +32,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ZodValidationPipe } from '../../../../common/pipes/zod-validation.pipe';
 import type { AuthenticatedUser } from '../../../identite/application/ports/auth-session-reader.port';
 import { AuthGuard } from '../../../identite/interface/auth.guard';
@@ -59,6 +60,7 @@ interface AuthenticatedRequest extends Request {
   user?: AuthenticatedUser;
 }
 
+@ApiTags('conformite-admin')
 @Controller('api/conformite/admin')
 @UseGuards(AuthGuard)
 export class AdminConformiteController {
@@ -69,6 +71,9 @@ export class AdminConformiteController {
     private readonly refuseDossier: RefuseDossierUseCase,
   ) {}
 
+  @ApiOperation({ summary: 'File de revue paginée (FR-003).' })
+  @ApiResponse({ status: 200, description: 'Liste des soumissions filtrées par statut.' })
+  @ApiResponse({ status: 401, description: 'Session absente ou role !== admin.' })
   @Get('queue')
   async getQueue(
     @Req() req: AuthenticatedRequest,
@@ -93,6 +98,11 @@ export class AdminConformiteController {
     };
   }
 
+  @ApiOperation({
+    summary: "Détail d'une soumission + URLs S3 GET signées (R5 attachment).",
+  })
+  @ApiResponse({ status: 200, description: 'Soumission complète prête à examiner.' })
+  @ApiResponse({ status: 404, description: 'Soumission introuvable.' })
   @Get('submissions/:submissionId')
   async getSubmissionDetail(
     @Req() req: AuthenticatedRequest,
@@ -146,6 +156,9 @@ export class AdminConformiteController {
     };
   }
 
+  @ApiOperation({ summary: 'Approuve une soumission (US1, FR-004).' })
+  @ApiResponse({ status: 200, description: 'Soumission approuvée, statut conformité recalculé.' })
+  @ApiResponse({ status: 409, description: 'Soumission déjà décidée.' })
   @Post('submissions/:submissionId/approve')
   @HttpCode(HttpStatus.OK)
   async approve(
@@ -163,6 +176,10 @@ export class AdminConformiteController {
     return { ok: true };
   }
 
+  @ApiOperation({ summary: 'Refuse une soumission avec motif ≥ 20 chars (FR-004).' })
+  @ApiResponse({ status: 200, description: 'Soumission refusée, conseiller peut re-soumettre.' })
+  @ApiResponse({ status: 400, description: 'Motif < 20 caractères.' })
+  @ApiResponse({ status: 409, description: 'Soumission déjà décidée.' })
   @Post('submissions/:submissionId/refuse')
   @HttpCode(HttpStatus.OK)
   async refuse(

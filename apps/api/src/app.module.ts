@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { LoggerModule } from './common/logger.module';
 import { ThrottlerModule } from './common/throttler.module';
 import { HealthModule } from './health/health.module';
+import { ConformiteModule } from './modules/conformite/interface/conformite.module';
 import { IdentiteModule } from './modules/identite/identite.module';
 import { BullMqModule } from './queue/bullmq.module';
 
@@ -12,7 +13,14 @@ import { BullMqModule } from './queue/bullmq.module';
  * Cf. constitution Principe V — monolithe modulaire.
  */
 @Module({
-  imports: [LoggerModule, ThrottlerModule, BullMqModule, IdentiteModule, HealthModule],
+  imports: [
+    LoggerModule,
+    ThrottlerModule,
+    BullMqModule,
+    IdentiteModule,
+    HealthModule,
+    ConformiteModule,
+  ],
   controllers: [],
   providers: [],
 })

@@ -154,8 +154,8 @@ description: "Tâches d'implémentation — Module Conformité"
 - [x] T069 [P] [US1] DTOs `AdminConformiteController` dans `apps/api/src/modules/conformite/interface/http/dto/admin.dto.ts`
 - [x] T070 [US1] `ConseillerConformiteController` (POST `/me/upload-urls`, POST `/me/submissions`, GET `/me`) dans `apps/api/src/modules/conformite/interface/http/conseiller-conformite.controller.ts`
 - [x] T071 [US1] `AdminConformiteController` (GET `/admin/queue`, GET `/admin/submissions/:id`, POST `approve`, POST `refuse`) dans `apps/api/src/modules/conformite/interface/http/admin-conformite.controller.ts`
-- [ ] T072 [US1] `ConformiteModule` NestJS DI wiring (use cases ↔ ports ↔ adapters) dans `apps/api/src/modules/conformite/interface/conformite.module.ts`
-- [ ] T073 [US1] Add `@nestjs/swagger` annotations sur les contrôleurs + génération OpenAPI à `/api/docs` (dev/staging only)
+- [x] T072 [US1] `ConformiteModule` NestJS DI wiring (use cases ↔ ports ↔ adapters) dans `apps/api/src/modules/conformite/interface/conformite.module.ts`
+- [x] T073 [US1] Add `@nestjs/swagger` annotations sur les contrôleurs + génération OpenAPI à `/api/docs` (dev/staging only)
 
 ### Frontend Next.js
 

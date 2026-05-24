@@ -34,6 +34,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ZodValidationPipe } from '../../../../common/pipes/zod-validation.pipe';
 import type { AuthenticatedUser } from '../../../identite/application/ports/auth-session-reader.port';
 import { AuthGuard } from '../../../identite/interface/auth.guard';
@@ -57,6 +58,7 @@ interface AuthenticatedRequest extends Request {
   user?: AuthenticatedUser;
 }
 
+@ApiTags('conformite-conseiller')
 @Controller('api/conformite/me')
 @UseGuards(AuthGuard)
 export class ConseillerConformiteController {
@@ -66,6 +68,12 @@ export class ConseillerConformiteController {
     @Inject(CONFORMITE_READER) private readonly reader: ConformiteReader,
   ) {}
 
+  @ApiOperation({
+    summary: 'Demande N URLs signées S3 pour téléverser les documents avant soumission (B2).',
+  })
+  @ApiResponse({ status: 200, description: 'URLs générées + UploadIntents persistés.' })
+  @ApiResponse({ status: 400, description: 'Validation Zod échouée (FR-021).' })
+  @ApiResponse({ status: 401, description: 'Session absente ou role !== conseiller.' })
   @Post('upload-urls')
   @HttpCode(HttpStatus.OK)
   async postUploadUrls(
@@ -88,6 +96,10 @@ export class ConseillerConformiteController {
     };
   }
 
+  @ApiOperation({ summary: 'Soumet un dossier complet (US1, FR-001/FR-016/FR-021).' })
+  @ApiResponse({ status: 201, description: 'Dossier accepté, en attente de revue admin.' })
+  @ApiResponse({ status: 400, description: 'Validation Zod ou UploadIntent invalide.' })
+  @ApiResponse({ status: 401, description: 'Session absente ou role !== conseiller.' })
   @Post('submissions')
   @HttpCode(HttpStatus.CREATED)
   async postSubmission(
@@ -120,6 +132,9 @@ export class ConseillerConformiteController {
     return { submissionId: result.submissionId, status: 'pending' };
   }
 
+  @ApiOperation({ summary: 'Lit le dossier du conseiller authentifié (US5, FR-013).' })
+  @ApiResponse({ status: 200, description: 'Dossier complet (statut, certs, affils).' })
+  @ApiResponse({ status: 404, description: 'Aucun dossier en DB pour ce conseiller.' })
   @Get()
   async getDossier(@Req() req: AuthenticatedRequest): Promise<GetConseillerDossierResponseDto> {
     const user = this.assertConseiller(req);
