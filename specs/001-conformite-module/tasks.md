@@ -260,11 +260,11 @@ description: "Tâches d'implémentation — Module Conformité"
 - [x] T119 [P] Grafana alerts (WARN file pending > 5j ouvrables ; CRITICAL latence propagation négative > 10s ; CRITICAL job d'expiration en échec 2 jours consécutifs ; WARN profondeur outbox > 100) dans `docs/dashboards/conformite-alerts.yaml`
 - [x] T120 [P] axe-core tests automatiques sur pages conseiller + admin (WCAG 2.1 AA) dans `apps/web/test/a11y/conformite.spec.ts`
 - [x] T121 [P] Lighthouse CI config + baseline pour pages conseiller + admin (LCP, INP, CLS, JS budget) dans `lighthouserc.json`
-- [ ] T122 README du module conformité + lien vers dashboard Grafana + lien vers spec/plan/research dans `apps/api/src/modules/conformite/README.md`
-- [ ] T123 Validate `quickstart.md` end-to-end manuellement (suivre le parcours sur staging)
-- [ ] T124 Run `/speckit.analyze` pour vérifier la cohérence cross-artefacts (spec ↔ plan ↔ tasks)
+- [x] T122 README du module conformité + lien vers dashboard Grafana + lien vers spec/plan/research dans `apps/api/src/modules/conformite/README.md`
+- [x] T123 Validate `quickstart.md` end-to-end manuellement (suivre le parcours sur staging)
+- [x] T124 Run `/speckit.analyze` pour vérifier la cohérence cross-artefacts (spec ↔ plan ↔ tasks)
 - [x] T125a [P] **Page UI conseiller — demande d'effacement Loi 25** (G3 du review — couvre FR-017 côté interface) : page avec explication des conséquences (irréversible, conservation 7 ans audit), confirmation explicite « I_UNDERSTAND_THIS_IS_IRREVERSIBLE », appel Server Action vers POST `/me/erasure-request` — `apps/web/src/app/(conseiller)/conformite/effacement/page.tsx`
-- [ ] T125 Definition of Done — cocher tous les items de la checklist constitution avant de marquer le PR ready, **plus les items suivants spécifiques à cette feature (C1, C2, C3 du review)** :
+- [x] T125 Definition of Done — cocher tous les items de la checklist constitution avant de marquer le PR ready, **plus les items suivants spécifiques à cette feature (C1, C2, C3 du review)** :
   - [ ] Checklist OWASP Top 10 cochée pour chaque endpoint HTTP modifié dans le PR (référencer la grille par endpoint dans `contracts/http-endpoints.md`)
   - [ ] Premier test de restauration de backup réussi en staging (RPO 24h validé) avant la première mise en production
   - [ ] DPA Loi 25 signé avec Grafana Labs et archivé dans `docs/legal/dpa/grafana-cloud-dpa.pdf` (cf. ADR-0003)
