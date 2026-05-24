@@ -85,6 +85,25 @@ export class FakeConformiteRepository implements ConformiteReader, ConformiteWri
     return Promise.resolve(this.compliances.get(id) ?? null);
   }
 
+  listVerifiedCompliances(): Promise<ReadonlyArray<ConseillerCompliance>> {
+    return Promise.resolve(
+      [...this.compliances.values()].filter(
+        (c) => c.status === 'verified' && c.anonymizedAt === null,
+      ),
+    );
+  }
+
+  findVerifiedByConseillerId(id: ConseillerId): Promise<ConseillerCompliance | null> {
+    const complianceId = this.compliancesByConseillerId.get(id);
+    if (!complianceId) return Promise.resolve(null);
+    const compliance = this.compliances.get(complianceId);
+    if (!compliance) return Promise.resolve(null);
+    if (compliance.status !== 'verified' || compliance.anonymizedAt !== null) {
+      return Promise.resolve(null);
+    }
+    return Promise.resolve(compliance);
+  }
+
   listCertificatsForCompliance(id: ConseillerComplianceId): Promise<ReadonlyArray<Certificat>> {
     return Promise.resolve(
       [...this.certificats.values()].filter((c) => c.conseillerComplianceId === id),

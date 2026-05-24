@@ -64,6 +64,26 @@ export class PrismaConformiteRepository implements ConformiteReader, ConformiteW
     return row ? this.mapCompliance(row) : null;
   }
 
+  /**
+   * FR-007 / U1 — filtre matériel verified + non anonymisé.
+   * Aucune autre méthode de lecture publique ne peut court-circuiter
+   * ce filtre — c'est l'unique porte de sortie vers les consommateurs
+   * externes (matching, SEO, port public US3).
+   */
+  async listVerifiedCompliances(): Promise<ReadonlyArray<ConseillerCompliance>> {
+    const rows = await prisma.conseillerCompliance.findMany({
+      where: { status: 'verified', anonymizedAt: null },
+    });
+    return rows.map((r) => this.mapCompliance(r));
+  }
+
+  async findVerifiedByConseillerId(id: ConseillerId): Promise<ConseillerCompliance | null> {
+    const row = await prisma.conseillerCompliance.findFirst({
+      where: { conseillerId: id, status: 'verified', anonymizedAt: null },
+    });
+    return row ? this.mapCompliance(row) : null;
+  }
+
   async listCertificatsForCompliance(
     id: ConseillerComplianceId,
   ): Promise<ReadonlyArray<Certificat>> {

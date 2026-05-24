@@ -30,6 +30,17 @@ export interface ConformiteReader {
   findComplianceByConseillerId(id: ConseillerId): Promise<ConseillerCompliance | null>;
   findComplianceById(id: ConseillerComplianceId): Promise<ConseillerCompliance | null>;
 
+  /**
+   * FR-007 / U1 du review — filtre matériel à appliquer pour TOUTE
+   * exposition publique d'un conseiller (matching, SEO, port public US3).
+   * Retourne UNIQUEMENT les compliances avec status='verified' AND
+   * anonymizedAt IS NULL. Aucun autre statut (pending/suspended/revoked)
+   * ne peut atteindre une fonctionnalité externe sans passer par ce
+   * filtre — test invariant T081a vérifie le contrat.
+   */
+  listVerifiedCompliances(): Promise<ReadonlyArray<ConseillerCompliance>>;
+  findVerifiedByConseillerId(id: ConseillerId): Promise<ConseillerCompliance | null>;
+
   listCertificatsForCompliance(id: ConseillerComplianceId): Promise<ReadonlyArray<Certificat>>;
   listAffiliationsForCompliance(id: ConseillerComplianceId): Promise<ReadonlyArray<Affiliation>>;
 
