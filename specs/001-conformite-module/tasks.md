@@ -189,11 +189,11 @@ description: "Tâches d'implémentation — Module Conformité"
 - [x] T083 [P] [US2] Test `PropagateExpirationsUseCase` (bascule vers `suspended` après expiration totale) dans `apps/api/src/modules/conformite/application/use-cases/__tests__/propagate-expirations.test.ts`
 - [x] T084 [US2] Implement `SendExpirationRemindersUseCase` dans `apps/api/src/modules/conformite/application/use-cases/send-expiration-reminders.use-case.ts`
 - [x] T085 [US2] Implement `PropagateExpirationsUseCase` dans `apps/api/src/modules/conformite/application/use-cases/propagate-expirations.use-case.ts`
-- [ ] T086 [P] [US2] `ExpirationSweepJob` BullMQ scheduled quotidiennement à 02:00 (ca-central-1) dans `apps/api/src/modules/conformite/infrastructure/jobs/expiration-sweep.job.ts`
-- [ ] T087 [P] [US2] `ReminderFanoutJob` (un job par conseiller, idempotent) dans `apps/api/src/modules/conformite/infrastructure/jobs/reminder-fanout.job.ts`
-- [ ] T088 [P] [US2] Templates react-email (rappel J-60, J-30, J-7) **avec signature `({ locale, ...props })`** (B3 du review itération 2 — Principe IV) : messages via clés i18n + formats date via `formatDate` de T030g, dans `packages/shared/email/templates/conformite/`
-- [ ] T089 [US2] Page conseiller renouvellement (re-soumission documents) dans `apps/web/src/app/(conseiller)/conformite/renouveler/page.tsx`
-- [ ] T090 [US2] Playwright e2e avec horloge injectée : créer cert expirant J-1 → run job → vérifier statut `suspended` dans `apps/api/test/e2e/conformite-us2.spec.ts`
+- [x] T086 [P] [US2] `ExpirationSweepJob` BullMQ scheduled quotidiennement à 02:00 (ca-central-1) dans `apps/api/src/modules/conformite/infrastructure/jobs/expiration-sweep.job.ts`
+- [x] T087 [P] [US2] `ReminderFanoutJob` (un job par conseiller, idempotent) dans `apps/api/src/modules/conformite/infrastructure/jobs/reminder-fanout.job.ts`
+- [x] T088 [P] [US2] Templates react-email (rappel J-60, J-30, J-7) **avec signature `({ locale, ...props })`** (B3 du review itération 2 — Principe IV) : messages via clés i18n + formats date via `formatDate` de T030g, dans `packages/shared/email/templates/conformite/`
+- [x] T089 [US2] Page conseiller renouvellement (re-soumission documents) dans `apps/web/src/app/(conseiller)/conformite/renouveler/page.tsx`
+- [x] T090 [US2] Playwright e2e avec horloge injectée : créer cert expirant J-1 → run job → vérifier statut `suspended` dans `apps/api/test/e2e/conformite-us2.spec.ts`
 
 ---
 

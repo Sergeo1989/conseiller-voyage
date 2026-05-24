@@ -2,3 +2,4 @@
 
 export * from './dossier-approved';
 export * from './dossier-refused';
+export * from './expiration-reminder';
