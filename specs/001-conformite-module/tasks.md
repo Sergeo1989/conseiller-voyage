@@ -101,22 +101,22 @@ description: "Tâches d'implémentation — Module Conformité"
 
 > Cycle Red-Green-Refactor obligatoire pour les fonctions pures et les use cases métier sensibles. Tests commités séparément des implémentations.
 
-- [ ] T031 [P] [US1] Test `isTransitionAllowed` (cas nominal + cas d'erreur pour chaque transition de la machine d'état) dans `apps/api/src/modules/conformite/domain/services/__tests__/is-transition-allowed.test.ts`
-- [ ] T032 [P] [US1] Test `computeConformiteStatus` (cas nominal, cas d'erreur, conseiller sans cert, multi-affiliation, cert expiré) dans `apps/api/src/modules/conformite/domain/services/__tests__/compute-conformite-status.test.ts`
+- [x] T031 [P] [US1] Test `isTransitionAllowed` (cas nominal + cas d'erreur pour chaque transition de la machine d'état) dans `apps/api/src/modules/conformite/domain/services/__tests__/is-transition-allowed.test.ts`
+- [x] T032 [P] [US1] Test `computeConformiteStatus` (cas nominal, cas d'erreur, conseiller sans cert, multi-affiliation, cert expiré) dans `apps/api/src/modules/conformite/domain/services/__tests__/compute-conformite-status.test.ts`
 - [ ] T033 [P] [US1] Test `validateDossierSubmission` (Zod + règles métier : ≥1 certificat, ≥1 affiliation, consentement obligatoire) dans `apps/api/src/modules/conformite/application/__tests__/validate-dossier-submission.test.ts`
 
 ### Domain (couche pure — zéro framework)
 
-- [ ] T034 [P] [US1] `ConformiteStatus` value object (4 valeurs + méthodes `isVerified`, `isFinal`) dans `apps/api/src/modules/conformite/domain/value-objects/conformite-status.vo.ts`
-- [ ] T035 [P] [US1] `Province` value object (`QC` | `ON`) dans `apps/api/src/modules/conformite/domain/value-objects/province.vo.ts`
-- [ ] T036 [P] [US1] `PermitNumber` value object (normalisation + validation format provincial) dans `apps/api/src/modules/conformite/domain/value-objects/permit-number.vo.ts`
-- [ ] T037 [P] [US1] `ConseillerCompliance` entity (avec invariants métier) dans `apps/api/src/modules/conformite/domain/entities/conseiller-compliance.entity.ts`
-- [ ] T038 [P] [US1] `Certificat` entity (avec invariants `decision === 'refused' ⇒ reason ≥ 20 chars`) dans `apps/api/src/modules/conformite/domain/entities/certificat.entity.ts`
-- [ ] T039 [P] [US1] `Affiliation` entity dans `apps/api/src/modules/conformite/domain/entities/affiliation.entity.ts`
-- [ ] T040 [P] [US1] `AuditEntry` entity dans `apps/api/src/modules/conformite/domain/entities/audit-entry.entity.ts`
-- [ ] T041 [P] [US1] Domain events (`ConformiteStatusChanged`, `DossierSubmitted`, `DossierDecided`) dans `apps/api/src/modules/conformite/domain/events/`
-- [ ] T042 [US1] Implement `isTransitionAllowed` fonction pure (GREEN contre T031) dans `apps/api/src/modules/conformite/domain/services/is-transition-allowed.ts`
-- [ ] T043 [US1] Implement `computeConformiteStatus` fonction pure (GREEN contre T032) dans `apps/api/src/modules/conformite/domain/services/compute-conformite-status.ts`
+- [x] T034 [P] [US1] `ConformiteStatus` value object (4 valeurs + méthodes `isVerified`, `isFinal`) dans `apps/api/src/modules/conformite/domain/value-objects/conformite-status.vo.ts`
+- [x] T035 [P] [US1] `Province` value object (`QC` | `ON`) dans `apps/api/src/modules/conformite/domain/value-objects/province.vo.ts`
+- [x] T036 [P] [US1] `PermitNumber` value object (normalisation + validation format provincial) dans `apps/api/src/modules/conformite/domain/value-objects/permit-number.vo.ts`
+- [x] T037 [P] [US1] `ConseillerCompliance` entity (avec invariants métier) dans `apps/api/src/modules/conformite/domain/entities/conseiller-compliance.entity.ts`
+- [x] T038 [P] [US1] `Certificat` entity (avec invariants `decision === 'refused' ⇒ reason ≥ 20 chars`) dans `apps/api/src/modules/conformite/domain/entities/certificat.entity.ts`
+- [x] T039 [P] [US1] `Affiliation` entity dans `apps/api/src/modules/conformite/domain/entities/affiliation.entity.ts`
+- [x] T040 [P] [US1] `AuditEntry` entity dans `apps/api/src/modules/conformite/domain/entities/audit-entry.entity.ts`
+- [x] T041 [P] [US1] Domain events (`ConformiteStatusChanged`, `DossierSubmitted`, `DossierDecided`) dans `apps/api/src/modules/conformite/domain/events/`
+- [x] T042 [US1] Implement `isTransitionAllowed` fonction pure (GREEN contre T031) dans `apps/api/src/modules/conformite/domain/services/is-transition-allowed.ts`
+- [x] T043 [US1] Implement `computeConformiteStatus` fonction pure (GREEN contre T032) dans `apps/api/src/modules/conformite/domain/services/compute-conformite-status.ts`
 
 ### Application (ports + cas d'usage)
 
