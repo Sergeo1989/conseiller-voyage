@@ -139,7 +139,7 @@ description: "Tâches d'implémentation — Module Conformité"
 - [x] T057 [US1] Migration Prisma initiale (créer toutes les tables `conformite_*`) — `apps/api/prisma/migrations/0001_init_conformite/migration.sql`
 - [x] T058 [P] [US1] Migration SQL pour rôle DB `app_conformite` (privilèges restreints, REVOKE UPDATE/DELETE sur `conformite_audit_entries`) — `apps/api/prisma/migrations/0000_setup_db_roles/migration.sql`
 - [x] T059 [US1] Migration SQL pour trigger PostgreSQL `conformite_audit_block_modifications` (audit append-only — R2) — `apps/api/prisma/migrations/0002_audit_append_only/migration.sql`
-- [ ] T060 [P] [US1] `PrismaConformiteRepository` implémentant `ConformiteReader` + `ConformiteWriter` dans `apps/api/src/modules/conformite/infrastructure/prisma-conformite-repository.ts`
+- [x] T060 [P] [US1] `PrismaConformiteRepository` implémentant `ConformiteReader` + `ConformiteWriter` dans `apps/api/src/modules/conformite/infrastructure/prisma-conformite-repository.ts`
 - [ ] T061 [P] [US1] `S3DocumentStorage` adapter (signed URLs PUT + GET, HEAD verification post-upload) dans `apps/api/src/modules/conformite/infrastructure/s3-document-storage.ts`
 - [ ] T062 [P] [US1] `PrismaAuditLogWriter` (valide chaque payload contre les Zod schemas T046 avant insert) dans `apps/api/src/modules/conformite/infrastructure/prisma-audit-log-writer.ts`
 - [ ] T063 [P] [US1] Test invariant : aucun appel `AuditLogWriter.write` n'inclut clés interdites (email, phone, firstName, lastName) — `apps/api/src/modules/conformite/infrastructure/__tests__/audit-payload-invariant.test.ts`
