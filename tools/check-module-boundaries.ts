@@ -29,6 +29,33 @@ const MODULE_PREFIXES: Record<string, string[]> = {
   seo: ['Seo', 'seo_'],
 };
 
+// Symboles autorisés à traverser les frontières modulaires.
+// Ce sont les CONTRATS PUBLICS de chaque module (au lieu de tout abstracter
+// derrière une facade `XxxQueryFacade`, on liste les exceptions de design).
+//
+// `AuthGuard`, `AuthRole`, `AuthenticatedUser` du module identité sont des
+// primitives d'authentification consommées par TOUS les modules métier
+// (controllers + use cases). Les abstracter derrière une facade
+// réintroduirait la complexité que cette liste évite.
+//
+// Quand on ajoute un nouveau contrat public à un module, on l'ajoute ici
+// avec une justification dans le commentaire.
+const ALLOWED_CROSS_MODULE_SYMBOLS: ReadonlySet<string> = new Set([
+  // module identite — RBAC primitives
+  'AuthGuard',
+  'AuthRole',
+  'AuthenticatedUser',
+  'AuthenticatedRequest',
+  'AuthSession',
+  'AuthSessionReader',
+  // intentionnellement laisser passer les types Auth* d'@prisma/client
+  // (AuthUser, AuthAccount, etc.) car ils sont accédés via @cv/db qui est
+  // le vendor neutre du schéma, pas directement via le module identité.
+  'AuthUser',
+  'AuthAccount',
+  'AuthVerificationToken',
+]);
+
 interface Violation {
   file: string;
   importingModule: string;
@@ -50,6 +77,16 @@ async function walkTs(dir: string): Promise<string[]> {
   return files;
 }
 
+function findFirstViolatingSymbol(content: string, prefix: string): string | null {
+  const re = new RegExp(`\\b${prefix}\\w+`, 'g');
+  for (const match of content.matchAll(re)) {
+    if (!ALLOWED_CROSS_MODULE_SYMBOLS.has(match[0])) {
+      return match[0];
+    }
+  }
+  return null;
+}
+
 async function scanFile(file: string, currentModule: string): Promise<Violation[]> {
   const content = await readFile(file, 'utf-8');
   const violations: Violation[] = [];
@@ -57,13 +94,12 @@ async function scanFile(file: string, currentModule: string): Promise<Violation[
   for (const [otherModule, prefixes] of Object.entries(MODULE_PREFIXES)) {
     if (otherModule === currentModule) continue;
     for (const prefix of prefixes) {
-      const re = new RegExp(`\\b${prefix}\\w+`);
-      const match = content.match(re);
-      if (match) {
+      const symbol = findFirstViolatingSymbol(content, prefix);
+      if (symbol !== null) {
         violations.push({
           file: relative(ROOT, file),
           importingModule: currentModule,
-          forbiddenSymbol: match[0],
+          forbiddenSymbol: symbol,
           fromModule: otherModule,
         });
       }

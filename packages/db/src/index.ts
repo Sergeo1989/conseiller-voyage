@@ -48,12 +48,22 @@ function maskUrl(url: string): string {
 }
 
 function createPrismaClient(): PrismaClient {
-  assertDatabaseUrl();
-
-  // Log explicite au boot : confirme quelles credentials sont vraiment
-  // chargées en RAM. Aide à diagnostiquer "j'ai changé .env mais ça
-  // utilise toujours les anciennes valeurs".
-  if (process.env.NODE_ENV !== 'production') {
+  // Fail-fast UNIQUEMENT en dev local (NODE_ENV=development).
+  //
+  // En production : Next.js `next build` collecte les page data en mode
+  // production sans DATABASE_URL fourni au CI — laisser Prisma gérer
+  // ses propres erreurs au premier query runtime.
+  //
+  // En test : Vitest tourne en NODE_ENV=test par défaut. Les tests
+  // unitaires utilisent des mocks (pas besoin de DATABASE_URL). Les
+  // tests d'integration injectent DATABASE_URL via le service postgres
+  // du job CI — pas besoin d'une assertion sync au boot.
+  //
+  // En dev : on garde le fail-fast strict pour éviter les bugs silencieux
+  // type "j'ai modifié .env.local mais le dev server tourne avec
+  // l'ancienne valeur en RAM".
+  if (process.env.NODE_ENV === 'development') {
+    assertDatabaseUrl();
     console.info(`[@cv/db] PrismaClient initialisé — ${maskUrl(process.env.DATABASE_URL ?? '')}`);
   }
 
