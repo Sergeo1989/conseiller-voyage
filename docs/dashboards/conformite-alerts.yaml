@@ -1,0 +1,84 @@
+# T119 — Alertes Grafana pour le module conformité.
+# Format compatible Grafana Alerting (provisioning fichier).
+# Cf. https://grafana.com/docs/grafana/latest/alerting/set-up/provision-alerting-resources/
+
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: conformite-sla
+    folder: conformite
+    interval: 1m
+    rules:
+      - uid: cv-conformite-sla-pending
+        title: WARN — File pending admin > 5 jours ouvrables
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: count(conformite_submission_age_business_days{status="pending"} > 5)
+              refId: A
+        noDataState: OK
+        execErrState: Alerting
+        for: 15m
+        annotations:
+          summary: '{{ $values.A.Value }} dossier(s) en attente depuis plus de 5 jours ouvrables (SLA admin).'
+          runbook_url: docs/runbooks/conformite-sla-pending.md
+        labels:
+          severity: warning
+          module: conformite
+
+      - uid: cv-conformite-propagation-negative
+        title: CRITICAL — Propagation négative > 10s (FR-022)
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: histogram_quantile(0.95, conformite_status_propagation_seconds_bucket{transition_kind="negative"}) > 10
+              refId: A
+        for: 5m
+        annotations:
+          summary: 'Propagation status négative p95 = {{ $values.A.Value }}s (cible FR-022 < 10s).'
+          runbook_url: docs/runbooks/conformite-propagation-slow.md
+        labels:
+          severity: critical
+          module: conformite
+
+      - uid: cv-conformite-expiration-job-failed
+        title: CRITICAL — Job d'expiration en échec 2 jours consécutifs
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 172800, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: increase(conformite_job_failures_total{job_name="expiration_sweep"}[48h]) >= 2
+              refId: A
+        for: 30m
+        annotations:
+          summary: '2+ échecs consécutifs du ExpirationSweepJob — les bascules verified→suspended ne sont plus calculées.'
+          runbook_url: docs/runbooks/conformite-expiration-down.md
+        labels:
+          severity: critical
+          module: conformite
+
+      - uid: cv-conformite-outbox-backlog
+        title: WARN — Profondeur outbox > 100
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: conformite_outbox_unpublished_total > 100
+              refId: A
+        for: 10m
+        annotations:
+          summary: '{{ $values.A.Value }} événements outbox non publiés — vérifier OutboxPublisherJob et la santé Redis pub/sub.'
+          runbook_url: docs/runbooks/conformite-outbox-backlog.md
+        labels:
+          severity: warning
+          module: conformite

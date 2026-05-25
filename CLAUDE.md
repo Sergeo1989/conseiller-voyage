@@ -1,6 +1,6 @@
 # Conseiller Voyage — Guide projet pour agents IA
 
-> Source de vérité contraignante : `.specify/memory/constitution.md` (v2.0.0).
+> Source de vérité contraignante : `.specify/memory/constitution.md` (v2.2.0).
 > Ce fichier en est un résumé opérationnel pour orienter rapidement les agents IA.
 
 ## Règle d'or
@@ -22,20 +22,19 @@ libellé, README de module. L'anglais et les autres langues sont ajoutés via
 i18n (clés/catalogues séparés), jamais par fork de gabarits. Cibler les requêtes
 francophones en priorité côté SEO.
 
-## Stack figée (cf. constitution, *Stack canonique*)
+## Stack figée (cf. constitution v2.1.0, *Stack canonique* + *Infrastructure et opérations*)
 
-- **Langage** : TypeScript ≥ 5 en mode strict
-- **Frontend** : Next.js (App Router), RSC par défaut
-- **Backend** : NestJS (le conteneur DI applique le Principe VIII)
-- **Monorepo** : pnpm workspaces — `apps/web`, `apps/api`, `packages/shared`
-- **ORM** : Prisma sur PostgreSQL ≥ 16 (région canadienne)
-- **Cache + file** : Redis + BullMQ
-- **Validation** : Zod (schémas partagés serveur/client)
-- **Tests** : Vitest (unit + intégration) + Playwright (e2e)
-- **Lint/format** : ESLint + Prettier
-- **CI** : GitHub Actions
-- **LLM** : derrière interface `LlmProvider` (fournisseur fixé par ADR, résidence canadienne)
-- **Hébergement** : région canadienne obligatoire (Loi 25)
+**Fondations** — TypeScript ≥ 5 strict · pnpm workspaces · **Turborepo** · **Biome** (lint+format) · Husky + lint-staged · Conventional Commits + commitlint · Zod · GitHub Actions.
+
+**Frontend** — Next.js App Router (RSC par défaut) · hybride RSC + TanStack Query (state serveur) · **Zustand** (state client) · react-hook-form + Zod resolver · **shadcn/ui** (Radix UI) · Tailwind CSS v4 · lucide-react · date-fns (`fr-CA`) · **next-intl** · **Auth.js v5** (sessions DB).
+
+**Backend** — NestJS + **Fastify** · Prisma · Pino · @nestjs/swagger · **react-email** · session DB partagée lue via Prisma · MFA TOTP/passkey conseiller.
+
+**Données et services externes** — PostgreSQL ≥ 16 · Redis ≥ 7 + BullMQ · **AWS S3 ca-central-1** (ADR-0001) · **AWS SES ca-central-1** (ADR-0006) · LLM derrière `LlmProvider`. Tout en région canadienne.
+
+**Tests** — Vitest · Playwright · **Testcontainers** · **MSW** · axe-core (CI bloquant).
+
+**Infrastructure** — **AWS ECS Fargate ca-central-1** (ADR-0005) · **AWS CDK** (IaC TypeScript) · **CloudFront** · OTel → **Grafana Cloud Canada** (ADR-0003) · **Sentry self-hosted ca-central-1** (ADR-0007) · AWS Secrets Manager (prod) + 1Password CLI (dev) · Docker Compose + LocalStack (dev local).
 
 Tout changement de composant nommé ici = amendement MINEUR de la constitution.
 
@@ -49,7 +48,7 @@ interface  →  application  →  domaine  ←  infrastructure
 - `application/` : un cas d'usage = une classe avec une méthode `execute`
   (`CreateLeadUseCase`, `MatchAdvisorsUseCase`).
 - `infrastructure/` : adaptateurs (`PrismaLeadRepository`, `RedisCache`,
-  `BedrockLlmProvider`, `ResendMailer`).
+  `BedrockLlmProvider`, `SesMailer`).
 - `interface/` : contrôleurs NestJS, Server Actions Next.js. Mince, déléguer
   à un cas d'usage.
 
@@ -63,6 +62,8 @@ SOLID appliqué concrètement : voir Principe VIII de la constitution.
 | II | Vie privée / Loi 25 | Données personnelles en région canadienne. Consentement explicite. Effacement implémenté. Rétention selon le tableau de la constitution. |
 | VI | Logique métier testée | Scoring matching + validation brief = fonctions pures, tests écrits AVANT implémentation (commits séparés visibles dans git). |
 | IX | Sécurité applicative | RBAC en couche application. Validation Zod côté serveur. En-têtes HTTP en place. Aucun secret en clair. Aucun SQL brut sans ADR. |
+| XI | Accessibilité WCAG 2.1 AA | axe-core CI bloquant. Navigation clavier intégrale. Contraste ≥ 4.5:1. Audit lecteur d'écran à chaque release majeure. |
+| XII | Optimisation SEO | SSR/SSG obligatoire pour pages publiques. CWV LCP/INP/CLS strictement dans les budgets. Lighthouse CI bloquant (Perf ≥ 90, SEO ≥ 95, A11y ≥ 95). Métadonnées + Schema.org JSON-LD complets. Trafic organique = valeur cœur. |
 
 ## Avant tout merge : Definition of Done
 
@@ -101,8 +102,14 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
 - `specs/<###-feature>/plan.md` — le COMMENT (avec section *Constitution Check*)
 - `specs/<###-feature>/tasks.md` — l'exécution
 - `docs/adr/` — les décisions structurantes
+- `docs/roadmap.md` — backlog stratégique vivant ; source de vérité pour
+  les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+**Plan courant** : [`specs/001-conformite-module/plan.md`](specs/001-conformite-module/plan.md)
+(Module Conformité — branche `001-conformite-module`).
+
+Pour le contexte technologique détaillé et la structure de répertoires de la
+feature courante, lire ce plan ainsi que `data-model.md`, `contracts/`,
+et `quickstart.md` du même répertoire `specs/001-conformite-module/`.
 <!-- SPECKIT END -->

@@ -1,0 +1,23 @@
+{
+  "name": "@cv/infra-cdk",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "biome check --error-on-warnings .",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "deploy": "cdk deploy"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.165.0",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.165.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.3"
+  }
+}

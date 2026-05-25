@@ -1,6 +1,69 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.1.0 → 2.2.0 (MINEUR)
+
+Justification du bump MINEUR :
+  - Ajout de deux nouveaux principes NON-NÉGOCIABLES (XI et XII)
+    en réponse à la demande explicite du porteur produit :
+      * Accessibilité WCAG 2.1 AA doit être strictement respectée.
+      * Optimisation SEO doit être strictement respectée — le site
+        repose sur le trafic organique comme valeur cœur.
+
+Principes — état :
+  I-X.   inchangés (cf. trail v2.1.0 ci-dessous)
+  XI.    Accessibilité WCAG 2.1 AA (NON-NÉGOCIABLE)            NOUVEAU
+  XII.   Optimisation SEO (NON-NÉGOCIABLE)                      NOUVEAU
+
+Sections modifiées :
+  - Patrons d'exécution et de scalabilité : sous-section Accessibilité
+    réduite à un renvoi vers Principe XI ; sous-section Performance
+    utilisateur réduite à un renvoi vers Principe XII (la matière reste
+    canonique dans les principes XI / XII).
+  - Flux de développement / Definition of Done : ajout de portes axe-core
+    + Lighthouse CI bloquantes pour toute page touchée.
+
+Templates et fichiers dépendants — état :
+  ✅ CLAUDE.md — référence v2.2.0 + 6 portes NON-NÉGOCIABLES (au lieu
+       de 4 précédemment : I, II, VI, IX → I, II, VI, IX, XI, XII)
+  ⚠  specs/001-conformite-module/plan.md — Constitution Check à
+       compléter avec sections Principle XI / XII lors du prochain
+       passage de revue.
+  ⚠  .specify/templates/plan-template.md — Constitution Check à
+       compléter avec sections Principe XI / XII pour les futurs plans.
+
+==================
+HISTORIQUE
+==================
+Version change: 2.0.0 → 2.1.0 (MINEUR)
+
+Justification du bump MINEUR :
+  - Plusieurs composants de la *Stack canonique* sont ajoutés ou modifiés :
+    Biome remplace ESLint + Prettier ; Turborepo ajouté ;
+    Auth.js / Zustand / shadcn/ui / Tailwind v4 / next-intl / Fastify /
+    AWS SES / Pino / react-email / Testcontainers / MSW / date-fns /
+    lucide-react inscrits formellement.
+  - Nouvelle section *Infrastructure et opérations* (AWS ECS Fargate
+    ca-central-1, Grafana Cloud Canada, Sentry self-hosted, AWS Secrets
+    Manager, AWS CDK, CloudFront).
+  - Cinq ADRs créés en lot (ADR-0003 à ADR-0007) pour formaliser les
+    choix de fournisseurs.
+
+Principes : inchangés.
+
+Templates et fichiers dépendants — état :
+  ✅ docs/adr/0003-observabilite-grafana-cloud-ca.md      — créé
+  ✅ docs/adr/0004-auth-session-db-partagee.md            — créé
+  ✅ docs/adr/0005-deploiement-aws-ecs-fargate.md         — créé
+  ✅ docs/adr/0006-pivot-resend-vers-aws-ses.md           — créé
+  ✅ docs/adr/0007-sentry-self-hosted.md                  — créé
+  ✅ CLAUDE.md — mis à jour avec la stack étendue
+  ⏳ specs/001-conformite-module/plan.md — phase B (refonte avec
+     résolution des blockers B1-B6 + intégration stack confirmée)
+
+==================
+HISTORIQUE
+==================
 Version change: 1.0.0 → 2.0.0 (MAJEUR)
 
 Justification du bump MAJEUR :
@@ -356,6 +419,125 @@ Le client **DOIT** envoyer un header `Idempotency-Key` (UUID v4) ; le serveur
 **Health checks** : tout service expose `/healthz` (liveness, dépendances
 minimales) et `/readyz` (readiness, dépendances complètes y compris DB).
 
+### XI. Accessibilité WCAG 2.1 AA (NON-NÉGOCIABLE)
+
+L'accessibilité **DOIT** être strictement respectée sur l'ensemble des
+interfaces utilisateur de la plateforme (publiques et authentifiées).
+Cible : **WCAG 2.1 niveau AA** au minimum. Aucune dérogation tolérée —
+ni « plus tard », ni « pour les pages secondaires », ni « si le designer
+préfère ».
+
+**Critères techniques bloquants en CI** :
+
+- **`axe-core`** exécuté en CI sur **toutes** les pages publiques et
+  authentifiées via Playwright ; **toute erreur de niveau serious ou
+  critical bloque le merge**.
+- **Contraste de couleur** : minimum 4,5:1 pour texte normal, 3:1 pour
+  texte large (≥ 18pt ou ≥ 14pt bold), 3:1 pour composants UI et
+  graphiques significatifs.
+- **Navigation 100 % clavier** : tout parcours utilisateur **DOIT** être
+  réalisable sans souris. Focus visible obligatoire. Pas de « focus
+  trap » non intentionnel.
+- **Sémantique HTML** : structure de titres `h1 → h2 → h3` sans saut
+  hiérarchique, landmarks ARIA appropriés (`<main>`, `<nav>`,
+  `<header>`, `<footer>`), labels associés à tous les champs de
+  formulaire.
+- **Images** : `alt` descriptif obligatoire sur toute `<img>` porteuse
+  d'information ; `alt=""` explicite sur images décoratives.
+- **Mouvement et autoplay** : aucun contenu animé > 5 s sans contrôle
+  pause/stop ; respect de `prefers-reduced-motion`.
+- **Erreurs de formulaire** : annoncées via `aria-live`, associées au
+  champ via `aria-describedby`, message en clair (pas seulement la
+  couleur).
+
+**Critères humains** (à chaque release majeure) :
+
+- **Audit manuel au lecteur d'écran** (NVDA Windows ou VoiceOver macOS)
+  sur tous les parcours principaux. Compte-rendu dans
+  `docs/a11y/release-<NN>.md`.
+- **Test au zoom 200 %** : aucune perte de fonctionnalité.
+
+**Raison** : l'accessibilité est un droit, pas une option. Toute UI
+inaccessible exclut concrètement des conseillers, des voyageurs, et
+expose la plateforme à des recours individuels et collectifs (la LCDP
+fédérale et les chartes provinciales québécoise et ontarienne couvrent
+explicitement l'accessibilité numérique). C'est aussi un signal SEO
+positif (Google récompense les sites accessibles via Core Web Vitals et
+les heuristiques de qualité).
+
+### XII. Optimisation SEO (NON-NÉGOCIABLE)
+
+Le trafic organique est la **valeur cœur** de la plateforme — c'est
+ce qui rend les leads abordables et l'acquisition conseiller pérenne.
+Toute interface publique **DOIT** être optimisée SEO strictement, dès
+sa première mise en ligne. Aucun compromis « on optimisera plus tard »
+n'est toléré.
+
+**Cibles de performance utilisateur (Core Web Vitals)** mesurées sur
+P75 réel via CrUX :
+
+- **LCP** (Largest Contentful Paint) < 2,5 s
+- **INP** (Interaction to Next Paint) < 200 ms
+- **CLS** (Cumulative Layout Shift) < 0,1
+- Budget JS initial : < 200 kB compressé (gzip) sur toute page publique
+- Lighthouse CI bloquant en pipeline : **Performance ≥ 90**, **SEO ≥ 95**,
+  **Accessibility ≥ 95** (cf. Principe XI). Régression > 10 % sur l'une
+  de ces métriques **bloque le merge**.
+
+**Rendu et indexabilité** :
+
+- **SSR ou SSG obligatoire** pour toute page publique. Aucun contenu
+  porteur d'information rendu uniquement en JS côté client.
+- **Métadonnées complètes par page** : `<title>` unique, `meta
+  description` < 160 caractères, balises Open Graph (`og:title`,
+  `og:description`, `og:image`, `og:url`, `og:locale`), `twitter:card`,
+  JSON-LD `Schema.org` approprié (`WebPage`, `Person`,
+  `ProfessionalService`, `BreadcrumbList`).
+- **URLs canoniques** propres, sans paramètres de tracking ; rel="canonical"
+  obligatoire sur chaque page indexable.
+- **Hreflang** complet (`fr-CA`, `en`, `x-default`) — cf. Principe IV.
+- **robots.txt** explicite, **sitemap.xml** auto-généré et déclaré dans
+  robots.txt + Google Search Console, **llms.txt** pour la visibilité
+  AI search (GEO).
+- Aucune page publique avec `noindex` par défaut. Les routes admin et
+  authentifiées sont explicitement `noindex`.
+
+**Structure éditoriale et internal linking** :
+
+- Hiérarchie de titres `h1` unique par page, suivie de `h2`/`h3`
+  cohérents (Principe XI le requiert aussi pour l'a11y — alignement
+  naturel).
+- Internal linking explicite entre pages thématiques (annuaire ↔ pages
+  destinations ↔ profils conseillers).
+- Breadcrumbs visibles ET en JSON-LD `BreadcrumbList`.
+
+**Optimisation des images** :
+
+- Format moderne (WebP en priorité, AVIF si supporté), fallback JPG/PNG.
+- `<img>` toujours avec `width`, `height` et `alt` explicites (CLS = 0).
+- Lazy-loading natif (`loading="lazy"`) sauf pour l'image hero.
+
+**Crawling et indexation** :
+
+- Pas de bloqueur d'indexation involontaire (Cloudflare bot management,
+  etc.). robots.txt vérifié manuellement à chaque mise en production.
+- Le délai d'indexation des nouvelles pages publiques (création de
+  profil conseiller, nouvelle landing thématique) **DOIT** être inférieur
+  à 7 jours en moyenne (mesure via GSC + sitemap submission).
+
+**Mesure** :
+
+- Tableau de bord Search Console intégré dans Grafana (clics, impressions,
+  position moyenne, pages indexées). Variation > -20 % d'une semaine sur
+  l'autre **DOIT** déclencher une investigation immédiate (oncall SEO).
+
+**Raison** : le modèle économique repose sur le ratio
+(visiteurs organiques) / (coût d'acquisition). Une page lente, mal
+indexée, ou non optimisée Schema.org dégrade ce ratio de façon
+silencieuse — la mesure SEO arrive avec un délai de plusieurs semaines,
+donc le contrôle qualité **DOIT** être préventif (gates CI), pas
+réactif.
+
 ---
 
 ## Stack canonique
@@ -364,27 +546,117 @@ La stack est figée par cette constitution. Tout changement de composant nommé
 ici constitue un amendement **MINEUR** au minimum et **DOIT** être motivé par
 un ADR.
 
-| Couche | Choix | Contraintes |
+### Fondations
+
+| Domaine | Choix | Contraintes / Note |
 |---|---|---|
 | Langage | **TypeScript ≥ 5** | `strict: true`, `noUncheckedIndexedAccess: true`, `noImplicitAny: true` |
-| Frontend | **Next.js (App Router)** | RSC par défaut ; client components seulement quand nécessaire |
-| Backend | **NestJS** | conteneur DI utilisé pour appliquer Principe VIII |
-| Monorepo | **pnpm workspaces** | `apps/web`, `apps/api`, `packages/shared` minimum |
-| ORM | **Prisma** | jamais de SQL brut sans ADR |
-| DB primaire | **PostgreSQL ≥ 16** | région canadienne (Principe II) |
-| Cache + file | **Redis ≥ 7** + **BullMQ** | région canadienne |
-| Validation | **Zod** | schémas partagés serveur/client via `packages/shared` |
-| Tests | **Vitest** (unit + intégration) + **Playwright** (e2e) | — |
-| Lint/format | **ESLint** + **Prettier** | erreur ESLint bloquante en CI |
+| Package manager | **pnpm** | workspaces : `apps/web`, `apps/api`, `packages/shared` minimum |
+| Orchestration monorepo | **Turborepo** | cache local + distant, pipelines parallèles |
+| Lint + format | **Biome** | erreur bloquante en CI |
+| Git hooks | **Husky** + **lint-staged** | enforce lint/format/typecheck pré-commit |
+| Convention commits | **Conventional Commits** + **commitlint** | `type(scope): description` |
+| Validation runtime | **Zod** | schémas partagés via `packages/shared` |
 | CI | **GitHub Actions** | pipelines obligatoires (cf. *Flux de développement*) |
-| LLM | derrière interface `LlmProvider` (Principe V) | fournisseur choisi par ADR avec résidence canadienne |
-| Hébergement | à fixer par ADR | région canadienne obligatoire (Principe II) |
-| Auth conseiller | TOTP via passkey ou app authenticator | Principe IX |
-| Observabilité | OpenTelemetry + tableau de bord avec alerting | Principe VII |
+| Documentation interne | **Markdown dans `docs/`** | versionné avec le code |
+
+### Frontend
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Framework | **Next.js (App Router)** | RSC par défaut ; client components seulement quand nécessaire |
+| State serveur | **Hybride RSC + TanStack Query** | RSC par défaut, TanStack pour client-heavy (file admin, dashboards live) |
+| State client | **Zustand** | hooks-based, sans provider |
+| Forms | **react-hook-form** + **@hookform/resolvers/zod** | adapté à l'intake multi-step |
+| UI components | **shadcn/ui** | Radix UI sous le capot, accessible WCAG par construction |
+| CSS | **Tailwind CSS v4** | imposé par shadcn/ui |
+| Icons | **lucide-react** | cohérent avec shadcn/ui |
+| Dates | **date-fns** | locale `fr-CA` (Principe IV) |
+| i18n | **next-intl** | App Router natif, ICU MessageFormat |
+| Auth web | **Auth.js v5 (NextAuth)** | sessions DB Postgres, passkeys + TOTP (cf. ADR-0004) |
+
+### Backend
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Framework | **NestJS** | conteneur DI pour appliquer Principe VIII |
+| HTTP adapter | **Fastify** via `@nestjs/platform-fastify` | 2-3× plus rapide qu'Express |
+| ORM | **Prisma** | jamais de SQL brut sans ADR |
+| Logging | **Pino** | JSON structuré, intégration OTel native |
+| API documentation | **@nestjs/swagger** | OpenAPI 3.x auto-généré depuis décorateurs |
+| Templates email | **react-email** | HTML statique + plain-text auto-généré |
+| Auth API | session DB Auth.js lue via Prisma | révocation instantanée (cf. ADR-0004) |
+| MFA conseiller | TOTP via passkey ou app authenticator | Principe IX, obligatoire avant accès aux leads |
+
+### Données et services externes
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| DB primaire | **PostgreSQL ≥ 16** | région canadienne (Principe II) |
+| Cache + file d'attente | **Redis ≥ 7** + **BullMQ** | région canadienne |
+| Stockage objet | **AWS S3 `ca-central-1`** | SSE-KMS, URLs signées (cf. ADR-0001) |
+| Email transactionnel | **AWS SES `ca-central-1`** | DKIM/SPF/DMARC (cf. ADR-0006) |
+| LLM | derrière interface `LlmProvider` (Principe V) | fournisseur précisé par ADR séparé, résidence canadienne |
+
+### Tests
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Unit + intégration | **Vitest** | TDD obligatoire sur logique métier (Principe VI) |
+| E2E | **Playwright** | parcours utilisateurs critiques |
+| Test DB | **Testcontainers** | Postgres + Redis isolés par suite |
+| Mock HTTP | **MSW** (Mock Service Worker) | intercepte au niveau réseau, mêmes handlers dev/test |
+| A11y | **axe-core** | bloquant en CI sur pages publiques (WCAG 2.1 AA) |
 
 Toute dépendance ajoutée au `package.json` **DOIT** être justifiée dans le
 plan d'implémentation et conforme à la politique de licence (cf. *Chaîne
 d'approvisionnement*).
+
+---
+
+## Infrastructure et opérations
+
+Cette section fixe les choix d'infrastructure et d'opérationnel. Comme la
+*Stack canonique*, tout changement de composant nommé ici constitue un
+amendement MINEUR de la constitution et **DOIT** être motivé par un ADR.
+
+Tous les services hébergeant ou traitant du PII **DOIVENT** être en région
+canadienne (Principe II, NON-NÉGOCIABLE).
+
+### Déploiement et infrastructure
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Plateforme de déploiement | **AWS ECS Fargate** dans `ca-central-1` | Next.js + NestJS + workers BullMQ (cf. ADR-0005) |
+| Infrastructure as Code | **AWS CDK** en TypeScript | même langage que la stack applicative |
+| CDN | **AWS CloudFront** | edge YYZ + YUL, signed URLs pour S3 privé |
+| Conteneurs | **Docker** (images distroless Node 22 LTS) | build multi-stage avec pnpm |
+| Dev local | **Docker Compose** + **LocalStack** | Postgres + Redis + S3/SES/KMS émulés |
+| Auto-scaling | sur CPU 70 % + p95 latency (CloudWatch) | autoscale 2-N par service |
+| Migrations DB | **Prisma Migrate** | forward-only, expand/contract (cf. *Migrations DB*) |
+
+### Observabilité et qualité de service
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Tracing + métriques + logs | **OpenTelemetry SDK** → **Grafana Cloud (région Canada)** | DPA Loi 25 signé (cf. ADR-0003) |
+| Error tracking | **Sentry self-hosted** sur AWS `ca-central-1` | scrubbing PII via `beforeSend` (cf. ADR-0007) |
+| Tableaux de bord | Grafana, versionnés en JSON dans `docs/dashboards/` | un par module au minimum |
+| Alerting | Grafana Alertmanager | routes Slack/Discord/courriel selon sévérité |
+| Health checks | `/healthz` (liveness) et `/readyz` (readiness) | par service (Principe X) |
+
+### Secrets et sécurité opérationnelle
+
+| Domaine | Choix | Contraintes / Note |
+|---|---|---|
+| Secrets prod | **AWS Secrets Manager `ca-central-1`** | rotation auto, IAM granulaire |
+| Secrets dev | **1Password CLI** (`op run -- ...`) | jamais de `.env` en clair sur disque |
+| Secrets CI | GitHub Actions OIDC → IAM role | lit Secrets Manager au runtime |
+| Rotation | annuelle minimum, mensuelle pour clés LLM | (cf. Principe IX) |
+
+Toute introduction d'un nouveau service tiers (SaaS, fournisseur géré)
+**DOIT** vérifier la résidence canadienne **avant** sélection (cf.
+ADR-0006 pour la leçon retenue).
 
 ---
 
@@ -462,22 +734,15 @@ classes. TTL acceptable pour donnée publique non sensible.
 
 ### Performance utilisateur
 
-Cibles sur pages publiques (P75 mesuré via CrUX) :
-
-- **LCP** (Largest Contentful Paint) < 2,5 s
-- **INP** (Interaction to Next Paint) < 200 ms
-- **CLS** (Cumulative Layout Shift) < 0,1
-- Budget JS initial : < 200 kB compressé (gzip)
-
-Lighthouse CI en pipeline GitHub Actions ; dégradation > 10 % sur une de ces
-métriques **DOIT** bloquer le merge.
+→ Cf. **Principe XII — Optimisation SEO (NON-NÉGOCIABLE)** pour les cibles
+Core Web Vitals (LCP < 2,5 s, INP < 200 ms, CLS < 0,1), le budget JS, et
+les seuils Lighthouse CI bloquants.
 
 ### Accessibilité
 
-Toute interface publique **DOIT** être conforme **WCAG 2.1 niveau AA**. Test
-automatique via `axe-core` en CI (bloquant sur les erreurs critiques). Audit
-manuel par release majeure avec test au lecteur d'écran (NVDA ou VoiceOver).
-L'audit a11y fait partie de la Definition of Done pour toute modification UI.
+→ Cf. **Principe XI — Accessibilité WCAG 2.1 AA (NON-NÉGOCIABLE)** pour la
+politique complète (axe-core CI bloquant, contraste, navigation clavier,
+sémantique HTML, audit lecteur d'écran).
 
 ### Coût et cache LLM
 
@@ -653,4 +918,4 @@ courant dans `specs/<feature>/plan.md` et aux ADR dans `docs/adr/`. Le
 fichier `CLAUDE.md` à la racine du dépôt résume la stack et les portes
 non-négociables pour les agents IA.
 
-**Version**: 2.0.0 | **Ratified**: 2026-05-22 | **Last Amended**: 2026-05-22
+**Version**: 2.2.0 | **Ratified**: 2026-05-22 | **Last Amended**: 2026-05-23

@@ -1,0 +1,206 @@
+// T056 — Schéma Prisma du module conformité.
+// Cf. specs/001-conformite-module/data-model.md *Schéma Prisma proposé*.
+//
+// Conventions :
+//   - UUID v4 partout en `@db.Uuid` pour aligner avec les Zod brand types
+//     de packages/shared/conformite/branded-ids.ts
+//   - Noms de table préfixés `conformite_` pour matérialiser la frontière
+//     module (T030a — script check-module-boundaries.ts)
+//   - onDelete: Restrict par défaut — aucune cascade silencieuse côté DB.
+//     L'effacement Loi 25 passe par EraseConseillerDataUseCase (T113) qui
+//     anonymise sans supprimer.
+//
+// Tables additionnelles vs data-model.md initial :
+//   - Submission : entité du domaine (référencée par les use cases
+//     SubmitDossier/Approve/Refuse). Ajoutée ici avec FK depuis
+//     Certificat/Affiliation pour matérialiser le regroupement.
+
+enum Province {
+  QC
+  ON
+}
+
+enum ConformiteStatus {
+  pending
+  verified
+  suspended
+  revoked
+}
+
+enum SubmissionDecision {
+  pending
+  approved
+  refused
+}
+
+enum SubmissionStatus {
+  pending
+  approved
+  refused
+}
+
+enum AffiliationInactivationReason {
+  conseiller
+  permit_revocation
+  admin
+}
+
+enum ActorRole {
+  conseiller
+  admin
+  system
+}
+
+model ConseillerCompliance {
+  id                      String           @id @default(uuid()) @db.Uuid
+  conseillerId            String           @unique @db.Uuid
+  status                  ConformiteStatus @default(pending)
+  lastVerifiedAt          DateTime?
+  lastStatusChangeAt      DateTime         @default(now())
+  consentToProcessGivenAt DateTime?
+  erasureRequestedAt      DateTime?
+  anonymizedAt            DateTime?
+
+  certificats   Certificat[]
+  affiliations  Affiliation[]
+  submissions   Submission[]
+  uploadIntents UploadIntent[]
+  auditEntries  AuditEntry[]
+
+  @@index([status])
+  @@index([lastStatusChangeAt])
+  @@map("conformite_conseiller_compliances")
+}
+
+model Submission {
+  id                     String               @id @default(uuid()) @db.Uuid
+  conseillerComplianceId String               @db.Uuid
+  conseillerCompliance   ConseillerCompliance @relation(fields: [conseillerComplianceId], references: [id], onDelete: Restrict)
+  submittedAt            DateTime             @default(now())
+  status                 SubmissionStatus     @default(pending)
+  decidedAt              DateTime?
+  decidedByAdminId       String?              @db.Uuid
+  decisionReason         String? // ≥ 20 chars si refused (FR-004), commentaire libre si approved
+
+  certificats  Certificat[]
+  affiliations Affiliation[]
+
+  @@index([conseillerComplianceId, submittedAt(sort: Desc)])
+  @@index([status, submittedAt(sort: Desc)])
+  @@map("conformite_submissions")
+}
+
+model Certificat {
+  id                     String               @id @default(uuid()) @db.Uuid
+  conseillerComplianceId String               @db.Uuid
+  conseillerCompliance   ConseillerCompliance @relation(fields: [conseillerComplianceId], references: [id], onDelete: Restrict)
+  submissionId           String               @db.Uuid
+  submission             Submission           @relation(fields: [submissionId], references: [id], onDelete: Restrict)
+  province               Province
+  certificateNumber      String
+  issuedAt               DateTime
+  expiresAt              DateTime
+  documentObjectKey      String
+  submittedAt            DateTime             @default(now())
+  decision               SubmissionDecision   @default(pending)
+  decisionAt             DateTime?
+  decisionByAdminId      String?              @db.Uuid
+  refusalReason          String?
+  supersededById         String?              @db.Uuid
+  supersededBy           Certificat?          @relation("CertificatSuperseding", fields: [supersededById], references: [id])
+  superseding            Certificat[]         @relation("CertificatSuperseding")
+
+  @@index([conseillerComplianceId, province])
+  @@index([expiresAt])
+  @@index([submissionId])
+  @@map("conformite_certificats")
+}
+
+model Affiliation {
+  id                     String                         @id @default(uuid()) @db.Uuid
+  conseillerComplianceId String                         @db.Uuid
+  conseillerCompliance   ConseillerCompliance           @relation(fields: [conseillerComplianceId], references: [id], onDelete: Restrict)
+  submissionId           String                         @db.Uuid
+  submission             Submission                     @relation(fields: [submissionId], references: [id], onDelete: Restrict)
+  agencyName             String                         @db.VarChar(200)
+  agencyPermitNumber     String
+  agencyProvince         Province
+  proofObjectKey         String
+  submittedAt            DateTime                       @default(now())
+  decision               SubmissionDecision             @default(pending)
+  decisionAt             DateTime?
+  decisionByAdminId      String?                        @db.Uuid
+  refusalReason          String?
+  role                   String?
+  activeSince            DateTime?
+  activeUntil            DateTime?
+  inactivatedBy          AffiliationInactivationReason?
+  inactivatedAt          DateTime?
+
+  @@index([agencyPermitNumber, agencyProvince])
+  @@index([conseillerComplianceId])
+  @@index([submissionId])
+  @@map("conformite_affiliations")
+}
+
+model PermitRevocation {
+  id                 String   @id @default(uuid()) @db.Uuid
+  agencyPermitNumber String
+  agencyProvince     Province
+  revokedAt          DateTime @default(now())
+  declaredByAdminId  String   @db.Uuid
+  reason             String
+
+  @@unique([agencyPermitNumber, agencyProvince])
+  @@index([revokedAt])
+  @@map("conformite_permit_revocations")
+}
+
+model UploadIntent {
+  id                     String               @id @default(uuid()) @db.Uuid
+  conseillerComplianceId String               @db.Uuid
+  conseillerCompliance   ConseillerCompliance @relation(fields: [conseillerComplianceId], references: [id], onDelete: Restrict)
+  purpose                String // enum applicatif (certificat | preuve_affiliation)
+  expectedContentType    String
+  expectedContentLength  Int
+  objectKey              String
+  createdAt              DateTime             @default(now())
+  expiresAt              DateTime
+  consumedAt             DateTime?
+
+  @@index([conseillerComplianceId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("conformite_upload_intents")
+}
+
+model AuditEntry {
+  id                     String                @id @default(uuid()) @db.Uuid
+  conseillerComplianceId String?               @db.Uuid
+  conseillerCompliance   ConseillerCompliance? @relation(fields: [conseillerComplianceId], references: [id], onDelete: Restrict)
+  eventType              String // enum applicatif validé par Zod schemas T046
+  actorId                String?               @db.Uuid
+  actorRole              ActorRole
+  payload                Json // pseudonymisé (B5/R10) — aucune PII directe
+  occurredAt             DateTime              @default(now())
+  idempotencyKey         String?
+  correlationId          String?
+
+  @@index([conseillerComplianceId, occurredAt(sort: Desc)])
+  @@index([eventType, occurredAt(sort: Desc)])
+  @@index([idempotencyKey], map: "audit_idempotency_key")
+  @@map("conformite_audit_entries")
+}
+
+model OutboxEntry {
+  id            String    @id @default(uuid()) @db.Uuid
+  eventType     String
+  payload       Json
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime?
+  lastError     String?
+
+  @@index([publishedAt, nextAttemptAt])
+  @@map("conformite_outbox")
+}
