@@ -33,6 +33,22 @@ services:
       timeout: 5s
       retries: 5
 
+  # Client web Postgres pour consulter la BD en dev.
+  # URL : http://localhost:8080
+  # Connexion préremplie :
+  #   Système : PostgreSQL · Serveur : postgres · User : cv_dev · Pass : cv_dev · BD : cv_dev
+  adminer:
+    image: adminer:latest
+    container_name: cv-adminer-dev
+    ports:
+      - '8080:8080'
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: pepa-linha-dark
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   localstack:
     image: localstack/localstack:3
     container_name: cv-localstack-dev
@@ -47,6 +63,10 @@ services:
     volumes:
       - localstack_data:/var/lib/localstack
       - /var/run/docker.sock:/var/run/docker.sock
+      # Init scripts exécutés quand LocalStack est ready — crée le bucket S3
+      # + configure CORS pour les uploads presignés depuis le navigateur.
+      # Cf. scripts/localstack/01-init-s3.sh
+      - ./scripts/localstack:/etc/localstack/init/ready.d
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:4566/_localstack/health']
       interval: 5s

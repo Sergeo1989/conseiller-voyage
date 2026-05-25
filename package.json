@@ -22,6 +22,13 @@
     "db:generate": "pnpm --filter @cv/db generate",
     "db:studio": "pnpm --filter @cv/db studio",
     "db:seed:dev": "pnpm --filter @cv/db seed:dev",
+    "docker:up": "docker compose -f docker-compose.dev.yml up -d",
+    "docker:down": "docker compose -f docker-compose.dev.yml down",
+    "docker:restart": "docker compose -f docker-compose.dev.yml restart",
+    "docker:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "docker:ps": "docker compose -f docker-compose.dev.yml ps",
+    "docker:reset": "docker compose -f docker-compose.dev.yml down -v",
+    "dev:up": "pnpm docker:up && pnpm db:migrate && pnpm dev",
     "check:boundaries": "tsx tools/check-module-boundaries.ts",
     "prepare": "husky"
   },

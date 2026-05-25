@@ -4,6 +4,11 @@
 // L'import de `./env` ici force la validation Zod des variables
 // d'environnement avant tout autre code.
 
+// MUST be the very first import — charge apps/api/.env dans process.env
+// AVANT que ./env (validation Zod) ne s'exécute. En prod, les vraies
+// valeurs viennent d'AWS Secrets Manager via task role (cf. ADR-0005).
+import 'dotenv/config';
+
 import { applyFrCAZodErrorMap } from '@cv/shared/conformite';
 import { initOtel } from './common/observability/otel';
 import { initSentry } from './common/observability/sentry';

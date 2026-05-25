@@ -16,6 +16,28 @@ const baseConfig = {
   }),
 };
 
-export const s3Client = new S3Client(baseConfig);
+/**
+ * S3 — désactive le checksum CRC32 auto introduit par AWS SDK v3 fin 2024.
+ *
+ * Pourquoi : depuis ~v3.730, le SDK ajoute un header
+ *   x-amz-sdk-checksum-algorithm=CRC32
+ * sur tous les PutObject. Pour les uploads PRESIGNÉS (browser PUT direct
+ * vers S3 via URL signée côté serveur), ce header n'est PAS inclus dans
+ * la signature → l'upload échoue avec 400 BadRequest.
+ *
+ * `WHEN_REQUIRED` n'active le checksum que si l'opération l'exige
+ * vraiment (rare). C'est le réglage recommandé par AWS pour les
+ * workflows presignés. Cf.
+ *   https://github.com/aws/aws-sdk-js-v3/issues/6810
+ *   https://docs.aws.amazon.com/sdkref/latest/guide/feature-dataintegrity.html
+ *
+ * Compatible LocalStack ET AWS prod.
+ */
+export const s3Client = new S3Client({
+  ...baseConfig,
+  requestChecksumCalculation: 'WHEN_REQUIRED',
+  responseChecksumValidation: 'WHEN_REQUIRED',
+});
+
 export const sesClient = new SESv2Client(baseConfig);
 export const secretsManagerClient = new SecretsManagerClient(baseConfig);
