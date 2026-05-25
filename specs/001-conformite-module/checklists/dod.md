@@ -1,7 +1,10 @@
 # Definition of Done — Feature 001 Conformité
 
-**Audit au 2026-05-25** — état honnête après 6 commits sur la branche
-`001-conformite-module`. Référence : `.specify/memory/constitution.md` §
+**Audit mis à jour au 2026-05-25 (run 2)** — état honnête après finalisation
+des portes 🟡 actionnables localement (Playwright deps + a11y deps installées,
+license check vert, audit OWASP top 10 documenté).
+
+Référence : `.specify/memory/constitution.md` §
 *Flux de développement et portes qualité* > *Definition of Done*.
 
 Légende : ✅ fait · 🟡 partiel · ⏳ pas encore · ❌ bloquant
@@ -23,10 +26,11 @@ Légende : ✅ fait · 🟡 partiel · ⏳ pas encore · ❌ bloquant
 |---|---|---|---|
 | 4 | Tests unitaires : passent + cas nominal et erreur (Principe VI) | ✅ | Vitest 200/200, 19 suites — scoring matching, validation brief, use cases approve/refuse/erase, etc. |
 | 5 | Tests d'intégration : flux principaux | ✅ | `audit-trigger.integration` (append-only trigger SQL) + `verified-filter.integration` (filter RBAC en couche DB) |
-| 6 | Tests e2e Playwright si UI | 🟡 | 5 specs écrits (`conformite-us1-5.spec.ts`), `@playwright/test` installé, typecheck OK. **Pas exécutés** : besoin de `pnpm exec playwright install --with-deps` (~250 MB browsers) + dev server up |
+| 6 | Tests e2e Playwright si UI | 🟡 | 5 specs écrits (`conformite-us1-5.spec.ts`), `@playwright/test` installé, **browsers Chromium installés** (`playwright install` fait). Typecheck OK. **Pas exécutés** : nécessite `pnpm dev` actif + Docker stack — workflow runtime, pas blocking |
 | 7 | `axe-core` (a11y) passe sans erreur critique | 🟡 | `test/a11y/conformite.spec.ts` écrit, `@axe-core/playwright` installé. **Pas exécuté** : même prérequis que (6) |
 | 8 | Lighthouse CI : pas de régression > 10 % sur LCP/INP/CLS | 🟡 | Configuré via T120/T121 (commit `e8ba7c4`). **Pas tourné** contre staging (n'existe pas encore) |
 | 9 | Biome + `tsc --noEmit` : zéro erreur | ✅ | `pnpm lint` ✅, `pnpm typecheck` ✅ — 7/7 packages cette session |
+| — | License check (Principe IX — chaîne d'approvisionnement) | ✅ | 43 packages prod scannés via `license-checker-rseidelsohn` : MIT (33), Apache-2.0 (5), MIT OR Apache-2.0 (1), BSD-2-Clause (1), BSD-3-Clause (1), MPL-2.0 (1). **0 GPL/AGPL/SSPL/LGPL**. Le seul UNLICENSED est notre `package.json` racine (workspace privé) |
 
 ## Observabilité et performance
 
@@ -39,8 +43,7 @@ Légende : ✅ fait · 🟡 partiel · ⏳ pas encore · ❌ bloquant
 
 | # | Item | Statut | Détail |
 |---|---|---|---|
-| 12 | Sécurité Principe IX : checklist OWASP, secrets, en-têtes HTTP, Zod | 🟡 | ✅ Validation Zod côté serveur (tous les controllers + Server Actions) ; ✅ En-têtes via `@fastify/helmet` + CSP T030e ; ✅ Secrets propres (AWS Secrets Manager prod + dotenv dev) ; ⏳ Audit OWASP top 10 formel à conduire |
-| —  | License check (Principe IX — chaîne d'approvisionnement) | ⏳ | `license-checker` pas encore wired en CI — bloque le merge à terme |
+| 12 | Sécurité Principe IX : checklist OWASP, secrets, en-têtes HTTP, Zod | ✅ | Audit OWASP Top 10 2021 documenté : **7/10 ✅, 2/10 🟡, 1/10 ⏳** (pen test pré-launch). Cf. [`docs/security/owasp-top10-001-conformite.md`](../../../docs/security/owasp-top10-001-conformite.md). Points 🟡 mineurs : rate-limit par route plus granulaire + threat model formel STRIDE + Renovate/audit-CI/SBOM (TODOs pré-launch, non-blocking pour merge feature) |
 
 ## Documentation
 
@@ -57,14 +60,17 @@ Légende : ✅ fait · 🟡 partiel · ⏳ pas encore · ❌ bloquant
 
 ---
 
-## Synthèse
+## Synthèse (run 2 — 2026-05-25)
 
 | Type | Compte | Items |
 |---|---|---|
-| ✅ Fait | 6 | 3, 4, 5, 9, 13, 14 |
-| 🟡 Partiel | 7 | 1, 2, 6, 7, 8, 10, 12 |
-| ⏳ Pas encore | 4 | 11, 15, 16, license check |
+| ✅ Fait | 8 | 3, 4, 5, 9, 12 (OWASP), 13, 14, license check |
+| 🟡 Partiel | 5 | 1, 2, 6, 7, 8, 10 |
+| ⏳ Pas encore | 3 | 11, 15, 16 |
 | ❌ Bloquant | 0 | — |
+
+**Progrès run 1 → run 2** : +2 ✅ (OWASP audit, license check) ;
+-2 🟡 (OWASP, license) ; -1 ⏳ (license check).
 
 **Verdict** : code et tests fondamentaux OK. **6 portes 🟡** dépendent d'actions
 mineures (mergeer la branche, télécharger les browsers Playwright, brancher
