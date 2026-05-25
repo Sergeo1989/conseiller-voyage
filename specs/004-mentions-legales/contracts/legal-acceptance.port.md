@@ -59,71 +59,127 @@ export interface LegalAcceptanceRecord {
    `(briefId, documentType, documentVersion)` retourne la même
    `LegalAcceptanceRecord` (lookup avant insert, ou capture du conflit
    unique côté Prisma).
-2. **Atomicité** : si le module 002 appelle `acceptForBrief` deux fois
-   dans la même transaction Prisma (une pour `confidentialite`, une
-   pour `cgu_b2c`), les deux inserts soit réussissent ensemble, soit
-   échouent ensemble (rollback géré par Prisma).
-3. **Version vérifiée** : `acceptForBrief` valide en interne que
+2. **Atomicité interne** : `acceptForBrief` encapsule sa propre
+   transaction Prisma côté module `identité` — l'appelant **ne passe
+   jamais** son client Prisma. Si l'insert échoue, la façade rollback
+   en interne et remonte une exception typée. Le module 002 gère son
+   propre lifecycle de brief en dehors (cf. research R7 — décision
+   Alt 2).
+3. **Pas de partage de client Prisma cross-module** (Principe V) : la
+   façade respecte la frontière modulaire en gérant sa propre
+   persistance. C'est l'appelant qui orchestre la séquence — pas la
+   transaction.
+4. **Version vérifiée** : `acceptForBrief` valide en interne que
    `documentVersion` correspond bien à une `LegalDocument` existante et
-   non supersédée. Si version inconnue → exception
-   `UnknownLegalDocumentVersionError`.
-4. **Validation Zod** : tous les inputs passent par Zod côté façade
+   effective (`effectiveAt <= now()`). Si version inconnue ou pas encore
+   effective → exception `UnknownLegalDocumentVersionError`.
+5. **Validation Zod** : tous les inputs passent par Zod côté façade
    (`packages/legal/src/schemas.ts`) — pas de confiance en l'appelant.
-5. **Pas d'écriture si version supersédée** : si la version pointée a
-   `supersededBy != null`, exception `LegalDocumentSupersededError`. Le
-   module 002 doit toujours utiliser `getCurrentVersion` pour récupérer
-   la version active.
+6. **Pas d'écriture si version obsolète** : si une version plus récente
+   est devenue effective, l'acceptation reste valide pour le
+   `documentVersion` demandé (cas voyageur : il accepte la version qu'on
+   lui a affichée). Mais en pratique, le module 002 doit appeler
+   `getCurrentVersion` juste avant et passer la valeur retournée pour
+   éviter les races.
 
 ---
 
 ## Exemples d'usage (depuis le module 002)
 
+Pattern alt 2 de research R7 — lifecycle de brief, façade encapsule sa
+propre transaction, pas de partage de client Prisma.
+
 ```typescript
 // Dans 002 : SubmitBriefUseCase
 
+// 1. Pré-récupérer les versions courantes (à afficher dans l'UI)
 const intakeConfidentialiteVersion = await this.legalAcceptanceFacade.getCurrentVersion('confidentialite');
 const cguB2cVersion = await this.legalAcceptanceFacade.getCurrentVersion('cgu_b2c');
 
-// Affichage UI : numéros de version stockés côté state du formulaire
+// ... (affichage UI, validation Zod côté form) ...
 
-// Submit : dans la transaction Prisma qui crée le brief
-await this.prisma.$transaction(async (tx) => {
-  const brief = await tx.brief.create({ data: { ... } });
-  await this.legalAcceptanceFacade.acceptForBrief({
-    briefId: brief.id,
-    documentType: 'confidentialite',
-    documentVersion: intakeConfidentialiteVersion,
-    acceptedAt: now,
-    ipAddress: requestIp,
-    userAgent: requestUserAgent,
+async function submitBrief(input: SubmitBriefInput): Promise<SubmissionResult> {
+  // 2. Créer le brief en consent_pending (transaction interne 002)
+  const brief = await this.briefWriter.create({
+    ...input,
+    status: 'consent_pending',
   });
-  await this.legalAcceptanceFacade.acceptForBrief({
-    briefId: brief.id,
-    documentType: 'cgu_b2c',
-    documentVersion: cguB2cVersion,
-    acceptedAt: now,
-    ipAddress: requestIp,
-    userAgent: requestUserAgent,
-  });
-});
+
+  try {
+    // 3. Enregistrer les deux acceptations via la façade (chaque appel = transaction interne identité)
+    await this.legalAcceptanceFacade.acceptForBrief({
+      briefId: brief.id,
+      documentType: 'confidentialite',
+      documentVersion: intakeConfidentialiteVersion,
+      acceptedAt: now,
+      ipAddress: requestIp,
+      userAgent: requestUserAgent,
+    });
+    await this.legalAcceptanceFacade.acceptForBrief({
+      briefId: brief.id,
+      documentType: 'cgu_b2c',
+      documentVersion: cguB2cVersion,
+      acceptedAt: now,
+      ipAddress: requestIp,
+      userAgent: requestUserAgent,
+    });
+
+    // 4. Marquer le brief comme consent_ok puis submitted (transaction interne 002)
+    await this.briefWriter.transition(brief.id, 'consent_pending', 'consent_ok');
+    await this.briefWriter.transition(brief.id, 'consent_ok', 'submitted');
+
+    return { briefId: brief.id, status: 'submitted' };
+  } catch (err) {
+    // 5. Si une acceptance échoue, le brief reste consent_pending.
+    //    Le job OrphanBriefCleanupJob (BullMQ quotidien) le marquera
+    //    consent_failed après 1 heure. Pas de rollback synchrone à faire.
+    this.logger.error({ briefId: brief.id, err }, 'acceptForBrief failed; brief left in consent_pending');
+    throw err;
+  }
+}
 ```
+
+### États du brief
+
+```text
+created → consent_pending → consent_ok → submitted → ...
+                ↓
+          consent_failed (orphan cleanup, > 1h sans transition)
+```
+
+Seuls les briefs en état `submitted` sont visibles côté matching. Les
+états `consent_pending` et `consent_failed` sont invisibles
+publiquement.
 
 ---
 
 ## Tests de contrat
 
-Le module 002 **doit** inclure un test de contrat
-(`apps/api/test/contract/legal-acceptance.contract.test.ts`) qui :
+Le test de contrat **vit dans 004** (pas dans 002), pour permettre la
+validation indépendante du contrat avant que 002 ne soit livré.
+Localisation : `apps/api/test/contract/legal-acceptance.contract.test.ts`.
+Pattern cohérent avec `ConformiteQueryPort` livré en 001
+(`conformite-query.contract.test.ts`).
 
-1. Appelle `acceptForBrief` avec un `briefId` factice et vérifie le
-   payload de retour.
-2. Appelle `acceptForBrief` deux fois avec les mêmes paramètres et
-   vérifie que la deuxième n'insère pas (lookup, pas d'erreur).
-3. Appelle `getCurrentVersion('cgu_b2c')` et vérifie qu'elle retourne
-   un entier > 0.
+Le test simule un consommateur (rôle joué par le test) qui :
+
+1. Appelle `getCurrentVersion('cgu_b2c')` et vérifie qu'elle retourne
+   un entier > 0 (la version seed initiale).
+2. Appelle `acceptForBrief` avec un `briefId` factice et la version
+   courante, vérifie le payload de retour.
+3. Appelle `acceptForBrief` une 2e fois avec les mêmes paramètres et
+   vérifie que la 2e appel est idempotent (pas d'erreur, retour
+   identique, count de rows inchangé).
 4. Appelle `acceptForBrief` avec une `documentVersion` invalide et
    vérifie l'exception `UnknownLegalDocumentVersionError`.
-5. Appelle `acceptForBrief` avec une version supersédée et vérifie
-   l'exception `LegalDocumentSupersededError`.
+5. Appelle `acceptForBrief` avec une version connue mais
+   `effectiveAt > now()` et vérifie l'exception
+   `UnknownLegalDocumentVersionError` (version pas encore effective).
+6. **Test de la non-fuite de transaction** : vérifie qu'aucune méthode
+   du contrat n'expose un type Prisma ou un client transactionnel.
+   Cohérent avec l'invariant de R7 (Alt 2).
 
-Cohérent avec le pattern `ConformiteQueryPort` livré en 001.
+Le test contractuel produit également une fixture JSON snapshot du
+contrat (chemin, signature des méthodes, types d'exceptions exposées)
+versionnée dans le repo. Tout changement de signature non
+intentionnel échoue le test → re-publication explicite obligatoire.

@@ -229,18 +229,246 @@ Chaque case produit une `LegalAcceptance` distincte
 
 ---
 
+## R6 — Parsing User-Agent pour anonymisation
+
+### Décision
+
+**`ua-parser-js`** (v2.x) — librairie de facto standard, ~20 KB, maintenue.
+
+Fonction pure `extractBrowserFamily(ua: string): string` dans
+`packages/legal/src/anonymization.ts`. Retour : nom de la famille du
+navigateur (`'Firefox'`, `'Chrome'`, `'Safari'`, etc.), ou `'unknown'`
+si parsing échoue ou retourne vide.
+
+Comportement explicite :
+
+- UA standard détecté → `result.browser.name` (Firefox, Chrome, Safari, Edge, Opera, ...)
+- UA exotique ou bot non identifié → `'unknown'`
+- UA vide / `null` / non-string → `'unknown'`
+- Cas Robots reconnus → `'bot'` (pas d'identifiant individuel)
+
+### Rationale
+
+Parser un User-Agent string proprement est notoirement complexe (UAs
+incluent versions, OS, devices, navigateurs vendor-modifiés). Réinventer
+le parsing est un gouffre. `ua-parser-js` couvre les cas connus, mis à
+jour régulièrement.
+
+Pour Loi 25 art. 8 traçabilité, on n'a pas besoin de la version exacte
+ni de l'OS — la famille suffit (« le user a confirmé avec Firefox »).
+
+### Alternatives évaluées
+
+- **Parsing manuel par regex** — sera incorrect sur les UAs modernes.
+- **`bowser`** — alternative décente, mais maintenance moins active que
+  `ua-parser-js` en 2026.
+- **`platform`** — déprécié.
+- **Cloudflare Workers User-Agent API** — coût supplémentaire, dépendance
+  cloud, latence ajoutée. Pas justifié.
+
+---
+
+## R7 — Stratégie de transaction cross-module pour le double consentement intake
+
+### Décision
+
+**Alternative 2 — séquentiel avec lifecycle de brief** :
+
+1. Le module `002-voyageur-intake` crée le brief en état `consent_pending`.
+2. `002` appelle `LegalAcceptanceFacade.acceptForBrief()` deux fois
+   (confidentialité + cgu_b2c) **dans la même transaction Prisma côté
+   `identité`**. Cette transaction est gérée *intégralement* par la façade —
+   `002` ne passe pas son client Prisma à `identité`.
+3. Si les deux acceptances réussissent, `identité` retourne `OK` à `002`.
+4. `002` met le brief à `consent_ok` puis `submitted` dans une transaction
+   séparée.
+5. **Si `acceptForBrief` échoue après la création du brief**, le brief reste
+   en `consent_pending`. Un job BullMQ `OrphanBriefCleanupJob` quotidien
+   (côté module `002` mais utilisant les ports identité en lecture)
+   détecte les briefs `consent_pending` > 1 heure et les marque
+   `consent_failed` (invisible côté matching).
+
+### Rationale
+
+- **Respecte la frontière modulaire** (Principe V) : aucun module externe
+  ne partage un client Prisma avec `identité`. La façade encapsule sa
+  propre transaction.
+- **Atomicité préservée à la granularité utile** : si l'une des deux
+  acceptances échoue, l'autre est rollback dans la même transaction. Le
+  brief est créé séparément mais marqué `consent_pending` jusqu'à
+  confirmation — il n'est jamais visible côté matching tant que
+  `consent_ok` n'est pas atteint.
+- **Pas de saga distribuée** : surcouche disproportionnée pour 2 inserts.
+- **Orphans détectables et nettoyables** : la table `briefs` reste cohérente
+  avec un état explicite ; pas de garbage silencieux.
+
+### Alternatives évaluées
+
+- **Alt 1 — Outbox pattern** : `002` écrit brief + événement
+  `BriefSubmitted` ; `identité` consomme et crée les acceptances. Casse
+  la garantie « brief n'est pas valide sans consentement » (latence outbox
+  drain ~5 s livré en 001 → brief temporairement visible sans
+  acceptances). Refusé.
+- **Alt 3 — Saga avec compensation** : pattern explicite avec rollback.
+  Sur-ingénierie pour 2 inserts.
+- **Alt 4 (originale, rejetée) — transaction Prisma partagée** :
+  `002` ouvre la transaction et la passe à `identité`. Casse Principe V.
+
+### Impact sur le contrat
+
+Le contrat `LegalAcceptanceFacade.acceptForBrief()` ne reçoit plus de
+client Prisma externe. Il gère sa propre transaction. Le diagramme dans
+`data-model.md` est mis à jour.
+
+---
+
+## R8 — Cookie de cache version : signature et sécurité
+
+### Décision
+
+**Cookie HTTP-only signé HMAC-SHA256** avec :
+
+- Nom : `__Host-cv.legal-version` (préfixe `__Host-` pour locking strict)
+- Attributs : `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`
+- TTL : 5 minutes (max-age 300)
+- Format du payload : `base64url(JSON.stringify({ userId, cguB2bVersion, exp })) + '.' + hmac`
+- Secret HMAC : nouveau secret `LEGAL_COOKIE_HMAC_SECRET` (32 bytes) stocké
+  dans AWS Secrets Manager `ca-central-1`. Distinct du salt
+  d'anonymisation (R3) et du secret Auth.js v5.
+
+### Endpoint backend pour le refresh
+
+`GET /api/me/legal/version-status` (authentifié, AuthGuard) :
+
+- Lit la version `cgu_b2b` acceptée la plus récente pour le `userId`.
+- Lit la version `cgu_b2b` courante (max `version` WHERE `effectiveAt <= now()`).
+- Retourne `{ accepted, current, status: 'up_to_date' | 'outdated' | 'never_accepted' }`.
+- Set le cookie `__Host-cv.legal-version` dans la réponse.
+
+Le middleware Next.js consomme ce endpoint **seulement** quand le cookie
+est absent ou expiré. Sinon il décode le cookie localement (vérification
+HMAC) et applique la logique.
+
+### Comportement multi-tab
+
+Cookie partagé entre tabs (même origine). Le premier tab qui détecte
+l'expiration appelle le backend ; les tabs suivants voient le cookie
+fraîchement set. Race théoriquement possible mais sans impact (l'endpoint
+est idempotent et le résultat est identique).
+
+### Comportement après acceptation
+
+Le Server Action `/api/me/legal/accept` (qui crée la nouvelle
+`LegalAcceptance`) émet aussi un `Set-Cookie` avec la nouvelle version
+acceptée. Le middleware sur la requête suivante voit immédiatement le
+cookie à jour, sans appel backend supplémentaire.
+
+### Rationale
+
+- **HMAC empêche la forge** : un conseiller mal intentionné ne peut pas
+  écrire un cookie `{ cguB2bVersion: 999 }` pour bypass le check. Le
+  middleware vérifie la signature, rejette si invalide → re-check
+  backend.
+- **`__Host-` préfixe** : Chrome/Firefox/Safari refusent de poser ce
+  cookie sur sous-domaine ou avec `Secure: false`. Protège contre les
+  vecteurs de pollution cross-subdomain.
+- **HttpOnly** : aucune lecture côté JS — pas de XSS exfiltration.
+- **TTL 5 min** : compromis latence vs fraîcheur. Si un bump de version
+  arrive en production, les conseillers connectés voient la redirection
+  vers `/cgu-conseiller/re-accepter` dans les 5 minutes maxi.
+
+### Alternatives évaluées
+
+- **Cookie non signé** — faille de sécurité directe (cf. review issue 5.1).
+- **JWT court (5 min)** — équivalent fonctionnel à cookie signé, mais JWT
+  ajoute du parsing JWT + bibliothèque jsonwebtoken. HMAC raw plus
+  léger.
+- **Refresh à chaque requête** — surcouche backend inutile. La fraîcheur
+  5 min est suffisante pour un changement de version (qui se compte en
+  jours, pas en secondes).
+
+---
+
+## R9 — Threat model du salt d'anonymisation Loi 25
+
+### Décision
+
+Documenter explicitement le threat model du `project_salt` (cf. R3) :
+
+**Qui peut lire le secret** :
+
+- Rôle IAM ECS Fargate de l'application backend (lecture seule).
+- Rôle IAM `terraform-deployer` (pour rotation manuelle, jamais utilisé
+  sauf incident).
+- Auditeur IAM (lecture des métadonnées du secret, pas de la valeur).
+
+**Plan de réponse à incident en cas de fuite** :
+
+1. Détection (alerte IAM CloudTrail sur accès non-attendu) → SecOps notifié.
+2. Génération d'un nouveau salt v2 en AWS Secrets Manager (la v1 reste
+   pour les hashs historiques — versionnement de secret natif AWS SM).
+3. Job batch `RehashLegalAcceptancesJob` qui rehash tous les
+   `subjectIdHash` avec salt v2 :
+   - Pour les acceptations dont `subjectId` n'est PAS encore anonymisé
+     (`subjectId` toujours présent) : recalcul direct.
+   - Pour les acceptations déjà anonymisées (`subjectId IS NULL`,
+     `subjectIdHash` calculé avec salt v1) : on ne peut **pas**
+     recalculer (le `subjectId` original est perdu). Accepter la perte
+     d'invariant d'unicité historique pour ces rows ; flag
+     `anonymizationSaltVersion: 1` à conserver dans une colonne dédiée
+     pour audit.
+4. Rotation du secret v1 → v2 (l'app ne peut plus le lire en clair).
+
+**Accept** : la rotation casse l'invariant « deux acceptances anonymisées
+ne peuvent pas être confondues pour le même utilisateur ». C'est un
+trade-off explicite documenté ici. Pour limiter l'impact, garder le salt
+v1 lisible (`grant_decrypt` IAM) en read-only pour les jobs forensiques
+si nécessaire.
+
+**Garde-fous** :
+
+- Audit IAM trail sur la valeur du secret (lecture loggée).
+- Pas de copie du secret dans les logs, env vars en dev (utiliser
+  1Password CLI à la place).
+- Tests d'intégration n'utilisent pas le vrai salt (`TEST_SALT` fixe).
+
+### Impact data-model
+
+Ajouter colonne `anonymizationSaltVersion: int @default(1)` sur
+`LegalAcceptanceAnonymization` (cf. data-model révisé) pour tracer quel
+salt a été utilisé. Permet le rolling rotation.
+
+---
+
 ## Synthèse
 
-Les 5 décisions sont alignées avec :
+Les 9 décisions sont alignées avec :
 
-- **Constitution v2.2.0** : Principes II (Loi 25), VIII (Clean
-  Architecture), IX (sécurité, validation), XI (a11y — labels
-  cases à cocher), XII (SEO — SSG préservé).
-- **Stack canonique** : Next.js 15 MDX, Prisma 5, NestJS 10, AWS
-  Secrets Manager (déjà en place via 001).
+- **Constitution v2.2.0** : Principes II (Loi 25), V (modularité — cf. R7
+  cross-module sans partage Prisma), VIII (Clean Architecture), IX
+  (sécurité, validation, cookie HMAC signé en R8, threat model salt en
+  R9), XI (a11y — labels cases à cocher), XII (SEO — SSG préservé).
+- **Stack canonique** : Next.js 15, Prisma 5, NestJS 10, AWS Secrets
+  Manager (déjà en place via 001).
 - **Patterns existants** en 001 : Auth.js v5 sessions partagées,
-  CSRF middleware, idempotency interceptor, port `LegalAcceptanceWriter`
-  exposé via façade pour respecter la frontière modulaire.
+  CSRF middleware, idempotency interceptor, pattern outbox + BullMQ
+  pour les jobs périodiques (orphan cleanup en R7).
 
-Aucune décision n'introduit de nouvelle dépendance externe au-delà de
-`@next/mdx` (qui est dans l'écosystème Next.js officiel).
+Nouvelles dépendances externes introduites :
+
+- `@next/mdx` + `@mdx-js/loader` + `@mdx-js/react` (R1) — écosystème Next.js
+  officiel
+- `ua-parser-js` (R6) — librairie standard légère, ~20 KB
+
+Nouveaux secrets AWS Secrets Manager `ca-central-1` :
+
+- `conformite/loi25/subject-anonymization-salt` (R3) — 32 bytes, jamais roté
+  sauf incident (cf. R9 plan de réponse)
+- `legal/cookie-hmac-secret` (R8) — 32 bytes, distinct du salt et d'Auth.js
+
+ADRs à créer (documentation formelle des décisions structurantes) :
+
+- **ADR-0008** — Anonymisation par hash salé pour traçabilité Loi 25
+  (formalise R3 + R9)
+- **ADR-0009** — Middleware Next.js avec cookie HMAC signé pour le check
+  de version CGU obsolète (formalise R4 + R8)

@@ -79,15 +79,18 @@ Ce script est wiré dans CI comme étape `pnpm legal:verify` avant
 Un script `tools/seed-legal-documents.ts` (idempotent) inspecte
 `packages/legal-content/**/*.mdx`, et pour chaque entrée :
 
-- Calcule le checksum.
+- Calcule le checksum SHA-256 du corps MDX (hors frontmatter).
+- Rend le corps MDX en HTML/texte plein pour stocker dans
+  `contentSnapshot` (archive éternelle, cf. data-model.md).
 - Vérifie si une row `auth_legal_documents` existe pour
   `(type, version)`.
 - Si oui et `checksum` inchangé : no-op.
 - Si oui et `checksum` différent : erreur (le check de pré-build aurait
-  déjà rejeté).
-- Si non : insert `{ type, version, checksum, mdxPath, publishedAt,
-  effectiveAt }` ; si une row précédente existe pour le même `type`
-  (version inférieure), set son `supersededById` à l'id de la nouvelle.
+  déjà rejeté ; redondance défensive).
+- Si non : insert `{ type, version, checksum, contentSnapshot,
+  publishedAt, effectiveAt }`. La version active est calculée par
+  requête (`max(version) WHERE type = X AND effectiveAt <= now()`) —
+  aucune mutation d'anciennes rows nécessaire.
 
 Le script s'exécute en post-deploy (étape de release CD) après la
 migration Prisma.
@@ -112,8 +115,10 @@ Le juriste demande une clarification de juridiction. Workflow :
 3. PR mergée sur main.
 4. Pipeline CD applique la migration Prisma (si schema change — ici
    non), puis exécute `seed-legal-documents.ts` qui :
-   - Insère la row `(cgu_b2b, 3)`.
-   - Met `(cgu_b2b, 2).supersededById = 3.id`.
+   - Calcule le `contentSnapshot` (corps MDX rendu) à figer en BD.
+   - Insère la row `(cgu_b2b, 3, contentSnapshot, ..., effectiveAt)`.
+   - Aucune mutation des rows existantes — la version active est
+     calculée par `max(version) WHERE effectiveAt <= now()`.
 5. À partir de `effectiveAt`, le middleware Next.js redirige les
    conseillers ayant accepté v2 vers `/cgu-conseiller/re-accepter`.
    Avant `effectiveAt` : la v2 reste valide, la v3 est annoncée mais

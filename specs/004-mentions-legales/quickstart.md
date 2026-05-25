@@ -18,13 +18,20 @@ Le repo doit déjà être configuré pour le développement local de la feature
 ## Setup additionnel
 
 ```bash
-# Installer le nouveau package legal-content
+# Installer les nouveaux packages legal + legal-content + dépendance ua-parser-js
 pnpm install
+
+# Générer le secret HMAC du cookie middleware en dev (1Password CLI)
+pnpm secrets:legal:dev
 
 # Vérifier la cohérence des fichiers MDX (pré-build check)
 pnpm legal:verify
 
-# Seed des LegalDocuments en BD locale
+# Prévisualiser les MDX en PDF rendus (pour relecture juriste hors-line)
+pnpm legal:preview
+# Génère packages/legal-content/preview/<locale>/<slug>.pdf
+
+# Seed des LegalDocuments en BD locale (calcule checksum + contentSnapshot)
 pnpm --filter @cv/api db:seed:legal
 
 # Lancer le stack complet (idem 001)
@@ -102,25 +109,53 @@ Vitest dédié à `LegalAcceptanceFacade.acceptForBrief`.
 
 ---
 
-## Parcours 4 — Ré-acceptation après bump de version (US3 sous-cas)
+## Parcours 4 — Bump de version + ré-acceptation après obsolescence (US3 sous-cas)
 
-1. Bumper la version `cgu_b2b` localement :
+### Workflow de bump (process explicite)
 
-   ```bash
-   # Éditer packages/legal-content/fr-CA/cgu-conseiller.mdx
-   # Changer version: 1 → version: 2 dans le frontmatter
-   # Mettre publishedAt à maintenant et effectiveAt à maintenant (immédiat en test)
-   pnpm legal:verify
-   pnpm --filter @cv/api db:seed:legal
-   ```
+Le bump de version est **une décision juridique**, pas technique. Process :
 
-2. Se connecter au tableau de bord conseiller en tant qu'utilisateur
+1. **Juriste** identifie un changement de fond dans un document légal
+   (clarification d'obligation, ajout d'un droit, modification d'une
+   finalité de traitement Loi 25, etc.). Distinction explicite :
+   - **Bump requis** : changement qui modifie ce que le user a accepté.
+   - **Pas de bump** : coquille orthographique, reformulation neutre.
+2. **Juriste** rédige la nouvelle version (texte) + tag explicite
+   `[BUMP]` ou `[NO-BUMP]` dans le commentaire PR.
+3. **Développeur** :
+   - Édite `packages/legal-content/<locale>/<slug>.mdx` (texte) ;
+   - Bump `version: N → N+1` dans le frontmatter ;
+   - Met à jour `publishedAt` à la date actuelle ;
+   - Définit `effectiveAt` (≥ `publishedAt`, typiquement +7 jours
+     pour préavis aux conseillers) ;
+   - Rédige une entrée `changelog` brève (1-3 lignes, lue par le
+     conseiller au moment de la ré-acceptation).
+4. **Pré-PR** : `pnpm legal:verify` localement (checksum + version
+   strictement croissante).
+5. **PR review** : le juriste confirme le tag `[BUMP]` dans le PR. Le
+   reviewer code confirme que le frontmatter est cohérent et que les
+   éventuelles références cross-document (ex: lien vers une autre
+   page légale) ne sont pas cassées.
+6. **Post-merge déploiement** : `seed-legal-documents.ts` détecte la
+   nouvelle version et l'insère en BD (calcule `contentSnapshot` à
+   ce moment-là — archive figée).
+
+### Parcours de test local
+
+1. Bumper localement comme décrit ci-dessus (étape 3-4).
+2. Re-seed : `pnpm --filter @cv/api db:seed:legal` (idempotent).
+3. Vérifier en BD : `SELECT type, version, effectiveAt FROM auth_legal_documents WHERE type = 'cgu_b2b' ORDER BY version;` → 2 rows (v1 et v2 — v1 reste en BD pour archive).
+4. Se connecter au tableau de bord conseiller en tant qu'utilisateur
    qui a accepté la version 1.
-3. Tenter d'accéder à `/fr/conseiller/leads` → vérifier redirection vers
-   `/fr/cgu-conseiller/re-accepter` qui affiche le `changelog` du
-   frontmatter et un bouton « J'accepte la version 2 ».
-4. Cliquer le bouton → vérifier qu'une 2e row est créée dans
-   `auth_legal_acceptances` (`document_version=2`), et que le tableau
+5. Tenter d'accéder à `/fr/conseiller/leads` → vérifier :
+   - Si `effectiveAt` futur → pas encore de redirection (transition
+     douce, conseiller voit la v2 annoncée mais pas obligée).
+   - Si `effectiveAt` passé → redirection vers
+     `/fr/cgu-conseiller/re-accepter` qui affiche le `changelog` du
+     frontmatter et un bouton « J'accepte la version 2 ».
+6. Cliquer le bouton → vérifier qu'une 2e row est créée dans
+   `auth_legal_acceptances` (`document_version=2`), qu'un nouveau cookie
+   `__Host-cv.legal-version` est set avec version 2, et que le tableau
    de bord est accessible.
 
 ---

@@ -1,9 +1,14 @@
 # HTTP Endpoints — Mentions légales
 
-**Date** : 2026-05-25
+**Date** : 2026-05-25 (révisé post-review)
 
-Cette feature introduit **un seul** endpoint HTTP authentifié (le reste —
-les 5 pages publiques — est statique SSG sans backend).
+Cette feature introduit **deux** endpoints HTTP authentifiés :
+
+1. `POST /api/me/legal/accept` — déclaration d'acceptation d'une CGU.
+2. `GET /api/me/legal/version-status` — consultation de l'état des
+   versions acceptées vs courantes (consommé par le middleware Next.js).
+
+Les 5 pages publiques restent statiques SSG sans backend.
 
 ---
 
@@ -61,9 +66,74 @@ Content-Type: application/json
 ```http
 HTTP/1.1 201 Created
 Content-Type: application/json
+Set-Cookie: __Host-cv.legal-version=<base64url-payload>.<hmac>; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=300
 
 { "acceptanceId": "...", "acceptedAt": "2026-05-25T14:32:11Z" }
 ```
+
+La réponse `Set-Cookie` rafraîchit immédiatement le cookie de cache
+côté middleware — le conseiller peut accéder à son tableau de bord
+sans round-trip supplémentaire.
+
+### Coexistence des deux mécanismes d'idempotence
+
+| Mécanisme | Niveau | Détection |
+|---|---|---|
+| Contrainte unique DB `(subjectId, documentType, documentVersion)` | Métier | Empêche 2 acceptances pour le même couple, même via 2 requêtes HTTP différentes |
+| Header `Idempotency-Key` (interceptor 001) | HTTP | Empêche un rejeu exact de la même requête (réseau, retry client) |
+
+**Comportement combiné** :
+
+- Première requête avec `Idempotency-Key: K` → INSERT, 201, cache la
+  réponse par `K`.
+- Rejeu de la même requête (même `Idempotency-Key`, même payload) → 200,
+  retourne la réponse cachée (interceptor 001).
+- Nouvelle requête (autre `Idempotency-Key`) avec même
+  `(documentType, documentVersion)` → 200 idempotent, retourne
+  l'acceptance existante (mécanisme DB).
+- Nouvelle requête (autre `Idempotency-Key`) avec **payload différent**
+  pour le même `Idempotency-Key` → 422 (interceptor 001 détecte le
+  payload mismatch).
+
+---
+
+## GET `/api/me/legal/version-status`
+
+**Description** : consommé par le middleware Next.js de vérification de
+version. Lecture seule, pas idempotent au sens HTTP (chaque appel
+re-lit la BD).
+
+**Auth** : Auth.js session cookie. RBAC :
+`role IN ('conseiller', 'admin')`.
+
+**Headers obligatoires** : `Cookie` (session). Pas de CSRF (GET).
+Pas de `Idempotency-Key` (lecture).
+
+### Réponse
+
+```typescript
+{
+  accepted: number | null,   // dernière version cgu_b2b acceptée par le user, null si jamais accepté
+  current: number,           // version active actuelle (max effective)
+  status: 'up_to_date' | 'outdated' | 'never_accepted',
+}
+```
+
+| Code | Body | Sémantique |
+|---|---|---|
+| **200 OK** | (voir ci-dessus) | Lecture réussie. Set-Cookie `__Host-cv.legal-version` rafraîchi. |
+| **401 Unauthorized** | `{ error: 'unauthenticated' }` | Pas de session |
+| **403 Forbidden** | `{ error: 'rbac_denied' }` | Role pas conseiller ni admin |
+| **503 Service Unavailable** | `{ error: 'db_unavailable' }` | DB primaire HS |
+
+### Rate limiting
+
+Le rate limiter global applique **30 requêtes / minute / utilisateur**
+(plus généreux que l'endpoint POST — c'est une lecture qui peut être
+appelée par le middleware sur plusieurs requêtes successives multi-tab).
+
+Le cookie HMAC TTL 5 min réduit le besoin d'appeler ce endpoint à
+~12 appels / heure / utilisateur en moyenne.
 
 ---
 

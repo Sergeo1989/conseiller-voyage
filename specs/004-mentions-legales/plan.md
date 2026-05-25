@@ -9,24 +9,43 @@
 ## Résumé
 
 Cinq pages statiques (`/mentions-legales`, `/cgu-voyageur`, `/cgu-conseiller`,
-`/confidentialite`, `/comment-ca-marche`) + un footer permanent + une petite
-extension du module `identité` existant pour tracer les acceptations
+`/confidentialite`, `/comment-ca-marche`) + un footer permanent statique +
+une extension du module `identité` existant pour tracer les acceptations
 horodatées Loi 25.
 
 **Approche technique** : pages Next.js 15 App Router en SSG sous un segment
 `(legal)` avec un layout partagé. Contenu éditorial en fichiers MDX
-`packages/legal-content/<locale>/<slug>.mdx` versionnés dans le repo (le
-versionnement est explicite via frontmatter `version: N` ; le bump de version
-est une étape manuelle documentée). Footer composant React partagé via
-`apps/web/src/components/Footer.tsx`. Côté serveur, une nouvelle entité
-`LegalAcceptance` dans le schéma Prisma du module `identité`, un use case
-pur `compareVersions` testé TDD, et un port public
-`LegalAcceptanceWriter` consommé par le module 002-voyageur-intake pour le
-double consentement au brief.
+`packages/legal-content/<locale>/<slug>.mdx` versionnés dans le repo
+(versionnement explicite via frontmatter `version: N` + checksum SHA-256 +
+`contentSnapshot` archivé en BD à publication pour permettre la
+re-consultation d'une version historique acceptée). Footer composant React
+**purement statique** (année du copyright commitée, sans dynamic).
+
+Côté serveur, trois nouvelles tables Prisma dans le schéma du module
+`identité` :
+
+- `auth_legal_documents` (immutable post-seed)
+- `auth_legal_acceptances` (strictement append-only)
+- `auth_legal_acceptance_anonymizations` (append-only, matérialise
+  l'effacement Loi 25 sans toucher l'acceptation originale)
+
+Quatre nouveaux use cases : `AcceptCguB2bUseCase`,
+`AcceptIntakeConsentUseCase`, `CheckCguUpToDateUseCase`,
+`AnonymizeLegalAcceptancesUseCase` (appelé en chaîne depuis l'extension
+de `EraseConseillerDataUseCase` livré en 001). Un port public
+`LegalAcceptanceFacade` consommé par le module 002-voyageur-intake — la
+façade **encapsule sa propre transaction Prisma** (cf. research R7, ne
+partage pas de client avec le module appelant).
 
 Middleware Next.js qui, sur les routes authentifiées du conseiller, vérifie
-que la version `cgu_b2b` acceptée n'est pas obsolète et redirige vers
-`/cgu-conseiller/re-accepter` si nécessaire.
+via un **cookie HMAC signé** (`__Host-cv.legal-version`, TTL 5 min, cf.
+research R8) que la version `cgu_b2b` acceptée n'est pas obsolète et
+redirige vers `/cgu-conseiller/re-accepter` si nécessaire. Si cookie
+absent ou signature invalide, fallback sur `GET /api/me/legal/version-status`.
+
+Deux nouveaux ADRs documentent les décisions structurantes :
+**ADR-0008** (anonymisation Loi 25 par hash salé) et **ADR-0009**
+(middleware Next.js + cookie HMAC).
 
 ---
 
@@ -39,8 +58,8 @@ Stack figée par la constitution v2.2.0 — détails ci-dessous.
 | Langage / version | TypeScript ≥ 5, mode `strict` |
 | Frontend principal | Next.js 15 App Router (RSC par défaut), Tailwind CSS v4, shadcn/ui, react-hook-form + Zod, **next-intl** (déjà configuré), date-fns (`fr-CA`) |
 | Contenu éditorial | **MDX** sous `packages/legal-content/<locale>/<slug>.mdx` avec frontmatter (version, publishedAt, effectiveAt, checksum) — pas de CMS au MVP |
-| Backend (extension `identité`) | NestJS 10 + Fastify, Prisma 5, Zod, Pino |
-| DB | PostgreSQL 16 `ca-central-1` (extension du schéma existant — 2 nouvelles tables `auth_legal_documents` et `auth_legal_acceptances`) |
+| Backend (extension `identité`) | NestJS 10 + Fastify, Prisma 5, Zod, Pino, **`ua-parser-js` v2** (anonymisation User-Agent — cf. research R6) |
+| DB | PostgreSQL 16 `ca-central-1` (extension du schéma existant — 3 nouvelles tables : `auth_legal_documents`, `auth_legal_acceptances`, `auth_legal_acceptance_anonymizations`) |
 | Tests | Vitest (unit + intégration), Playwright (e2e), **axe-core** (a11y CI bloquant), **Lighthouse CI** (Perf/SEO/A11y bloquant) |
 | Plateforme cible | Node.js 22 LTS, AWS ECS Fargate `ca-central-1` (existant), CloudFront CDN |
 | Performance | LCP < 1,5 s (sous budget 2,5 s), INP < 200 ms, CLS < 0,1 ; Lighthouse Perf ≥ 90, SEO ≥ 95, A11y ≥ 95 |
@@ -143,20 +162,31 @@ Le script de check CI `tools/check-no-hardcoded-strings.ts` (livré en
 
 Aucun nouveau module. Extension du module `identité` existant :
 
-- Nouvelle table Prisma `auth_legal_documents` (préfixe `auth_` cohérent
-  avec les tables Auth.js).
-- Nouvelle table Prisma `auth_legal_acceptances`.
-- 3 nouveaux use cases dans `apps/api/src/modules/identite/application/use-cases/`.
-- 1 port public `LegalAcceptanceWriter` exposé via la façade
-  `IdentiteModule.LegalAcceptanceFacade` — consommé par le module
-  `002-voyageur-intake` pour le double consentement Loi 25 au brief.
+- 3 nouvelles tables Prisma (préfixe `auth_` cohérent avec Auth.js) :
+  `auth_legal_documents`, `auth_legal_acceptances`,
+  `auth_legal_acceptance_anonymizations`.
+- 4 nouveaux use cases dans
+  `apps/api/src/modules/identite/application/use-cases/` :
+  `AcceptCguB2bUseCase`, `AcceptIntakeConsentUseCase`,
+  `CheckCguUpToDateUseCase`, `AnonymizeLegalAcceptancesUseCase`.
+- 1 port public `LegalAcceptanceFacade` exposé par le module identité —
+  consommé par 002-voyageur-intake.
 
-Aucun appel LLM dans cette feature.
+**Frontière modulaire respectée pour la transaction cross-module**
+(cf. research R7 — décision Alt 2) : la façade `acceptForBrief()`
+encapsule sa propre transaction Prisma côté `identité`. Le module 002
+n'ouvre **jamais** une transaction qu'il partagerait avec `identité`.
+Le brief est créé en état `consent_pending` ; après succès du
+`acceptForBrief × 2`, il passe à `consent_ok`. Un job BullMQ orphan
+cleanup détecte les briefs `consent_pending > 1h` et les marque
+`consent_failed`.
 
 Enforcement de la frontière modulaire (déjà en place via 001) :
 `tools/check-module-boundaries.ts` garantit qu'aucun module externe
-n'importe directement les tables `auth_legal_*` — passage obligatoire
-par la façade.
+n'importe directement les tables `auth_legal_*` ni le client Prisma
+d'`identité` — passage obligatoire par la façade.
+
+Aucun appel LLM dans cette feature.
 
 ✅ **Conforme.**
 
@@ -209,20 +239,22 @@ livraison.
 Structure en quatre couches strictes (cohérent avec le pattern établi par
 001) :
 
-- `domain/entities/` : `LegalDocument`, `LegalAcceptance` (TypeScript
-  pur, zéro import NestJS/Prisma).
+- `domain/entities/` : `LegalDocument`, `LegalAcceptance`,
+  `LegalAcceptanceAnonymization` (TypeScript pur, zéro import NestJS/Prisma).
 - `domain/value-objects/` : `LegalDocumentType` (enum `mentions_legales` |
   `cgu_b2c` | `cgu_b2b` | `confidentialite` | `comment_ca_marche`),
   `DocumentVersion` (entier positif monotone).
 - `application/use-cases/` : `AcceptCguB2bUseCase`,
   `AcceptIntakeConsentUseCase`, `CheckCguUpToDateUseCase`,
-  `PublishLegalDocumentVersionUseCase` (admin, optionnel au MVP).
+  `AnonymizeLegalAcceptancesUseCase` (appelé depuis l'extension de
+  `EraseConseillerDataUseCase` livré en 001).
 - `application/ports/` : `LegalAcceptanceReader`, `LegalAcceptanceWriter`,
-  `LegalDocumentRepository`.
+  `LegalDocumentRepository`, `LegalAcceptanceAnonymizationWriter`.
 - `infrastructure/` : `PrismaLegalAcceptanceRepository`,
-  `PrismaLegalDocumentRepository`.
+  `PrismaLegalDocumentRepository`,
+  `PrismaLegalAcceptanceAnonymizationRepository`.
 - `interface/http/` : `LegalAcceptanceController` (POST
-  `/api/me/legal/accept` pour conseiller).
+  `/api/me/legal/accept`, GET `/api/me/legal/version-status`).
 - `interface/public-api/` : `LegalAcceptanceFacade` consommée par le
   module 002-voyageur-intake.
 
@@ -238,14 +270,15 @@ SOLID appliqué :
 
 ### IX. Sécurité applicative (NON-NÉGOCIABLE)
 
-- **RBAC** : `AcceptCguB2bUseCase` vérifie que `requestedBy.role === 'conseiller'` (ou `admin`). `AcceptIntakeConsentUseCase` est appelé par le module 002 avec un `briefId` issu de sa propre validation interne — le voyageur n'est pas authentifié.
+- **RBAC** : `AcceptCguB2bUseCase` vérifie que `requestedBy.role === 'conseiller'`. `AcceptIntakeConsentUseCase` est appelé par le module 002 avec un `briefId` issu de sa propre validation interne — le voyageur n'est pas authentifié.
 - **AuthN** : conseiller authentifié via Auth.js v5 (déjà en place via 001). Pas de MFA pour cette feature (l'acceptation des CGU n'est pas une action sensible élevée — le MFA reste pour les actions matching côté conseiller, cf. spec MFA à venir).
 - **CSRF** : `CsrfProtectionMiddleware` (livré en 001) appliqué à POST `/api/me/legal/accept`.
 - **Validation Zod** côté serveur sur tous les payloads. Schémas partagés via `packages/legal/src/schemas.ts`.
 - **En-têtes HTTP** : déjà configurés via Fastify hooks en 001 (CSP, HSTS, etc.).
-- **Idempotence** : clé unique Prisma `(subjectId, documentType, documentVersion)`. Si rejeu → no-op silencieux (réponse 200, pas de nouvelle row). Header `Idempotency-Key` honoré via l'interceptor livré en 001.
+- **Cookie middleware HMAC signé** (cf. research R8) : `__Host-cv.legal-version`, `HttpOnly`, `Secure`, `SameSite=Lax`, payload signé HMAC-SHA256 avec un nouveau secret `LEGAL_COOKIE_HMAC_SECRET` (32 bytes, AWS Secrets Manager `ca-central-1`). Empêche la forge côté client.
+- **Idempotence** : (a) clé unique Prisma `(subjectId, documentType, documentVersion)` empêche les doublons fonctionnels ; (b) header `Idempotency-Key` honoré via l'interceptor livré en 001 (rejeu HTTP exact). Les deux mécanismes coexistent — détails dans `contracts/http-endpoints.md`.
 - **Checklist OWASP Top 10** revue par endpoint (cf. `contracts/http-endpoints.md`).
-- **Secrets** : aucun nouveau secret introduit.
+- **Nouveaux secrets** : `LEGAL_COOKIE_HMAC_SECRET` (cookie HMAC) ; `LOI25_SUBJECT_ANONYMIZATION_SALT` (cf. R3+R9, threat model documenté). Tous en AWS Secrets Manager `ca-central-1`, IAM read-only sur rôle ECS Fargate de l'app.
 - **Aucun SQL brut** : Prisma exclusivement.
 - **Uploads** : aucun (pages statiques + acceptations).
 
@@ -275,13 +308,18 @@ SOLID appliqué :
   message FR-CA. Le conseiller ne peut pas finaliser son signup tant que
   l'écriture n'est pas confirmée (Principe IX : pas de compte sans
   consentement tracé). UI affiche bannière dégradé.
+- **`acceptForBrief` côté 002 échoue après création du brief** → brief
+  reste en état `consent_pending`. Job BullMQ orphan cleanup quotidien
+  marque les briefs `consent_pending > 1h` à `consent_failed`. Le brief
+  n'est jamais visible côté matching avant `consent_ok`. Cohérent avec
+  research R7 (Alt 2).
 - **MDX content unavailable** (régression bundle) → pages statiques
   pré-rendues servent depuis le CDN même si l'app est down. C'est tout
   l'intérêt du SSG.
-- **Bump de version Failed mid-deploy** → version par défaut affichée
-  reste la précédente (les fichiers MDX sont en repo) ; le compteur
-  `legal_document_publish_total` ne bouge pas tant que la migration de
-  version n'est pas appliquée en DB.
+- **Bump de version échoue mid-deploy** → version courante en BD reste
+  la précédente jusqu'à idempotent retry du `seed-legal-documents.ts`.
+  Les `contentSnapshot` archivés en BD garantissent que les versions
+  historiques restent affichables même si le repo Git change.
 
 **Circuit breakers** : non pertinent (pas d'appel externe).
 
@@ -317,6 +355,10 @@ SOLID appliqué :
 - **SSR/SSG** : les 5 pages sont rendues statiquement (`export const
   dynamic = 'force-static'`). Pas de RSC dynamique. Pages servies depuis
   CloudFront.
+- **Footer purement statique** : aucune donnée dynamique (pas de version
+  courante CGU, pas d'année calculée). Année du copyright hardcodée et
+  bumpée par commit explicite annuel (rappel calendrier janvier).
+  Préserve la garantie SSG (`force-static`).
 - **CWV budgets** : LCP < 2,5 s, INP < 200 ms, CLS < 0,1. Pages
   ultra-légères (texte + footer) — atteint trivialement. Lighthouse CI
   bloquant en pipeline.
@@ -326,8 +368,8 @@ SOLID appliqué :
 - **JSON-LD** : schéma `WebPage` (avec `inLanguage`, `dateModified`) sur
   chaque page. La page `/mentions-legales` ajoute un schéma
   `Organization` avec `name`, `address` (PostalAddress), `email`.
-- **Sitemap** : les 5 pages ajoutées au `sitemap.xml` (référencé dans
-  `robots.txt`). Au MVP, sitemap statique généré au build ; feature 017
+- **Sitemap** : les 5 pages (FR-CA + EN placeholder) ajoutées au
+  `sitemap.xml`. Au MVP, sitemap statique généré au build ; feature 017
   (Tier 3) le rendra dynamique.
 - **hreflang** : `<link rel="alternate" hreflang="fr-CA">` et
   `hreflang="x-default">` (héritage du layout livré en 001). EN ajouté
@@ -338,7 +380,9 @@ SOLID appliqué :
   SEO pour les requêtes « comment ça marche conseiller voyage », « pas
   une agence de voyage ».
 
-Lighthouse CI : Perf ≥ 90, SEO ≥ 95, A11y ≥ 95. Bloquant.
+**Lighthouse CI au MVP** : 5 routes FR-CA uniquement (Perf ≥ 90, SEO ≥
+95, A11y ≥ 95, bloquant). Quand le contenu EN sera ajouté plus tard,
+étendre à 10 routes via `lighthouserc.json`.
 
 ✅ **Conforme.**
 
@@ -348,19 +392,39 @@ La DoD complète de la constitution **sera cochée intégralement** avant le
 merge du PR final. Items spécifiques à cette feature :
 
 - Tests TDD écrits **avant** implémentation pour `compareLegalVersion`,
-  `shouldRequireReacceptance`, et les 2 use cases d'acceptation (commits
-  visibles).
+  `shouldRequireReacceptance`, `extractBrowserFamily` (R6),
+  `signLegalVersionCookie` / `verifyLegalVersionCookie` (R8), et les 4
+  use cases d'acceptation/anonymisation (commits visibles).
+- **Test critique du middleware Next.js** (`legal-middleware.spec.ts`)
+  couvrant les 6 cas du diagramme : cookie absent, cookie valide,
+  cookie expiré, cookie forgé (signature invalide), version obsolète,
+  race multi-tab. **Bloquant** pour merge.
+- **Test de contrat `LegalAcceptanceFacade`** dans 004 même
+  (`legal-acceptance.contract.test.ts`) simulant un appelant module
+  002, idempotence, version supersédée, version inconnue.
+- **Test de drift checksum MDX** : modifier en mémoire un MDX et
+  vérifier que `tools/check-legal-mdx.ts` exit ≠ 0.
+- **Test immutabilité triggers PostgreSQL** : tenter UPDATE et DELETE
+  sur chacune des 3 tables (`auth_legal_documents`,
+  `auth_legal_acceptances`, `auth_legal_acceptance_anonymizations`) et
+  vérifier l'exception.
+- **Test anonymisation cross-module** : appeler
+  `EraseConseillerDataUseCase` (livré en 001 + étendu ici), vérifier
+  qu'une row `LegalAcceptanceAnonymization` est créée pour chaque
+  acceptance du conseiller effacé et que la row originale reste intacte.
 - Migration Prisma testée en staging avec rollback applicatif vérifié.
 - Audit axe-core sur les 5 pages publiques + composant Footer + page
   ré-acceptation conseiller.
-- Lighthouse CI sur les 5 pages.
+- Lighthouse CI sur les 5 pages FR-CA (10 quand EN sera ajouté).
 - Texte juridique des 5 pages relu par juriste (ou validation explicite
-  du porteur si template adapté) — bloquant pour mise en ligne publique
-  mais pas pour merge.
+  du porteur si template adapté), avec workflow de relecture via
+  `pnpm legal:preview` (PDF rendus) — bloquant pour mise en ligne
+  publique mais pas pour merge du code.
 - Valeurs exactes raison sociale + NEQ + adresse de l'éditeur fournies
   par le porteur du projet et intégrées dans
   `/mentions-legales` — bloquant pour mise en ligne publique mais pas
   pour merge.
+- **ADR-0008 et ADR-0009** créés et acceptés avant le PR final.
 - License check (déjà CI).
 - OWASP Top 10 par endpoint dans `contracts/http-endpoints.md`.
 
@@ -397,36 +461,43 @@ conseiller-voyage/                         # racine du monorepo pnpm
 │   │   │   │   └── identite/              # ← MODULE ÉTENDU
 │   │   │   │       ├── domain/
 │   │   │   │       │   ├── entities/
-│   │   │   │       │   │   ├── legal-document.entity.ts        # NOUVEAU
-│   │   │   │       │   │   └── legal-acceptance.entity.ts      # NOUVEAU
+│   │   │   │       │   │   ├── legal-document.entity.ts                # NOUVEAU
+│   │   │   │       │   │   ├── legal-acceptance.entity.ts              # NOUVEAU
+│   │   │   │       │   │   └── legal-acceptance-anonymization.entity.ts # NOUVEAU
 │   │   │   │       │   └── value-objects/
-│   │   │   │       │       ├── legal-document-type.vo.ts       # NOUVEAU
-│   │   │   │       │       └── document-version.vo.ts          # NOUVEAU
+│   │   │   │       │       ├── legal-document-type.vo.ts               # NOUVEAU
+│   │   │   │       │       └── document-version.vo.ts                  # NOUVEAU
 │   │   │   │       ├── application/
 │   │   │   │       │   ├── use-cases/
-│   │   │   │       │   │   ├── accept-cgu-b2b.use-case.ts      # NOUVEAU
-│   │   │   │       │   │   ├── accept-intake-consent.use-case.ts # NOUVEAU
-│   │   │   │       │   │   └── check-cgu-up-to-date.use-case.ts # NOUVEAU
+│   │   │   │       │   │   ├── accept-cgu-b2b.use-case.ts              # NOUVEAU
+│   │   │   │       │   │   ├── accept-intake-consent.use-case.ts       # NOUVEAU
+│   │   │   │       │   │   ├── check-cgu-up-to-date.use-case.ts        # NOUVEAU
+│   │   │   │       │   │   └── anonymize-legal-acceptances.use-case.ts # NOUVEAU (appelé par EraseConseillerData)
 │   │   │   │       │   └── ports/
-│   │   │   │       │       ├── legal-acceptance-reader.port.ts # NOUVEAU
-│   │   │   │       │       ├── legal-acceptance-writer.port.ts # NOUVEAU
-│   │   │   │       │       └── legal-document-repository.port.ts # NOUVEAU
+│   │   │   │       │       ├── legal-acceptance-reader.port.ts            # NOUVEAU
+│   │   │   │       │       ├── legal-acceptance-writer.port.ts            # NOUVEAU
+│   │   │   │       │       ├── legal-acceptance-anonymization-writer.port.ts # NOUVEAU
+│   │   │   │       │       └── legal-document-repository.port.ts          # NOUVEAU
 │   │   │   │       ├── infrastructure/
-│   │   │   │       │   ├── prisma-legal-acceptance-repository.ts # NOUVEAU
-│   │   │   │       │   └── prisma-legal-document-repository.ts # NOUVEAU
+│   │   │   │       │   ├── prisma-legal-acceptance-repository.ts                # NOUVEAU
+│   │   │   │       │   ├── prisma-legal-acceptance-anonymization-repository.ts  # NOUVEAU
+│   │   │   │       │   └── prisma-legal-document-repository.ts                  # NOUVEAU
 │   │   │   │       ├── interface/
 │   │   │   │       │   ├── http/
-│   │   │   │       │   │   └── legal-acceptance.controller.ts  # NOUVEAU
+│   │   │   │       │   │   └── legal-acceptance.controller.ts  # NOUVEAU (POST /accept + GET /version-status)
 │   │   │   │       │   └── public-api/
 │   │   │   │       │       └── legal-acceptance.facade.ts      # NOUVEAU
-│   │   │   │       └── identite.module.ts                      # MODIFIÉ (wiring)
+│   │   │   │       └── identite.module.ts                      # MODIFIÉ (wiring + extension EraseConseillerDataUseCase)
 │   │   ├── prisma/
-│   │   │   ├── schema.prisma                                   # MODIFIÉ (2 modèles ajoutés)
+│   │   │   ├── schema.prisma                                   # MODIFIÉ (3 modèles ajoutés)
 │   │   │   └── migrations/
-│   │   │       └── 00NN_init_legal/migration.sql               # NOUVEAU
+│   │   │       └── 00NN_init_legal/migration.sql               # NOUVEAU (incl. 3 triggers immutables)
 │   │   └── test/
-│   │       └── integration/identite/
-│   │           └── legal-acceptance.test.ts                    # NOUVEAU
+│   │       ├── integration/identite/
+│   │       │   ├── legal-acceptance.test.ts                    # NOUVEAU
+│   │       │   └── legal-immutability-triggers.test.ts         # NOUVEAU (trigger UPDATE/DELETE blocked)
+│   │       └── contract/
+│   │           └── legal-acceptance.contract.test.ts           # NOUVEAU (simule consommateur 002)
 │   └── web/                               # Next.js — frontend
 │       ├── src/
 │       │   ├── app/[locale]/
@@ -439,15 +510,19 @@ conseiller-voyage/                         # racine du monorepo pnpm
 │       │   │       ├── confidentialite/page.tsx                # NOUVEAU
 │       │   │       └── comment-ca-marche/page.tsx              # NOUVEAU
 │       │   ├── components/
-│       │   │   ├── Footer.tsx                                  # NOUVEAU
+│       │   │   ├── Footer.tsx                                  # NOUVEAU (purement statique, force-static compatible)
 │       │   │   └── legal/
-│       │   │       ├── AcceptCguCheckbox.tsx                   # NOUVEAU
-│       │   │       └── ReacceptCguGuard.tsx                    # NOUVEAU (client component)
-│       │   ├── middleware.ts                                   # MODIFIÉ (extension ré-acceptation)
+│       │   │       └── AcceptCguCheckbox.tsx                   # NOUVEAU
+│       │   ├── lib/legal/
+│       │   │   ├── cookie-hmac.ts                              # NOUVEAU (signature + vérification HMAC du cookie version)
+│       │   │   └── version-check.ts                            # NOUVEAU (logique appelée par middleware)
+│       │   ├── middleware.ts                                   # MODIFIÉ (extension ré-acceptation avec cookie HMAC)
 │       │   └── app/[locale]/layout.tsx                         # MODIFIÉ (intègre Footer)
 │       └── test/
-│           ├── a11y/legal.spec.ts                              # NOUVEAU (axe-core)
-│           └── e2e/legal.spec.ts                               # NOUVEAU (Playwright)
+│           ├── a11y/legal.spec.ts                              # NOUVEAU (axe-core sur 5 pages + Footer + re-accepter)
+│           ├── e2e/legal.spec.ts                               # NOUVEAU (Playwright 5 pages + signup + ré-acceptation)
+│           ├── e2e/legal-middleware.spec.ts                    # NOUVEAU (6 cas du diagram critique)
+│           └── unit/cookie-hmac.test.ts                        # NOUVEAU (signature + forge detection)
 └── packages/
     ├── legal/                                                  # NOUVEAU package
     │   ├── package.json
@@ -484,11 +559,15 @@ pures partagées entre frontend (validation Zod côté client) et backend
 
 Cf. [`research.md`](./research.md). Décisions traitées :
 
-1. Format du contenu éditorial (Markdown frontmatter, MDX, JSON, CMS) — décision : **MDX**.
-2. Stratégie de versioning et de bump (incrément manuel, semver, hash de contenu) — décision : **entier monotone + checksum SHA-256 du contenu**.
-3. Stratégie d'anonymisation `subjectId` lors d'un effacement Loi 25 — décision : **SHA-256(subjectId || project_salt) avec salt en AWS Secrets Manager**.
-4. Vérification de version CGU obsolète : middleware Next.js, Server Component check, ou interceptor NestJS — décision : **middleware Next.js sur les routes du conseiller authentifié**.
-5. Granularité du consentement Loi 25 au brief intake (1 case groupée vs 2 cases séparées) — décision : **2 cases séparées** (cohérent avec Loi 25 art. 8).
+1. **R1** — Format du contenu éditorial — décision : **MDX**.
+2. **R2** — Versioning des documents légaux — décision : **entier monotone + checksum SHA-256 + `contentSnapshot` archivé en BD**.
+3. **R3** — Anonymisation `subjectId` Loi 25 — décision : **SHA-256(subjectId || project_salt) avec salt en AWS Secrets Manager**.
+4. **R4** — Vérification de version CGU obsolète — décision : **middleware Next.js** avec cookie HMAC signé (raffiné en R8).
+5. **R5** — Granularité du consentement Loi 25 — décision : **2 cases séparées** (Loi 25 art. 8).
+6. **R6** — Parsing User-Agent pour anonymisation — décision : **`ua-parser-js` v2** + fonction pure `extractBrowserFamily()`.
+7. **R7** — Stratégie de transaction cross-module pour le double consentement intake — décision : **Alt 2** (lifecycle de brief `consent_pending → consent_ok` + orphan cleanup job, façade `identité` encapsule sa propre transaction).
+8. **R8** — Cookie de cache version — décision : **`__Host-cv.legal-version` signé HMAC-SHA256** avec nouveau secret `LEGAL_COOKIE_HMAC_SECRET`.
+9. **R9** — Threat model du salt d'anonymisation Loi 25 — plan de réponse à incident documenté, rotation via versionnement AWS Secrets Manager + `anonymizationSaltVersion` colonne.
 
 ---
 
@@ -496,23 +575,45 @@ Cf. [`research.md`](./research.md). Décisions traitées :
 
 ### Artefacts générés
 
-- [`data-model.md`](./data-model.md) — entités `LegalDocument` et
-  `LegalAcceptance`, schéma Prisma proposé, contraintes d'intégrité,
-  règles d'anonymisation.
+- [`data-model.md`](./data-model.md) — 3 entités (`LegalDocument`,
+  `LegalAcceptance`, `LegalAcceptanceAnonymization`), schéma Prisma, 3
+  triggers d'immutabilité, privilèges DB par rôle, règles d'anonymisation.
 - [`contracts/legal-acceptance.port.md`](./contracts/legal-acceptance.port.md)
-  — port public `LegalAcceptanceWriter` consommé par 002.
+  — port public `LegalAcceptanceFacade` consommé par 002 (transaction
+  interne, pas de partage de client Prisma cross-module).
+- [`contracts/middleware-version-check.md`](./contracts/middleware-version-check.md)
+  — format du cookie HMAC `__Host-cv.legal-version`, logique du
+  middleware, endpoint `/api/me/legal/version-status`, anti-patterns
+  documentés, 9 cas de test dont 3 bloquants pour merge.
 - [`contracts/http-endpoints.md`](./contracts/http-endpoints.md) —
-  endpoint POST `/api/me/legal/accept` + checklist OWASP.
+  endpoints POST `/api/me/legal/accept` + GET `/api/me/legal/version-status`
+  + checklist OWASP.
 - [`contracts/mdx-frontmatter.md`](./contracts/mdx-frontmatter.md) —
-  format frontmatter standardisé des fichiers MDX.
+  format frontmatter standardisé des fichiers MDX + workflow de bump
+  de version.
 - [`quickstart.md`](./quickstart.md) — setup local + parcours de test
-  des 5 pages + acceptation conseiller + double consentement voyageur.
+  des 5 pages + acceptation conseiller + double consentement voyageur +
+  ré-acceptation + effacement Loi 25.
 
-### ADR liés
+### ADRs à créer (formalisation des décisions structurantes)
 
-Aucun nouvel ADR introduit. Référence implicite à
-[ADR-0002](../../docs/adr/0002-pas-de-cta-contact-direct.md) pour la
-position « pas une agence ».
+- **ADR-0008** — Anonymisation Loi 25 par hash salé immutable
+  (formalise research R3 + R9 ; pattern d'anonymisation différée via
+  table `LegalAcceptanceAnonymization`, threat model du salt, plan de
+  rotation en cas d'incident).
+- **ADR-0009** — Middleware Next.js + cookie HMAC signé pour la
+  vérification de version CGU obsolète (formalise research R4 + R8 ;
+  format du cookie `__Host-cv.legal-version`, endpoint
+  `/api/me/legal/version-status`, comportement multi-tab).
+
+À créer avant `/speckit.tasks` (les tâches dépendront du wording exact).
+
+### ADRs liés (existants, référencés)
+
+- [ADR-0002](../../docs/adr/0002-pas-de-cta-contact-direct.md) — Pas de
+  CTA contact direct (pivot narratif de `/comment-ca-marche`).
+- [ADR-0004](../../docs/adr/0004-auth-session-db-partagee.md) — Auth.js
+  sessions DB partagées (consommé par le middleware version-check).
 
 ### Mise à jour du contexte agent
 
