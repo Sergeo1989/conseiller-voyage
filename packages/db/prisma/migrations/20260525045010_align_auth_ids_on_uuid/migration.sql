@@ -1,5 +1,29 @@
+-- ============================================================================
+-- DANGER : MIGRATION DESTRUCTIVE NON-REVERSIBLE — PRÉ-PROD UNIQUEMENT
+-- ============================================================================
+--
+-- Cette migration DROP les colonnes id et userId sur auth_users,
+-- auth_accounts, auth_sessions pour les recréer en type UUID. TOUTE
+-- DATA EXISTANTE EST PERDUE. Aucun cast cuid→uuid possible.
+--
+-- Si déployée par erreur en production avec users existants :
+--   1. Toutes les sessions sont invalidées
+--   2. Tous les comptes OAuth sont perdus
+--   3. Restauration : depuis snapshot RDS pre-migration uniquement
+--
+-- Garde-fou : refuse l'application si auth_users contient des lignes.
+-- ----------------------------------------------------------------------------
+
+DO $migration_safety$
+BEGIN
+  IF EXISTS (SELECT 1 FROM auth_users LIMIT 1) THEN
+    RAISE EXCEPTION 'Refus : auth_users contient des données. Cette migration est destructive et ne doit jamais tourner sur une DB de production. Si dev/staging avec données de test, TRUNCATE auth_users CASCADE manuellement avant.';
+  END IF;
+END
+$migration_safety$;
+
 /*
-  Warnings:
+  Warnings (auto-générés Prisma) :
 
   - The primary key for the `auth_accounts` table will be changed. If it partially fails, the table could be left without primary key constraint.
   - The primary key for the `auth_sessions` table will be changed. If it partially fails, the table could be left without primary key constraint.
