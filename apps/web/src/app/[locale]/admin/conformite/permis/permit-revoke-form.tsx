@@ -2,7 +2,7 @@
 // Compteur live des caractères + preview de l'impact en cas de succès.
 
 'use client';
-import { type FormEvent, useState, useTransition } from 'react';
+import { type FormEvent, type ReactNode, useState, useTransition } from 'react';
 import { declarePermitRevokedAction } from './actions';
 
 const MIN_REASON = 20;
@@ -12,7 +12,7 @@ interface PermitRevokeFormProps {
   readonly locale: string;
 }
 
-export function PermitRevokeForm({ locale }: PermitRevokeFormProps): JSX.Element {
+export function PermitRevokeForm({ locale }: PermitRevokeFormProps): ReactNode {
   const [permitNumber, setPermitNumber] = useState('');
   const [province, setProvince] = useState<'QC' | 'ON'>('QC');
   const [reason, setReason] = useState('');

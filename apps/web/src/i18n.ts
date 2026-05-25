@@ -30,9 +30,13 @@ export function toUrlLocale(locale: string): string {
 // Application de la map d'erreurs Zod FR-CA — exécutée une seule fois au boot.
 applyFrCAZodErrorMap();
 
-export default getRequestConfig(async ({ locale }) => {
-  const resolvedLocale = (locales as readonly string[]).includes(locale ?? '')
-    ? (locale as Locale)
+export default getRequestConfig(async ({ requestLocale }) => {
+  // Next.js 15 + next-intl 3.22+ : requestLocale est une Promise asynchrone
+  // (l'API headers() interne est devenue async). Cf.
+  // https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+  const requested = await requestLocale;
+  const resolvedLocale = (locales as readonly string[]).includes(requested ?? '')
+    ? (requested as Locale)
     : defaultLocale;
 
   const messages = (

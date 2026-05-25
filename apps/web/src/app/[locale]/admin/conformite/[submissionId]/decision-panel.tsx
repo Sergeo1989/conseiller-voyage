@@ -7,7 +7,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState, useTransition } from 'react';
+import { type FormEvent, type ReactNode, useState, useTransition } from 'react';
 import { approveSubmissionAction, refuseSubmissionAction } from './actions';
 
 const MIN_REFUSAL_CHARS = 20;
@@ -25,7 +25,7 @@ export function DecisionPanel({
   submissionId,
   locale,
   alreadyDecided,
-}: DecisionPanelProps): JSX.Element {
+}: DecisionPanelProps): ReactNode {
   const t = useTranslations('conformite.admin.detail');
   const [comment, setComment] = useState('');
   const [reason, setReason] = useState('');

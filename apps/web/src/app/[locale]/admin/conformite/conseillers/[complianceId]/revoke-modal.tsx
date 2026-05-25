@@ -4,7 +4,7 @@
 
 'use client';
 
-import { type FormEvent, useState, useTransition } from 'react';
+import { type FormEvent, type ReactNode, useState, useTransition } from 'react';
 import { revokeConseillerAction } from './actions';
 
 const MIN_REASON = 20;
@@ -15,7 +15,7 @@ interface RevokeModalProps {
   readonly locale: string;
 }
 
-export function RevokeModal({ complianceId, locale }: RevokeModalProps): JSX.Element {
+export function RevokeModal({ complianceId, locale }: RevokeModalProps): ReactNode {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [confirmText, setConfirmText] = useState('');

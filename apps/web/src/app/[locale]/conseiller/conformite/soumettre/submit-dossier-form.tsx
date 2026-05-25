@@ -8,7 +8,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 import { requestUploadUrlsAction, submitDossierAction } from './actions';
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -34,7 +34,7 @@ interface AffiliationDraft {
 
 type SubmissionPhase = 'editing' | 'submitting' | 'success' | 'error';
 
-export function SubmitDossierForm(): JSX.Element {
+export function SubmitDossierForm(): ReactNode {
   const t = useTranslations('conformite.conseiller.submit');
   const tShared = useTranslations('conformite.shared');
   const tCommon = useTranslations();

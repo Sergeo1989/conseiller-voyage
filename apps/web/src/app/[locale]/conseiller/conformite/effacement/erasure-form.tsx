@@ -3,7 +3,7 @@
 
 'use client';
 
-import { type FormEvent, useState, useTransition } from 'react';
+import { type FormEvent, type ReactNode, useState, useTransition } from 'react';
 import { requestErasureAction } from './actions';
 
 const REQUIRED_CONFIRMATION = 'I_UNDERSTAND_THIS_IS_IRREVERSIBLE';
@@ -12,7 +12,7 @@ interface ErasureFormProps {
   readonly locale: string;
 }
 
-export function ErasureForm({ locale }: ErasureFormProps): JSX.Element {
+export function ErasureForm({ locale }: ErasureFormProps): ReactNode {
   const [confirmation, setConfirmation] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);

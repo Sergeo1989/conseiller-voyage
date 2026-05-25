@@ -154,7 +154,7 @@ export default async function ConseillerOverviewPage({ params }: PageProps): Pro
       </section>
 
       <p>
-        <Link href={`/${urlLocale}/conseiller/conformite/soumettre`} style={ctaStyle}>
+        <Link href={`/${urlLocale}/conseiller/conformite/renouveler`} style={ctaStyle}>
           {t('conseiller.overview.ctaRenew')}
         </Link>
       </p>

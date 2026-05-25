@@ -57,8 +57,15 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
-      <body>
+    // `suppressHydrationWarning` sur <html> et <body> : pattern Next.js
+    // officiel pour neutraliser les warnings causés par les extensions
+    // de navigateur (Grammarly, ColorZilla, Dark Reader, etc.) qui
+    // mutent ces éléments AVANT que React hydrate. C'est purement local
+    // au boundary de l'élément — n'affecte pas la détection de mismatch
+    // dans les enfants.
+    // Cf. https://nextjs.org/docs/messages/react-hydration-error
+    <html lang={locale} suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>
