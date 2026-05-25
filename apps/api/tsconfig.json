@@ -13,5 +13,5 @@
     "verbatimModuleSyntax": false
   },
   "include": ["src/**/*", "test/**/*", "prisma/**/*.ts"],
-  "exclude": ["dist", "node_modules", "test/e2e/**", "vitest.config.ts"]
+  "exclude": ["dist", "node_modules", "vitest.config.ts"]
 }

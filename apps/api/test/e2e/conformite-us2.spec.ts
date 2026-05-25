@@ -46,6 +46,7 @@ test.describe('US2 — Expiration automatique', () => {
             path: '/',
             httpOnly: true,
             secure: false,
+            expires: -1,
             sameSite: 'Lax',
           },
         ],

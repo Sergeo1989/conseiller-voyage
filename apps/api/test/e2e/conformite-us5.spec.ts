@@ -25,6 +25,7 @@ test.describe('US5 — Espace personnel conseiller', () => {
             path: '/',
             httpOnly: true,
             secure: false,
+            expires: -1,
             sameSite: 'Lax',
           },
         ],
