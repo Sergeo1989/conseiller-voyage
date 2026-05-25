@@ -106,10 +106,21 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/001-conformite-module/plan.md`](specs/001-conformite-module/plan.md)
-(Module Conformité — branche `001-conformite-module`).
+**Plan courant** : [`specs/004-mentions-legales/plan.md`](specs/004-mentions-legales/plan.md)
+(Mentions légales, CGU B2B/B2C, politique Loi 25, page « Comment ça marche »
+— branche `004-mentions-legales`).
 
 Pour le contexte technologique détaillé et la structure de répertoires de la
-feature courante, lire ce plan ainsi que `data-model.md`, `contracts/`,
-et `quickstart.md` du même répertoire `specs/001-conformite-module/`.
+feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
+`contracts/{legal-acceptance.port,http-endpoints,mdx-frontmatter}.md`, et
+`quickstart.md` du même répertoire `specs/004-mentions-legales/`.
+
+**Features précédentes** :
+- `001-conformite-module` (PR #1 mergé sur `main` le 2026-05-25, squash
+  `8592922`). Source de vérité pour le statut `verified` des conseillers ;
+  consommée via `ConformiteQueryPort` par les modules matching et SEO.
+- `002-voyageur-intake` (en cours sur sa propre branche) : module intake /
+  préqualification voyageur. Consommera `LegalAcceptanceFacade.acceptForBrief`
+  défini par cette feature 004 pour le double consentement Loi 25 au moment
+  du brief (US4 de 004 + dépendance documentée).
 <!-- SPECKIT END -->
