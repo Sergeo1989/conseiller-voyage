@@ -180,11 +180,14 @@ function renderStatusBadge(
   status: DossierApiShape['status'],
   t: Awaited<ReturnType<typeof getTranslations>>,
 ): ReactNode {
+  // Couleurs darkened pour contraste WCAG AA ≥ 4.5:1 avec texte blanc.
+  // Avant : pending #eab308 (2.1:1 FAIL), suspended #f97316 (2.9:1 FAIL).
+  // Audit axe-core CI bloquerait à coup sûr.
   const colors: Record<DossierApiShape['status'], string> = {
-    pending: '#eab308',
-    verified: '#16a34a',
-    suspended: '#f97316',
-    revoked: '#dc2626',
+    pending: '#a16207',
+    verified: '#15803d',
+    suspended: '#c2410c',
+    revoked: '#b91c1c',
   };
   const labels: Record<DossierApiShape['status'], string> = {
     pending: t('shared.statusPending'),

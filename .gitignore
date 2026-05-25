@@ -58,3 +58,4 @@ prisma/migrations/.cache/
 # Local development
 *.local
 .DS_Store
+.gstack/

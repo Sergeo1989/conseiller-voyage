@@ -3,10 +3,14 @@
 
 'use client';
 
+import { ERASURE_CONFIRMATION_PHRASE } from '@cv/shared/conformite';
 import { type FormEvent, type ReactNode, useState, useTransition } from 'react';
 import { requestErasureAction } from './actions';
 
-const REQUIRED_CONFIRMATION = 'I_UNDERSTAND_THIS_IS_IRREVERSIBLE';
+// Cf. ERASURE_CONFIRMATION_PHRASE dans @cv/shared — phrase en FR-CA
+// pour respecter Principe IV (Français d'abord), surtout sur un flux
+// Loi 25 québécois.
+const REQUIRED_CONFIRMATION = ERASURE_CONFIRMATION_PHRASE;
 
 interface ErasureFormProps {
   readonly locale: string;

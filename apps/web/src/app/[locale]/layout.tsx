@@ -65,6 +65,57 @@ export default async function LocaleLayout({
     // dans les enfants.
     // Cf. https://nextjs.org/docs/messages/react-hydration-error
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        {/*
+          Baseline globale : fixe font-size body ≥ 16px (Safari/certains
+          Linux livrent 13-14px par défaut, FAIL WCAG 1.4.4), line-height
+          ≥ 1.5x, focus-visible visible (Principe XI WCAG 2.4.7), et
+          touch targets ≥ 44px sur les boutons via min-height. Pose les
+          bases d'accessibilité que les inline styles inline pages
+          n'imposent pas.
+          Migration future : shadcn/ui + design tokens dans la feature
+          design-system. Pour ce MVP, ces 6 règles suffisent à passer
+          axe-core sur le commun denominator.
+        */}
+        <style>{`
+          html, body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #111827;
+          }
+          *, *::before, *::after { box-sizing: border-box; }
+          :focus-visible {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
+            border-radius: 2px;
+          }
+          button:focus-visible, a:focus-visible {
+            outline-offset: 3px;
+          }
+          button {
+            min-height: 44px;
+            cursor: pointer;
+          }
+          button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+          button:not(:disabled):hover {
+            filter: brightness(0.92);
+          }
+          a { color: #2563eb; }
+          a:hover { text-decoration: underline; }
+          @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+            }
+          }
+        `}</style>
+      </head>
       <body suppressHydrationWarning>
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}

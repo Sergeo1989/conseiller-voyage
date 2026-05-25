@@ -87,39 +87,44 @@ export default async function AdminQueuePage({
       {data.items.length === 0 ? (
         <p>{t('noResults')}</p>
       ) : (
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={thStyle}>{t('tableHeaders.submissionId')}</th>
-              <th style={thStyle}>{t('tableHeaders.conseiller')}</th>
-              <th style={thStyle}>{t('tableHeaders.submittedAt')}</th>
-              <th style={thStyle}>{t('tableHeaders.status')}</th>
-              <th style={thStyle}>{t('tableHeaders.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.items.map((item) => (
-              <tr key={item.submissionId}>
-                <td style={tdStyle}>
-                  <code style={{ fontSize: 12 }}>{item.submissionId.slice(0, 8)}…</code>
-                </td>
-                <td style={tdStyle}>
-                  <code style={{ fontSize: 12 }}>{item.conseillerComplianceId.slice(0, 8)}…</code>
-                </td>
-                <td style={tdStyle}>{formatDate(new Date(item.submittedAt), locale)}</td>
-                <td style={tdStyle}>{renderStatus(item.status, tShared)}</td>
-                <td style={tdStyle}>
-                  <Link
-                    href={`/${urlLocale}/admin/conformite/${item.submissionId}`}
-                    style={linkButtonStyle}
-                  >
-                    {t('viewDetails')}
-                  </Link>
-                </td>
+        // Wrapper overflow-x : la table 5 colonnes déborde sur mobile/iPad
+        // portrait (< 768px). Sans ce wrapper, c'est la page entière qui
+        // scrollait latéralement. Avec, le scroll est contenu à la table.
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={thStyle}>{t('tableHeaders.submissionId')}</th>
+                <th style={thStyle}>{t('tableHeaders.conseiller')}</th>
+                <th style={thStyle}>{t('tableHeaders.submittedAt')}</th>
+                <th style={thStyle}>{t('tableHeaders.status')}</th>
+                <th style={thStyle}>{t('tableHeaders.actions')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.items.map((item) => (
+                <tr key={item.submissionId}>
+                  <td style={tdStyle}>
+                    <code style={{ fontSize: 12 }}>{item.submissionId.slice(0, 8)}…</code>
+                  </td>
+                  <td style={tdStyle}>
+                    <code style={{ fontSize: 12 }}>{item.conseillerComplianceId.slice(0, 8)}…</code>
+                  </td>
+                  <td style={tdStyle}>{formatDate(new Date(item.submittedAt), locale)}</td>
+                  <td style={tdStyle}>{renderStatus(item.status, tShared)}</td>
+                  <td style={tdStyle}>
+                    <Link
+                      href={`/${urlLocale}/admin/conformite/${item.submissionId}`}
+                      style={linkButtonStyle}
+                    >
+                      {t('viewDetails')}
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <nav aria-label="Pagination" style={paginationStyle}>

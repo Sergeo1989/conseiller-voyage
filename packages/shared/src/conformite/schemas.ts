@@ -305,10 +305,18 @@ export const RevokeConseillerSchema = z
 export type RevokeConseillerBody = z.infer<typeof RevokeConseillerSchema>;
 
 // --- Phase N POST /me/erasure-request (Loi 25 FR-017) ---
+//
+// Constante en FR-CA pour cohérence avec Principe IV de la constitution :
+// le flux Loi 25 (Québec) ne doit JAMAIS exiger une saisie en anglais
+// d'un conseiller francophone — c'est précisément le contexte le plus
+// politiquement sensible. Pattern identique au revoke-modal qui utilise
+// déjà « RÉVOQUER » en FR.
+
+export const ERASURE_CONFIRMATION_PHRASE = 'JE_CONFIRME_LA_SUPPRESSION_IRREVERSIBLE' as const;
 
 export const ErasureRequestSchema = z
   .object({
-    confirmation: z.literal('I_UNDERSTAND_THIS_IS_IRREVERSIBLE'),
+    confirmation: z.literal(ERASURE_CONFIRMATION_PHRASE),
   })
   .strict();
 export type ErasureRequestBody = z.infer<typeof ErasureRequestSchema>;
