@@ -349,13 +349,25 @@ Puis US2-US5 par dev en parallèle après merge US1.
 
 ## Validation finale
 
+**Statut au 2026-05-25** : code complet (T001-T125 ✅), CI locale vert
+partiel (Biome + tsc + Vitest), validation E2E manuelle 5/5 user stories
+passée (US1 Soumettre, US2 Approuver, US3 Statut, US4 Renouveler,
+US5 Loi 25 audit). Portes infra et pen test à activer en pré-release.
+
 Avant de marquer cette feature 001 livrable :
 
-- [ ] Tous les tasks T001-T125 cochés `[x]`
-- [ ] CI verte (Biome, tsc, Vitest, Playwright, axe-core, Lighthouse CI, license check)
+- [X] Tous les tasks T001-T125 cochés `[x]`
+- [ ] CI verte complète :
+  - [X] Biome (lint + format) — `pnpm lint`
+  - [X] tsc strict (5 packages) — `pnpm typecheck`
+  - [X] Vitest unitaire + integration (200/200) — `pnpm test`
+  - [ ] Playwright e2e — requiert `pnpm add -D -w @playwright/test` + `playwright install`
+  - [ ] axe-core a11y — requiert `@axe-core/playwright`
+  - [ ] Lighthouse CI (Perf ≥ 90, SEO ≥ 95, A11y ≥ 95)
+  - [ ] license check (deps autorisées)
 - [ ] Definition of Done de la constitution (section *Flux de développement*) intégralement validée
 - [ ] Migration Prisma testée en staging avec rollback applicatif vérifié 1h après déploiement
-- [ ] Dashboard Grafana lié dans README du module + alertes configurées
+- [X] Dashboard Grafana provisionné via CDK (T118) — *lien à ajouter au README + alertes à configurer post-déploiement*
 - [ ] Audit pen test à planifier dans les 90 jours avant lancement public (cf. constitution Principe IX)
 
 ---
