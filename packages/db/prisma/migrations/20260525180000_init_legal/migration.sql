@@ -78,9 +78,6 @@ CREATE UNIQUE INDEX "auth_legal_acceptance_anonymizations_acceptanceId_key" ON "
 CREATE INDEX "auth_legal_acceptance_anonymizations_anonymized_at_idx" ON "auth_legal_acceptance_anonymizations"("anonymizedAt");
 
 -- AddForeignKey
--- ON DELETE SET NULL initialement — aligné sur RESTRICT par la migration
--- suivante 20260525224400_align_legal_acceptance_fk_restrict pour défense
--- en profondeur (les triggers bloquent déjà DELETE sur auth_legal_documents).
 ALTER TABLE "auth_legal_acceptances" ADD CONSTRAINT "auth_legal_acceptances_documentType_documentVersion_fkey" FOREIGN KEY ("documentType", "documentVersion") REFERENCES "auth_legal_documents"("type", "version") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
