@@ -8,7 +8,7 @@
 // Modèle aligné sur https://authjs.dev/reference/adapter/prisma
 
 model AuthUser {
-  id            String    @id @default(cuid())
+  id            String    @id @default(uuid()) @db.Uuid
   email         String?   @unique
   emailVerified DateTime?
   name          String?
@@ -31,8 +31,8 @@ enum AuthRole {
 }
 
 model AuthAccount {
-  id                String   @id @default(cuid())
-  userId            String
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @db.Uuid
   type              String
   provider          String
   providerAccountId String
@@ -54,9 +54,9 @@ model AuthAccount {
 }
 
 model AuthSession {
-  id            String    @id @default(cuid())
+  id            String    @id @default(uuid()) @db.Uuid
   sessionToken  String    @unique
-  userId        String
+  userId        String    @db.Uuid
   expires       DateTime
   // Élévation MFA (Principe IX) — non-null après vérification TOTP/passkey
   mfaVerifiedAt DateTime?

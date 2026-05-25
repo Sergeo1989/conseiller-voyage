@@ -17,7 +17,10 @@ import {
   type AuthenticatedUser,
 } from '../application/ports/auth-session-reader.port';
 
-const COOKIE_NAME = '__Host-cv.session.token';
+// En prod : cookie strict __Host-cv.session.token (requires HTTPS).
+// En dev HTTP : le préfixe __Host- est rejeté par le navigateur, on
+// accepte donc aussi le nom standard Auth.js v5 (authjs.session-token).
+const COOKIE_NAMES = ['__Host-cv.session.token', 'authjs.session-token'] as const;
 
 interface AuthenticatedRequest {
   cookies?: Record<string, string | undefined>;
@@ -42,12 +45,15 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
-    const fromCookies = req.cookies?.[COOKIE_NAME];
     const cookieHeader = req.headers.cookie;
     const headerStr = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader;
-    const fromHeader = parseCookies(headerStr)[COOKIE_NAME];
+    const headerCookies = parseCookies(headerStr);
 
-    const token = fromCookies ?? fromHeader;
+    let token: string | undefined;
+    for (const name of COOKIE_NAMES) {
+      token = req.cookies?.[name] ?? headerCookies[name];
+      if (token) break;
+    }
     if (!token) {
       throw new UnauthorizedException('Missing session cookie.');
     }

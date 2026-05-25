@@ -27,7 +27,14 @@ END
 $$;
 
 -- Privilèges de connexion + usage du schéma public (CONNECT/USAGE seulement).
-GRANT CONNECT ON DATABASE current_database() TO app_conformite;
+-- Note: GRANT ON DATABASE exige un identifiant littéral, pas une expression
+-- comme current_database() — on passe par EXECUTE format() pour résoudre
+-- dynamiquement le nom (compatible Postgres standard + shadow database Prisma).
+DO $$
+BEGIN
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO app_conformite', current_database());
+END
+$$;
 GRANT USAGE ON SCHEMA public TO app_conformite;
 
 -- Les tables et privilèges granulaires sont accordés après leur création

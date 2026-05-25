@@ -1,19 +1,81 @@
-// T017 — Configuration Auth.js v5 (NextAuth) côté apps/web.
-// Sessions stockées en DB Postgres via @auth/prisma-adapter — cf. ADR-0004.
-// Les providers (passkey TOTP conseiller, magic-link voyageur) seront
-// ajoutés en feature 002 (identité).
+// T017 — Helper `auth()` côté apps/web.
+//
+// IMPLÉMENTATION DEV/PHASE 1 — directe via Prisma, SANS Auth.js.
+//
+// Pourquoi pas @auth/prisma-adapter ?
+//   Le PrismaAdapter d'Auth.js v5 exige des modèles nommés
+//   `User`/`Session`/`Account`/`VerificationToken`. Notre schéma
+//   utilise `AuthUser`/`AuthSession`/`AuthAccount`/`AuthVerificationToken`
+//   (préfixe `Auth` pour éviter collision avec les modèles métier
+//   conformite/identité). L'adapter cherche `prisma.user` qui est
+//   undefined → TypeError au runtime.
+//
+//   Plutôt que d'écrire un adapter wrapper qui mappe les noms,
+//   on lit directement la table `auth_sessions` côté Web. La vraie
+//   pile Auth.js (passkey/magic link + custom adapter) sera mise en
+//   place en feature 002 (identité).
+//
+// Côté API NestJS, l'AuthGuard fait déjà exactement le même lookup
+// via PrismaAuthSessionReader — donc Web et API sont cohérents.
 
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@cv/db';
-import NextAuth from 'next-auth';
-import { authConfig } from './auth.config';
+import { cookies } from 'next/headers';
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  ...authConfig,
-  adapter: PrismaAdapter(prisma),
-  session: {
-    strategy: 'database',
-    maxAge: 30 * 24 * 60 * 60, // 30 jours
-    updateAge: 24 * 60 * 60, // refresh quotidien
-  },
-});
+/**
+ * Noms de cookie acceptés — supporte à la fois prod (`__Host-` strict
+ * HTTPS) et dev HTTP (`authjs.session-token` posé par devLoginAction).
+ * L'ordre = priorité : on essaie le cookie prod en premier.
+ */
+const SESSION_COOKIE_NAMES = ['__Host-cv.session.token', 'authjs.session-token'] as const;
+
+export type AuthRole = 'voyageur' | 'conseiller' | 'admin';
+
+export interface CvSessionUser {
+  readonly id: string;
+  readonly email: string | null;
+  readonly name: string | null;
+  readonly role: AuthRole;
+}
+
+export interface CvSession {
+  readonly user: CvSessionUser;
+  readonly expires: Date;
+}
+
+/**
+ * Retourne la session courante ou `null` si aucun cookie valide,
+ * cookie expiré, ou session introuvable en DB.
+ *
+ * API compatible avec celle d'Auth.js : `const session = await auth();`
+ * `if (!session?.user) redirect('/login');`
+ */
+export async function auth(): Promise<CvSession | null> {
+  const cookieStore = await cookies();
+
+  let token: string | undefined;
+  for (const name of SESSION_COOKIE_NAMES) {
+    const value = cookieStore.get(name)?.value;
+    if (value) {
+      token = value;
+      break;
+    }
+  }
+  if (!token) return null;
+
+  const session = await prisma.authSession.findUnique({
+    where: { sessionToken: token },
+    include: { user: true },
+  });
+  if (!session) return null;
+  if (session.expires.getTime() <= Date.now()) return null;
+
+  return {
+    user: {
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      role: session.user.role as AuthRole,
+    },
+    expires: session.expires,
+  };
+}

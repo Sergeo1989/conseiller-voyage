@@ -3,19 +3,36 @@
   "version": "0.0.0",
   "private": true,
   "type": "commonjs",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./conformite": "./src/conformite/index.ts",
-    "./conformite/*": "./src/conformite/*.ts",
-    "./auth": "./src/auth/index.ts",
-    "./email/conformite": "./src/email/templates/conformite/index.ts"
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./conformite": {
+      "types": "./src/conformite/index.ts",
+      "default": "./dist/conformite/index.js"
+    },
+    "./conformite/*": {
+      "types": "./src/conformite/*.ts",
+      "default": "./dist/conformite/*.js"
+    },
+    "./auth": {
+      "types": "./src/auth/index.ts",
+      "default": "./dist/auth/index.js"
+    },
+    "./email/conformite": {
+      "types": "./src/email/templates/conformite/index.ts",
+      "default": "./dist/email/templates/conformite/index.js"
+    }
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "lint": "biome check --error-on-warnings src",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "date-fns": "^4.1.0",

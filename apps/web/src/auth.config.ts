@@ -4,6 +4,23 @@
 
 import type { NextAuthConfig } from 'next-auth';
 
+/**
+ * Le préfixe `__Host-` impose au navigateur secure=true + path=/ + no Domain,
+ * ce qui exige HTTPS. C'est la bonne valeur en prod (durcissement CSRF/
+ * fixation), mais en dev HTTP localhost le navigateur refuse silencieusement
+ * de stocker le cookie → auth.js ne voit jamais la session.
+ *
+ * En dev on bascule sur le nom Auth.js par défaut (`authjs.session-token`)
+ * et secure=false, ce qui matche aussi le cookie posé par devLoginAction
+ * (cf. apps/web/src/app/[locale]/login/actions.ts).
+ *
+ * Côté API NestJS, l'AuthGuard accepte les DEUX noms (prod + dev) — cf.
+ * apps/api/src/modules/identite/interface/auth.guard.ts.
+ */
+const useSecureCookies = process.env.NODE_ENV === 'production';
+
+const SESSION_COOKIE_NAME = useSecureCookies ? '__Host-cv.session.token' : 'authjs.session-token';
+
 export const authConfig: NextAuthConfig = {
   providers: [
     // À compléter en feature 002 (identité) :
@@ -17,12 +34,12 @@ export const authConfig: NextAuthConfig = {
   },
   cookies: {
     sessionToken: {
-      name: '__Host-cv.session.token',
+      name: SESSION_COOKIE_NAME,
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: true,
+        secure: useSecureCookies,
       },
     },
   },
