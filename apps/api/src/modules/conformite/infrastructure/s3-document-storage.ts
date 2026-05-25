@@ -90,13 +90,30 @@ export class S3DocumentStorage implements DocumentStoragePort {
 
   async presignDownload(objectKey: string, options?: PresignDownloadOptions): Promise<string> {
     const ttl = options?.ttlSeconds ?? DEFAULT_DOWNLOAD_TTL_SECONDS;
+
+    // HEAD pour récupérer le Content-Type stocké lors du PUT. Permet :
+    //   1. ResponseContentType : on force S3 à renvoyer ce type, même
+    //      si quelqu'un a manipulé les métadonnées entre-temps.
+    //   2. Extension de filename : les objectKey en DB sont des UUIDs
+    //      sans extension (cf. RequestUploadUrlsUseCase). Sans extension
+    //      dans Content-Disposition, l'OS ne sait pas ouvrir le fichier
+    //      téléchargé avec le bon programme.
+    //
+    // 1 HEAD + 1 sign = 2 round-trips, acceptable pour un download admin
+    // (hors hot-path). Pour optimiser, on pourra plus tard cacher la
+    // metadata par objectKey ou passer le contentType en option.
+    const meta = await this.headObject(objectKey);
+    const contentType = meta?.contentType ?? 'application/octet-stream';
+    const filename = this.safeFilename(objectKey, contentType);
+
     const command = new GetObjectCommand({
       Bucket: env.AWS_S3_BUCKET_CONFORMITE,
       Key: objectKey,
+      ResponseContentType: contentType,
       // Force download — empêche le rendu inline d'un PDF/HTML
       // potentiellement malicieux dans l'onglet admin (R5).
       ...(options?.forceDownload !== false && {
-        ResponseContentDisposition: `attachment; filename="${this.safeFilename(objectKey)}"`,
+        ResponseContentDisposition: `attachment; filename="${filename}"`,
       }),
     });
     return getSignedUrl(this.client, command, { expiresIn: ttl });
@@ -119,9 +136,34 @@ export class S3DocumentStorage implements DocumentStoragePort {
     return e.name === 'NotFound' || e.$metadata?.httpStatusCode === 404;
   }
 
-  /** Sanitize objectKey to a safe filename for Content-Disposition. */
-  private safeFilename(objectKey: string): string {
+  /**
+   * Sanitize objectKey + content-type → filename safe pour
+   * Content-Disposition. Ajoute l'extension dérivée du MIME si elle
+   * n'est pas déjà présente, sinon l'OS du destinataire ne saura pas
+   * ouvrir le fichier téléchargé avec le bon programme.
+   */
+  private safeFilename(objectKey: string, contentType?: string): string {
     const tail = objectKey.split('/').pop() ?? 'document';
-    return tail.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const sanitized = tail.replace(/[^a-zA-Z0-9._-]/g, '_');
+    if (!contentType || /\.[a-zA-Z0-9]{2,5}$/.test(sanitized)) {
+      return sanitized;
+    }
+    const ext = MIME_TO_EXTENSION[contentType.toLowerCase()];
+    return ext ? `${sanitized}${ext}` : sanitized;
   }
 }
+
+/**
+ * Table de correspondance MIME → extension. Couvre les types acceptés
+ * par la validation upload (PDF, JPG, PNG, HEIC). Mettre à jour si les
+ * types d'upload acceptés évoluent.
+ */
+const MIME_TO_EXTENSION: Readonly<Record<string, string>> = {
+  'application/pdf': '.pdf',
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/png': '.png',
+  'image/heic': '.heic',
+  'image/heif': '.heif',
+  'image/webp': '.webp',
+};

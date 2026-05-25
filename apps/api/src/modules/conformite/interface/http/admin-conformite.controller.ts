@@ -9,11 +9,16 @@
 //
 // Cf. specs/001-conformite-module/contracts/http-endpoints.md.
 
-import type { AdminId, SubmissionId } from '@cv/shared/conformite';
+import type {
+  AdminId,
+  DeclarePermitRevokedBody,
+  DeclarePermitRevokedResponse,
+  RevokeConseillerBody,
+  SubmissionId,
+} from '@cv/shared/conformite';
 import {
   AdminIdSchema,
   ApproveSubmissionSchema,
-  type DeclarePermitRevokedResponse,
   DeclarePermitRevokedSchema,
   QueueQuerySchema,
   RefuseSubmissionSchema,
@@ -55,6 +60,8 @@ import { DeclarePermitRevokedUseCase } from '../../application/use-cases/declare
 import { RefuseDossierUseCase } from '../../application/use-cases/refuse-dossier.use-case';
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
 import { RevokeConseillerUseCase } from '../../application/use-cases/revoke-conseiller.use-case';
+// biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
+import { DataRetentionSweepJob } from '../../infrastructure/jobs/data-retention-sweep.job';
 import type {
   ApproveSubmissionRequestDto,
   QueueQueryDto,
@@ -78,6 +85,7 @@ export class AdminConformiteController {
     private readonly refuseDossier: RefuseDossierUseCase,
     private readonly declarePermit: DeclarePermitRevokedUseCase,
     private readonly revokeConseiller: RevokeConseillerUseCase,
+    private readonly retentionSweepJob: DataRetentionSweepJob,
   ) {}
 
   @ApiOperation({ summary: 'File de revue paginée (FR-003).' })
@@ -215,7 +223,7 @@ export class AdminConformiteController {
   async revokePermit(
     @Req() req: AuthenticatedRequest,
     @Body(new ZodValidationPipe(DeclarePermitRevokedSchema))
-    body: import('@cv/shared/conformite').DeclarePermitRevokedBody,
+    body: DeclarePermitRevokedBody,
   ): Promise<DeclarePermitRevokedResponse> {
     const admin = this.assertAdmin(req);
     return this.declarePermit.execute({
@@ -238,7 +246,7 @@ export class AdminConformiteController {
     @Req() req: AuthenticatedRequest,
     @Param('complianceId') complianceId: string,
     @Body(new ZodValidationPipe(RevokeConseillerSchema))
-    body: import('@cv/shared/conformite').RevokeConseillerBody,
+    body: RevokeConseillerBody,
   ): Promise<{ ok: true }> {
     const admin = this.assertAdmin(req);
     await this.revokeConseiller.execute({
@@ -247,6 +255,38 @@ export class AdminConformiteController {
       reason: body.reason,
     });
     return { ok: true };
+  }
+
+  /**
+   * Force l'exécution immédiate du DataRetentionSweepJob (Loi 25 / OPC).
+   *
+   * Le job tourne normalement via setInterval 24h dans ConformiteModule.
+   * Cet endpoint permet aux ops de déclencher un sweep à la demande :
+   *   - debug post-incident où des demandes d'effacement s'accumulent
+   *   - tests E2E dev pour valider US5 sans attendre 24h
+   *   - exécution post-window de maintenance
+   *
+   * Idempotent : un verrou interne (`this.running`) garantit qu'un sweep
+   * déjà en cours ne sera pas relancé en parallèle — l'endpoint répond
+   * alors `{ processed: 0, skipped: true }`.
+   *
+   * Sécurité : réservé aux admins (assertAdmin). En prod on ajoutera
+   * possiblement un rate-limit dédié à cet endpoint pour éviter le
+   * thundering herd, même si le verrou couvre déjà l'overlap.
+   */
+  @ApiOperation({ summary: "Force le sweep d'effacement Loi 25 (US5)." })
+  @ApiResponse({
+    status: 200,
+    description: 'Sweep exécuté. Retourne le nombre de comptes effacés.',
+  })
+  @ApiResponse({ status: 401, description: 'Session absente ou role !== admin.' })
+  @Post('jobs/data-retention/sweep')
+  @HttpCode(HttpStatus.OK)
+  async runDataRetentionSweep(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<{ processed: number; skipped: boolean }> {
+    this.assertAdmin(req);
+    return this.retentionSweepJob.sweep();
   }
 
   // --- Helpers privés ---

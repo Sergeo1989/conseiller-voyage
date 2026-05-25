@@ -17,10 +17,12 @@
 
 import { BullModule } from '@nestjs/bullmq';
 import { Module, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { s3Client } from '../../../aws/clients';
 import { CryptoUuidGenerator } from '../../../common/infrastructure/crypto-uuid-generator';
 import { SystemClock } from '../../../common/infrastructure/system-clock';
 import { CLOCK } from '../../../common/ports/clock.port';
 import { UUID_GENERATOR } from '../../../common/ports/uuid-generator.port';
+import { BullMqModule } from '../../../queue/bullmq.module';
 import { IdentiteModule } from '../../identite/identite.module';
 import { AUDIT_LOG_WRITER } from '../application/ports/audit-log-writer.port';
 import { CONFORMITE_EVENT_PUBLISHER } from '../application/ports/conformite-event-publisher.port';
@@ -55,7 +57,7 @@ import { PrismaConformiteRepository } from '../infrastructure/prisma-conformite-
 import { PrismaOutboxWriter } from '../infrastructure/prisma-outbox-writer';
 import { RedisConformiteEventPublisher } from '../infrastructure/redis-conformite-event-publisher';
 import { RedisConformiteStatusCache } from '../infrastructure/redis-conformite-status-cache';
-import { S3DocumentStorage } from '../infrastructure/s3-document-storage';
+import { S3DocumentStorage, S3_CLIENT } from '../infrastructure/s3-document-storage';
 import { AdminConformiteController } from './http/admin-conformite.controller';
 import { ConseillerConformiteController } from './http/conseiller-conformite.controller';
 import { ConformiteQueryFacade } from './public-api/conformite-query.facade';
@@ -70,6 +72,7 @@ const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 @Module({
   imports: [
     IdentiteModule, // AuthGuard + AUTH_SESSION_READER
+    BullMqModule, // REDIS_CLIENT + @nestjs/bullmq forRoot
     BullModule.registerQueue({ name: CONFORMITE_NOTIFICATIONS_QUEUE }),
   ],
   controllers: [ConseillerConformiteController, AdminConformiteController],
@@ -96,6 +99,7 @@ const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
     { provide: CONFORMITE_READER, useExisting: PrismaConformiteRepository },
     { provide: CONFORMITE_WRITER, useExisting: PrismaConformiteRepository },
 
+    { provide: S3_CLIENT, useValue: s3Client },
     { provide: DOCUMENT_STORAGE, useClass: S3DocumentStorage },
     { provide: AUDIT_LOG_WRITER, useClass: PrismaAuditLogWriter },
     { provide: OUTBOX_WRITER, useClass: PrismaOutboxWriter },
@@ -145,7 +149,10 @@ export class ConformiteModule implements OnModuleInit, OnModuleDestroy {
       void this.uploadCleanupJob.sweep();
     }, CLEANUP_INTERVAL_MS);
     this.retentionSweepInterval = setInterval(() => {
-      void this.retentionSweepJob.sweep();
+      // sweep() peut throw — catch ici pour éviter un unhandled rejection
+      // qui crasherait le process Node. L'erreur est déjà loggée par le
+      // job lui-même via son Logger interne.
+      this.retentionSweepJob.sweep().catch(() => undefined);
     }, CLEANUP_INTERVAL_MS);
   }
 

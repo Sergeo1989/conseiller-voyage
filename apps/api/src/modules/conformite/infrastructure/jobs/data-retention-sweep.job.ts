@@ -13,6 +13,7 @@
 // expose son propre DataRetentionSweepJob ou une méthode appelée par
 // un orchestrateur global.
 
+import type { ConseillerComplianceId } from '@cv/shared/conformite';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   CONFORMITE_READER,
@@ -31,19 +32,27 @@ export class DataRetentionSweepJob {
     private readonly eraseData: EraseConseillerDataUseCase,
   ) {}
 
-  async sweep(): Promise<void> {
+  /**
+   * Retourne le nombre d'effacements traités lors de cette invocation,
+   * ou `skipped: true` si un sweep tourne déjà (verrou anti-overlap).
+   * Utile pour les déclenchements manuels via endpoint admin
+   * (force le sweep sans attendre le scheduler 24h).
+   */
+  async sweep(): Promise<{ processed: number; skipped: boolean }> {
     if (this.running) {
       this.logger.warn('DataRetentionSweep already running — skipping.');
-      return;
+      return { processed: 0, skipped: true };
     }
     this.running = true;
     try {
       const processed = await this.processBatch();
       this.logger.log(`DataRetentionSweep done: ${processed} erasures completed.`);
+      return { processed, skipped: false };
     } catch (error) {
       this.logger.error(
         `DataRetentionSweep failed: ${error instanceof Error ? error.message : String(error)}`,
       );
+      throw error;
     } finally {
       this.running = false;
     }
@@ -60,9 +69,7 @@ export class DataRetentionSweepJob {
     return processed;
   }
 
-  private async tryErase(
-    complianceId: import('@cv/shared/conformite').ConseillerComplianceId,
-  ): Promise<boolean> {
+  private async tryErase(complianceId: ConseillerComplianceId): Promise<boolean> {
     try {
       await this.eraseData.execute({ conseillerComplianceId: complianceId });
       return true;
