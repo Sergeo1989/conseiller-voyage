@@ -404,10 +404,52 @@ export class PrismaConformiteRepository implements ConformiteReader, ConformiteW
     outboxEntries: ReadonlyArray<OutboxEntryToCreate>;
   }): Promise<void> {
     await prisma.$transaction(async (tx) => {
+      // Récupère le conseillerId (FK vers auth_users.id) AVANT de marquer
+      // anonymizedAt — on a besoin du lien pour nullifier les PII dans
+      // auth_users, sinon Loi 25 art. 28 violé : email/name/image
+      // restent en clair dans auth_users après "effacement complet".
+      const compliance = await tx.conseillerCompliance.findUnique({
+        where: { id: args.conseillerComplianceId },
+        select: { conseillerId: true },
+      });
+      if (!compliance) {
+        throw new Error(`anonymizeCompliance: compliance ${args.conseillerComplianceId} not found`);
+      }
+
+      // 1. Marque la compliance anonymisée.
       await tx.conseillerCompliance.update({
         where: { id: args.conseillerComplianceId },
         data: { anonymizedAt: args.anonymizedAt },
       });
+
+      // 2. Nullifie les PII dans auth_users (email, name, image).
+      //    Conserve la ligne pour préserver l'intégrité référentielle
+      //    de l'audit log (actorId), mais sans aucune donnée nominative.
+      //    Loi 25 art. 28 : droit à l'effacement des renseignements
+      //    personnels — l'identifiant pseudonymisé (UUID) reste, mais
+      //    aucun lien vers la personne réelle n'est conservé.
+      await tx.authUser.update({
+        where: { id: compliance.conseillerId },
+        data: {
+          email: null,
+          name: null,
+          image: null,
+        },
+      });
+
+      // 3. Supprime toutes les sessions Auth.js du conseiller — empêche
+      //    une session persistante de re-révéler ses anciennes données
+      //    via cache navigateur ou cookie en flight.
+      await tx.authSession.deleteMany({
+        where: { userId: compliance.conseillerId },
+      });
+
+      // 4. Supprime les comptes liés (OAuth providers, si jamais utilisés
+      //    par la feature 006 identité — anticipation Loi 25).
+      await tx.authAccount.deleteMany({
+        where: { userId: compliance.conseillerId },
+      });
+
       await this.writeAuditEntries(tx, args.auditEntries);
       await this.writeOutboxEntries(tx, args.outboxEntries);
     });
