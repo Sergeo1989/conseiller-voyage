@@ -138,11 +138,11 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 **Independent Test** : un voyageur (test manuel ou automated Playwright) accède à `/fr/comment-ca-marche`, voit l'affirmation explicite « ce n'est pas une agence de voyages » visible dans le `<h1>` ou un encadré, comprend le rôle du conseiller vérifié et le plafond de 3 conseillers. Page se charge en < 1 s, accessible WCAG AA, indexable.
 
-- [ ] T042 [US1] Rédiger `packages/legal-content/fr-CA/comment-ca-marche.mdx` (placeholder texte, frontmatter version 1 conforme à `contracts/mdx-frontmatter.md`, énoncé explicite « pas une agence » visible) — texte juriste ou template adapté ; ne bloque pas le merge mais bloque le déploiement public
-- [ ] T043 [US1] Placeholder vide `packages/legal-content/en/comment-ca-marche.mdx` (structure i18n)
-- [ ] T044 [P] [US1] Page Next.js `apps/web/src/app/[locale]/(legal)/comment-ca-marche/page.tsx` (`export const dynamic = 'force-static'`, charge le MDX via next-mdx, métadonnées `<title>`, `<meta name="description">`, OpenGraph FR-CA, JSON-LD `WebPage` avec `inLanguage` et `dateModified`)
-- [ ] T045 [P] [US1] Test a11y axe-core sur `/fr/comment-ca-marche` dans `apps/web/test/a11y/legal.spec.ts` (US1 seule — zéro violation `critical` ni `serious`)
-- [ ] T046 [P] [US1] Test e2e Playwright : voyageur arrive sur `/fr/comment-ca-marche`, voit l'énoncé explicite « pas une agence », titre `<h1>` présent, JSON-LD parsable — dans `apps/web/test/e2e/legal-us1.spec.ts`
+- [x] T042 [US1] Rédiger `packages/legal-content/fr-CA/comment-ca-marche.mdx` (placeholder texte, frontmatter version 1 conforme à `contracts/mdx-frontmatter.md`, énoncé explicite « pas une agence » visible) — texte juriste ou template adapté ; ne bloque pas le merge mais bloque le déploiement public
+- [x] T043 [US1] Placeholder vide `packages/legal-content/en/comment-ca-marche.mdx` (structure i18n)
+- [x] T044 [P] [US1] Page Next.js `apps/web/src/app/[locale]/(legal)/comment-ca-marche/page.tsx` (`export const dynamic = 'force-static'`, charge le MDX via next-mdx, métadonnées `<title>`, `<meta name="description">`, OpenGraph FR-CA, JSON-LD `WebPage` avec `inLanguage` et `dateModified`)
+- [x] T045 [P] [US1] Test a11y axe-core sur `/fr/comment-ca-marche` dans `apps/web/test/a11y/legal.spec.ts` (US1 seule — zéro violation `critical` ni `serious`)
+- [x] T046 [P] [US1] Test e2e Playwright : voyageur arrive sur `/fr/comment-ca-marche`, voit l'énoncé explicite « pas une agence », titre `<h1>` présent, JSON-LD parsable — dans `apps/web/test/e2e/legal-us1.spec.ts`
 
 **Checkpoint US1** : la page peut être déployée seule, indépendamment des 4 autres. Le voyageur comprend le modèle. MVP minimal.
 
@@ -156,36 +156,36 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 ### Contenu éditorial (MDX placeholders)
 
-- [ ] T047 [P] [US2] Rédiger `packages/legal-content/fr-CA/mentions-legales.mdx` (structure : raison sociale + NEQ + adresse Québec + juridiction Montréal + contact + dernière mise à jour ; valeurs exactes placeholder à remplacer en T071)
-- [ ] T048 [P] [US2] Rédiger `packages/legal-content/fr-CA/cgu-voyageur.mdx` (B2C : utilisation par voyageur, intake, plafond 3 conseillers, absence de transaction sur plateforme)
-- [ ] T049 [P] [US2] Rédiger `packages/legal-content/fr-CA/cgu-conseiller.mdx` (B2B : abonnement, statut vérifié CCV/TICO, juridiction Montréal, droit civil québécois)
-- [ ] T050 [P] [US2] Rédiger `packages/legal-content/fr-CA/confidentialite.mdx` (finalités collecte, tableau de rétention reflétant constitution, droits Loi 25, coordonnées responsable, mention « aucun cookie analytique au MVP »)
-- [ ] T051 [P] [US2] Placeholders EN vides pour les 4 MDX (`packages/legal-content/en/*.mdx`)
+- [x] T047 [P] [US2] Rédiger `packages/legal-content/fr-CA/mentions-legales.mdx` (structure : raison sociale + NEQ + adresse Québec + juridiction Montréal + contact + dernière mise à jour ; valeurs exactes placeholder à remplacer en T071)
+- [x] T048 [P] [US2] Rédiger `packages/legal-content/fr-CA/cgu-voyageur.mdx` (B2C : utilisation par voyageur, intake, plafond 3 conseillers, absence de transaction sur plateforme)
+- [x] T049 [P] [US2] Rédiger `packages/legal-content/fr-CA/cgu-conseiller.mdx` (B2B : abonnement, statut vérifié CCV/TICO, juridiction Montréal, droit civil québécois)
+- [x] T050 [P] [US2] Rédiger `packages/legal-content/fr-CA/confidentialite.mdx` (finalités collecte, tableau de rétention reflétant constitution, droits Loi 25, coordonnées responsable, mention « aucun cookie analytique au MVP »)
+- [x] T051 [P] [US2] Placeholders EN vides pour les 4 MDX (`packages/legal-content/en/*.mdx`)
 
 ### Pages Next.js SSG
 
-- [ ] T052 [P] [US2] Page `apps/web/src/app/[locale]/(legal)/mentions-legales/page.tsx` (force-static, métadonnées, JSON-LD `WebPage` + `Organization` avec `PostalAddress`)
-- [ ] T053 [P] [US2] Page `apps/web/src/app/[locale]/(legal)/cgu-voyageur/page.tsx`
-- [ ] T054 [P] [US2] Page `apps/web/src/app/[locale]/(legal)/cgu-conseiller/page.tsx`
-- [ ] T055 [P] [US2] Page `apps/web/src/app/[locale]/(legal)/confidentialite/page.tsx`
-- [ ] T056 [US2] Layout partagé `apps/web/src/app/[locale]/(legal)/layout.tsx` (typographie cohérente, max-width lisible)
+- [x] T052 [P] [US2] Page `apps/web/src/app/[locale]/(legal)/mentions-legales/page.tsx` (force-static, métadonnées, JSON-LD `WebPage` + `Organization` avec `PostalAddress`)
+- [x] T053 [P] [US2] Page `apps/web/src/app/[locale]/(legal)/cgu-voyageur/page.tsx`
+- [x] T054 [P] [US2] Page `apps/web/src/app/[locale]/(legal)/cgu-conseiller/page.tsx`
+- [x] T055 [P] [US2] Page `apps/web/src/app/[locale]/(legal)/confidentialite/page.tsx`
+- [x] T056 [US2] Layout partagé `apps/web/src/app/[locale]/(legal)/layout.tsx` (typographie cohérente, max-width lisible)
 
 ### Footer composant
 
-- [ ] T057 [US2] Composant `apps/web/src/components/Footer.tsx` : purement statique (HTML+CSS pur, zéro JS, aucune donnée dynamique — année hardcodée par commit annuel), 5 liens labellisés, `aria-label` explicites, touch targets ≥ 44 px, focus visible (réutilise les classes a11y baseline livrées en 001)
-- [ ] T058 [US2] Intégrer `Footer` dans `apps/web/src/app/[locale]/layout.tsx` (rendu sur toutes les pages du layout racine — Server Component, pas de hydration)
+- [x] T057 [US2] Composant `apps/web/src/components/Footer.tsx` : purement statique (HTML+CSS pur, zéro JS, aucune donnée dynamique — année hardcodée par commit annuel), 5 liens labellisés, `aria-label` explicites, touch targets ≥ 44 px, focus visible (réutilise les classes a11y baseline livrées en 001)
+- [x] T058 [US2] Intégrer `Footer` dans `apps/web/src/app/[locale]/layout.tsx` (rendu sur toutes les pages du layout racine — Server Component, pas de hydration)
 
 ### SEO + sitemap
 
-- [ ] T059 [P] [US2] Ajouter les 5 routes FR-CA + 5 routes EN au `sitemap.xml` (statique au MVP via `apps/web/src/app/sitemap.ts` standard Next.js)
-- [ ] T060 [P] [US2] Vérifier que `apps/web/public/robots.txt` autorise crawl des 5 routes (aucun `Disallow` les concernant)
+- [x] T059 [P] [US2] Ajouter les 5 routes FR-CA + 5 routes EN au `sitemap.xml` (statique au MVP via `apps/web/src/app/sitemap.ts` standard Next.js)
+- [x] T060 [P] [US2] Vérifier que `apps/web/public/robots.txt` autorise crawl des 5 routes (aucun `Disallow` les concernant)
 
 ### Tests
 
-- [ ] T061 [P] [US2] Test a11y axe-core sur les 5 pages + Footer dans `apps/web/test/a11y/legal.spec.ts` (étendu de T045)
-- [ ] T062 [P] [US2] Test e2e crawler : un script Playwright visite l'accueil, 3 pages produit aléatoires (404, /, /comment-ca-marche), et vérifie que les 5 liens du footer sont présents et retournent 200 — dans `apps/web/test/e2e/footer.spec.ts`
-- [ ] T063 [P] [US2] Test e2e Playwright responsive : mobile (375 px) + clavier-only — vérifier touch targets ≥ 44 px et focus visible — dans `apps/web/test/e2e/footer-responsive.spec.ts`
-- [ ] T064 [US2] Configurer Lighthouse CI sur les 5 routes FR-CA (`lighthouserc.json` étendu) avec budgets Perf ≥ 90, SEO ≥ 95, A11y ≥ 95 — bloquant en CI
+- [x] T061 [P] [US2] Test a11y axe-core sur les 5 pages + Footer dans `apps/web/test/a11y/legal.spec.ts` (étendu de T045)
+- [x] T062 [P] [US2] Test e2e crawler : un script Playwright visite l'accueil, 3 pages produit aléatoires (404, /, /comment-ca-marche), et vérifie que les 5 liens du footer sont présents et retournent 200 — dans `apps/web/test/e2e/footer.spec.ts`
+- [x] T063 [P] [US2] Test e2e Playwright responsive : mobile (375 px) + clavier-only — vérifier touch targets ≥ 44 px et focus visible — dans `apps/web/test/e2e/footer-responsive.spec.ts`
+- [x] T064 [US2] Configurer Lighthouse CI sur les 5 routes FR-CA (`lighthouserc.json` étendu) avec budgets Perf ≥ 90, SEO ≥ 95, A11y ≥ 95 — bloquant en CI
 
 **Checkpoint US2** : les 5 pages publiques accessibles, footer partout, Lighthouse ≥ budgets, axe-core clean. Couche public-facing du MVP complète.
 

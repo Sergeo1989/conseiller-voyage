@@ -1,0 +1,134 @@
+---
+type: confidentialite
+version: 1
+slug: confidentialite
+title: Politique de confidentialité (Loi 25)
+description: Politique Loi 25 — collecte, utilisation, rétention et protection de vos renseignements personnels en région canadienne. Aucun tracking.
+publishedAt: 2026-05-25T00:00:00Z
+effectiveAt: 2026-05-25T00:00:00Z
+locale: fr-CA
+---
+
+> ⚠ **Placeholder à valider par juriste avant déploiement public.** La structure ci-dessous reflète les obligations Loi 25 et les pratiques effectives de la Plateforme (résidence canadienne, anonymisation différée, audit append-only). Les valeurs exactes (coordonnées du responsable, etc.) doivent être complétées.
+
+## 1. Responsable du traitement
+
+Le responsable du traitement des renseignements personnels collectés par Conseiller Voyage est l'**éditeur du site**, dont l'identité figure dans les [mentions légales](/fr/mentions-legales).
+
+Le **responsable de la protection des renseignements personnels (RPRP)** désigné conformément à l'article 3.1 de la Loi 25 est : *[à compléter — nom + courriel direct]*.
+
+## 2. Renseignements collectés
+
+### Pour le voyageur (anonyme, identifié par un identifiant de brief)
+
+Au moment de la soumission du brief intake :
+
+- **Coordonnées** : courriel (pour le magic-link de vérification et la communication avec les conseillers proposés)
+- **Description du projet de voyage** : destination, dates approximatives, fourchette de budget, nombre de voyageurs, langue préférée, spécialité recherchée, contraintes éventuelles
+- **Acceptations légales** : horodatage, version acceptée, adresse IP, User-Agent (traçabilité Loi 25 article 8)
+
+### Pour le conseiller (compte identifié)
+
+À l'inscription et tout au long du parcours :
+
+- **Identité** : nom, prénom, courriel, photo de profil (optionnel)
+- **Certification professionnelle** : numéro de certificat CCV (Québec) ou enregistrement TICO (Ontario), province, dates d'émission et d'expiration, copie scannée du certificat
+- **Affiliations** : nom et numéro de permis OPC/TICO de chaque agence à laquelle le conseiller est affilié, document scanné attestant l'affiliation
+- **Données de session** : sessions Auth.js v5, dates d'élévation MFA (si activé)
+- **Historique d'audit** : événements de soumission, approbation, refus, rappels d'expiration, bascules automatiques de statut (7 ans après le dernier événement)
+- **Acceptations légales** : horodatage, version acceptée, adresse IP, User-Agent
+
+## 3. Finalités et bases légales
+
+Les renseignements sont collectés pour les seules finalités suivantes :
+
+| Finalité | Base légale |
+|---|---|
+| Mettre en relation un voyageur avec jusqu'à 3 conseillers vérifiés | Exécution d'une mesure pré-contractuelle (Loi 25 art. 12) |
+| Vérifier la conformité professionnelle des conseillers (CCV/TICO) | Obligation légale (encadrement OPC/TICO) |
+| Maintenir un journal d'audit immutable des décisions de conformité | Obligation légale (preuve réglementaire 7 ans) |
+| Tracer les acceptations légales des utilisateurs | Obligation légale (Loi 25 art. 8 et 10) |
+
+**Aucune utilisation marketing.** Aucun envoi de courriel promotionnel non sollicité. Aucun partage avec des tiers à des fins commerciales.
+
+## 4. Résidence des données
+
+Toutes les données personnelles sont **stockées et traitées en région canadienne** :
+
+- **PostgreSQL 16** sur AWS RDS, région **ca-central-1** (Montréal) — ADR-0001
+- **Stockage objet** (documents scannés) sur AWS S3, région **ca-central-1** avec chiffrement SSE-KMS — ADR-0001
+- **Courriel transactionnel** via AWS SES, région **ca-central-1** — ADR-0006
+- **Observabilité** via Grafana Cloud Canada — ADR-0003
+- **Suivi d'erreurs** Sentry self-hébergé sur AWS Canada — ADR-0007
+
+Aucune donnée personnelle identifiable ne transite par des serveurs hors Canada.
+
+## 5. Durées de conservation
+
+Conformément au tableau de rétention de la constitution interne v2.2.0 et aux obligations légales :
+
+| Catégorie | Durée de conservation | Justification |
+|---|---|---|
+| Profil conseiller actif | Tant qu'actif | Service rendu |
+| Profil conseiller désactivé | 6 mois après désactivation, puis pseudonymisation | Rétention raisonnable post-désaffiliation |
+| Documents de conformité (certificats, preuves) | 24 mois après le dernier événement de conformité | Audit OPC/TICO |
+| Journal d'audit conformité | **7 ans** après le dernier événement | Obligation légale CCV/TICO |
+| Acceptations légales (Loi 25 art. 8) | **7 ans** | Preuve de consentement éclairé |
+| Brief intake voyageur | 24 mois après soumission, puis anonymisation | Suivi post-relation |
+| Sessions Auth.js | 30 jours (sliding refresh) | Sécurité applicative |
+
+Les durées peuvent être prolongées en cas de litige juridictionnel en cours.
+
+## 6. Droits des personnes concernées
+
+Conformément à la Loi 25 (articles 27 à 41), vous disposez des droits suivants :
+
+- **Droit d'accès** (article 27) : connaître les renseignements personnels détenus à votre sujet
+- **Droit de rectification** (article 28) : corriger un renseignement inexact ou incomplet
+- **Droit d'effacement** (article 28.1) : demander la suppression de vos renseignements personnels
+- **Droit à la portabilité** (article 27) : recevoir vos renseignements dans un format structuré
+- **Droit de retirer le consentement** : pour les traitements basés sur le consentement, sans effet rétroactif
+
+**Particularité de l'effacement Loi 25 sur le journal d'audit** : conformément à l'arbitrage légal documenté dans l'ADR-0008, l'obligation de conservation du journal d'audit pendant 7 ans **supplante** le droit à l'effacement strict. Le journal est **anonymisé** (hash salé SHA-256 de votre identifiant + masquage IP + extraction de la famille de navigateur) mais conservé comme preuve historique d'engagement. Le contenu identifiant disparaît ; la trace d'événement demeure.
+
+Pour exercer vos droits, contactez le RPRP : *[courriel à compléter]*. Réponse dans un délai maximum de **30 jours** conformément à la Loi 25 article 34.
+
+## 7. Cookies et technologies de suivi
+
+La Plateforme n'utilise **aucun cookie de tracking analytique** (Google Analytics, Meta Pixel, Hotjar, etc.). Les seuls cookies utilisés sont **strictement essentiels** au fonctionnement :
+
+| Cookie | Finalité | Durée |
+|---|---|---|
+| `__Host-cv.session.token` | Session Auth.js v5 | 30 jours |
+| `__Host-cv.legal-version` | Cache de la version CGU acceptée (cf. ADR-0009) | 5 minutes |
+| Cookies CSRF / locale next-intl | Sécurité applicative + i18n | Session |
+
+Aucun bandeau de consentement aux cookies n'est requis car aucun cookie n'est utilisé pour du tracking comportemental.
+
+## 8. Sécurité
+
+La Plateforme applique les mesures de sécurité suivantes :
+
+- **Chiffrement en transit** (HTTPS/TLS 1.3 strict)
+- **Chiffrement au repos** (RDS AES-256, S3 SSE-KMS)
+- **Authentification multi-facteurs** (MFA TOTP/passkey) pour les conseillers vérifiés (avant accès aux leads)
+- **Audit append-only** des journaux de conformité (triggers PostgreSQL — UPDATE et DELETE rejetés)
+- **Hébergement en région canadienne** (cf. section 4)
+- **Rotation annuelle** des secrets (HMAC cookies, etc.)
+- **Pen test externe** prévu dans les 90 jours suivant le lancement public (Principe IX de la constitution interne)
+
+## 9. Recours auprès de la CAI
+
+Si vous estimez que vos droits n'ont pas été respectés, vous pouvez déposer une plainte auprès de la **Commission d'accès à l'information du Québec** :
+
+- Site web : [www.cai.gouv.qc.ca](https://www.cai.gouv.qc.ca)
+- Téléphone : 418-528-7741
+- Adresse : Bureau 18.200, 575, rue Saint-Amable, Québec (Québec) G1R 2G4
+
+## 10. Modifications de la présente politique
+
+L'éditeur se réserve le droit de modifier la présente politique. Toute modification de fond entraîne une nouvelle version avec un préavis de **7 jours** avant prise d'effet. Les utilisateurs sont notifiés par courriel et invités à ré-accepter le cas échéant.
+
+## 11. Dernière mise à jour
+
+**Version :** 1 (initiale) · **Date de prise d'effet :** *[automatique]*

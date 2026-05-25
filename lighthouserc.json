@@ -2,11 +2,16 @@
   "ci": {
     "collect": {
       "url": [
-        "http://localhost:3000/fr-CA",
-        "http://localhost:3000/fr-CA/conseiller/conformite",
-        "http://localhost:3000/fr-CA/conseiller/conformite/soumettre",
-        "http://localhost:3000/fr-CA/admin/conformite",
-        "http://localhost:3000/fr-CA/admin/conformite/permis"
+        "http://localhost:3000/fr",
+        "http://localhost:3000/fr/conseiller/conformite",
+        "http://localhost:3000/fr/conseiller/conformite/soumettre",
+        "http://localhost:3000/fr/admin/conformite",
+        "http://localhost:3000/fr/admin/conformite/permis",
+        "http://localhost:3000/fr/mentions-legales",
+        "http://localhost:3000/fr/cgu-voyageur",
+        "http://localhost:3000/fr/cgu-conseiller",
+        "http://localhost:3000/fr/confidentialite",
+        "http://localhost:3000/fr/comment-ca-marche"
       ],
       "numberOfRuns": 3,
       "settings": {
@@ -33,6 +38,6 @@
     "upload": {
       "target": "temporary-public-storage"
     },
-    "_comment": "T121 — Budgets cohérents avec Principe XII (CWV LCP/INP/CLS strictement dans les budgets, Lighthouse CI bloquant Perf >= 90, SEO >= 95, A11y >= 95). Le token de session est injecté par le job CI avant le run."
+    "_comment": "T121 (001) + T064 (004) — Budgets cohérents avec Principe XII (CWV LCP/INP/CLS strictement dans les budgets, Lighthouse CI bloquant Perf >= 90, SEO >= 95, A11y >= 95). 10 routes au total : 5 conformité existantes (001) + 5 nouvelles pages légales SSG (004). URLs en /fr/... (next-intl localePrefix mappe fr-CA → /fr). Le token de session est injecté par le job CI avant le run pour les pages authentifiées."
   }
 }

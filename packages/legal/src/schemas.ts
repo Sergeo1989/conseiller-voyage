@@ -66,6 +66,13 @@ export type VersionStatusResponse = z.infer<typeof VersionStatusResponseSchema>;
  *
  * Cf. specs/004-mentions-legales/contracts/mdx-frontmatter.md.
  */
+// Helper : YAML (gray-matter) auto-parse les ISO datetime strings en Date objects.
+// On accepte les deux et normalise en ISO string.
+const isoDateString = z.preprocess(
+  (v) => (v instanceof Date ? v.toISOString() : v),
+  z.string().datetime({ offset: true }),
+);
+
 export const LegalMdxFrontmatterSchema = z
   .object({
     type: LegalDocumentTypeSchema,
@@ -73,8 +80,8 @@ export const LegalMdxFrontmatterSchema = z
     slug: z.string().regex(/^[a-z0-9-]+$/, 'slug must be URL-safe (a-z 0-9 -)'),
     title: z.string().min(1),
     description: z.string().min(1).max(160),
-    publishedAt: z.string().datetime({ offset: false }),
-    effectiveAt: z.string().datetime({ offset: false }),
+    publishedAt: isoDateString,
+    effectiveAt: isoDateString,
     locale: z.string().min(2),
     changelog: z.string().optional(),
   })
