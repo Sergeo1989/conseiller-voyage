@@ -117,19 +117,19 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/007-profil-conseiller/plan.md`](specs/007-profil-conseiller/plan.md)
-(Profil conseiller public + privé — feature 005 roadmap, Tier 1, premier
-sprint d'activation conseiller B2B ; branche `007-profil-conseiller`).
-Vue publique anti-marketplace (ADR-0002), dashboard conseiller, édition
-profil, aperçu public, modération admin via console conformité 001 étendue,
-relances onboarding J+3/J+7/J+14, slug `prenom-nom` immuable et réservé
-Loi 25 (SC-007), cookie `cv_suggested` HMAC pour boost soft ≤ +10% du
-scoring matching (futur 011).
+**Plan courant** : [`specs/002-voyageur-intake/plan.md`](specs/002-voyageur-intake/plan.md)
+(Module intake / préqualification voyageur — feature 008 roadmap, Tier 2,
+brique centrale boucle économique ; branche `002-voyageur-intake`).
+Formulaire structuré FR-CA prioritaire, brief qualifié consommable par
+le matching (feature 011 future) avec plafond 3 conseillers, magic link
+voyageur (pas de compte permanent), consentement Loi 25 horodaté.
+Consomme `LegalAcceptanceFacade.acceptForBrief` (feature 004) et le
+cookie `cv_suggested` posé par 007 pour boost soft scoring (≤ +10 %).
 
 Pour le contexte technologique détaillé et la structure de répertoires de la
 feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
-`contracts/{profil-public,profil-edition,profil-moderation,est-profil-public,conformite-nom-legal,http-endpoints,intake-suggested-middleware}.{port.md,md}`,
-et `quickstart.md` du même répertoire `specs/007-profil-conseiller/`.
+`contracts/http-endpoints.md`, et `quickstart.md` du même répertoire
+`specs/002-voyageur-intake/`.
 
 **Features précédentes mergées** (Tier 0 fermé) :
 - `001-conformite-module` (PR #1, squash `8592922`). Source de vérité pour
@@ -151,11 +151,17 @@ et `quickstart.md` du même répertoire `specs/007-profil-conseiller/`.
   politique Loi 25 + page « Comment ça marche ». **Consommé par 007** via
   le middleware CGU déjà en place sur `/(conseiller)/**` (FR-019) et le
   lien `/comment-ca-marche` dans la section pédagogique (FR-009).
+- `007-profil-conseiller` (PR #16, squash `702828e`). Vue publique
+  anti-marketplace (ADR-0002), dashboard conseiller, édition profil,
+  aperçu, modération admin, slug `prenom-nom` immuable (SC-007 Loi 25,
+  ADR-0015), cookie `cv_suggested` HMAC pour boost soft scoring matching.
+  Étend 001 via `ConformiteNomLegalReader`. Consomme 003 (relances
+  onboarding J+3/J+7/J+14) et 004 (middleware CGU + `/comment-ca-marche`).
+- **Architecture VIII.a** (PRs #17, #18). Feature slicing front + route
+  groups par audience + Server Actions par verbe + `tools/check-feature-boundaries.ts`
+  + `shared/auth/{getSession,requireSession,requireConseiller,requireAdmin}`
+  + ADR-0016. Constitution v2.2.0 → v2.3.0 (Principe VIII.a).
 
 **Features en cours / à venir** :
-- `002-voyageur-intake` (en cours sur sa propre branche) : module intake /
-  préqualification voyageur. Consommera `LegalAcceptanceFacade.acceptForBrief`
-  (feature 004) et le cookie `cv_suggested` posé par 007 (cf.
-  contracts/intake-suggested-middleware.md) pour passer la liste de boosts
-  au matching feature 011 future.
+- `002-voyageur-intake` (cette branche) : voir *Plan courant* ci-dessus.
 <!-- SPECKIT END -->
