@@ -15,7 +15,12 @@
 //
 // Cf. specs/001-conformite-module/contracts/http-endpoints.md.
 
-import type { AuditPageResponse, ConseillerId } from '@cv/shared/conformite';
+import type {
+  AuditPageResponse,
+  AuditQuery,
+  ConseillerId,
+  ErasureRequestBody,
+} from '@cv/shared/conformite';
 import {
   AuditQuerySchema,
   ConseillerIdSchema,
@@ -186,7 +191,7 @@ export class ConseillerConformiteController {
   async getAudit(
     @Req() req: AuthenticatedRequest,
     @Query(new ZodValidationPipe(AuditQuerySchema))
-    query: import('@cv/shared/conformite').AuditQuery,
+    query: AuditQuery,
   ): Promise<AuditPageResponse> {
     const user = this.assertConseiller(req);
     const result = await this.viewDossier.execute({
@@ -214,7 +219,7 @@ export class ConseillerConformiteController {
   async postErasureRequest(
     @Req() req: AuthenticatedRequest,
     @Body(new ZodValidationPipe(ErasureRequestSchema))
-    _body: import('@cv/shared/conformite').ErasureRequestBody,
+    _body: ErasureRequestBody,
   ): Promise<{ status: 'pending'; message: string }> {
     const user = this.assertConseiller(req);
     await this.requestErasure.execute({

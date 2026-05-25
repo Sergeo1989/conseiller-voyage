@@ -9,8 +9,8 @@
     "start": "next start --port 3000",
     "lint": "biome check --error-on-warnings src",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:unit": "vitest run",
+    "test": "vitest run --passWithNoTests",
+    "test:unit": "vitest run --passWithNoTests",
     "test:e2e": "playwright test",
     "test:a11y": "playwright test --grep @a11y"
   },

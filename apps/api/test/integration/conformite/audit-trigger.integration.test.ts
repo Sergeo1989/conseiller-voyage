@@ -41,14 +41,16 @@ async function cleanup(): Promise<void> {
 }
 
 async function insertAuditRow(suffix: string): Promise<{ id: string }> {
-  const id = `${TEST_AUDIT_PREFIX}${suffix.padStart(4, '0')}`;
+  // Les colonnes id/actorId sont maintenant @db.Uuid → le 5e groupe doit
+  // faire 12 chars exactement. Préfixe `bbbb` (4) + suffix padStart 8 = 12.
+  const id = `${TEST_AUDIT_PREFIX}${suffix.padStart(8, '0')}`;
   const data: Prisma.AuditEntryUncheckedCreateInput = {
     id,
     conseillerComplianceId: null,
     eventType: 'admin.viewed_dossier',
-    actorId: '00000000-0000-4000-8000-cccc0001',
+    actorId: '00000000-0000-4000-8000-cccc00000001',
     actorRole: 'admin',
-    payload: { targetId: '00000000-0000-4000-8000-aaaa0001' },
+    payload: { targetId: '00000000-0000-4000-8000-aaaa00000001' },
     idempotencyKey: null,
     correlationId: null,
   };
@@ -90,20 +92,23 @@ describe('[invariant] conformite_audit_entries append-only (T081b)', () => {
   });
 
   it('REJETTE UPDATE en masse via updateMany', async () => {
-    await insertAuditRow('0004');
+    const inserted = await insertAuditRow('0004');
+    // Le trigger SQL fire sur tout UPDATE, peu importe le nombre de rows
+    // matchées. On filtre par ID exact car `startsWith` n'existe pas sur
+    // les colonnes UUID Postgres (type binaire 16 octets, pas string).
     await expect(
       prisma.auditEntry.updateMany({
-        where: { id: { startsWith: TEST_AUDIT_PREFIX } },
+        where: { id: inserted.id },
         data: { eventType: 'admin.viewed_document' },
       }),
     ).rejects.toThrow(/append-only/i);
   });
 
   it('REJETTE DELETE en masse via deleteMany', async () => {
-    await insertAuditRow('0005');
+    const inserted = await insertAuditRow('0005');
     await expect(
       prisma.auditEntry.deleteMany({
-        where: { id: { startsWith: TEST_AUDIT_PREFIX } },
+        where: { id: inserted.id },
       }),
     ).rejects.toThrow(/append-only/i);
   });

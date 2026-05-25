@@ -25,9 +25,14 @@ const repo = new PrismaConformiteRepository();
 const TEST_PREFIX = '00000000-0000-4000-8000-aaaa';
 
 async function cleanup(): Promise<void> {
-  await prisma.conseillerCompliance.deleteMany({
-    where: { id: { startsWith: TEST_PREFIX } },
-  });
+  // `startsWith` n'est pas supporté sur les colonnes UUID Postgres
+  // (type binaire 16 octets). On bascule sur du SQL natif avec
+  // `id::text LIKE` qui cast l'UUID en string côté DB. Même pattern
+  // qu'utilisé par audit-trigger.integration.test.ts:36.
+  // Nom de table : @@map("conformite_conseiller_compliances") dans le schéma.
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM conformite_conseiller_compliances WHERE id::text LIKE '${TEST_PREFIX}%'`,
+  );
 }
 
 async function seedCompliance(
@@ -35,8 +40,10 @@ async function seedCompliance(
   status: 'pending' | 'verified' | 'suspended' | 'revoked',
   options: { anonymizedAt?: Date | null } = {},
 ): Promise<{ id: string; conseillerId: string }> {
-  const id = `${TEST_PREFIX}${suffix.padStart(4, '0')}`;
-  const conseillerId = `00000000-0000-4000-8000-cccc${suffix.padStart(4, '0')}`;
+  // Les colonnes id sont en @db.Uuid → 5e groupe doit faire 12 chars.
+  // Préfixe 4 chars + suffix padStart 8 = 12.
+  const id = `${TEST_PREFIX}${suffix.padStart(8, '0')}`;
+  const conseillerId = `00000000-0000-4000-8000-cccc${suffix.padStart(8, '0')}`;
   const data: Prisma.ConseillerComplianceUncheckedCreateInput = {
     id,
     conseillerId,
