@@ -12,7 +12,11 @@ import type { UuidGenerator } from '../../../../../common/ports/uuid-generator.p
 import type { Affiliation } from '../../../domain/entities/affiliation.entity';
 import type { Certificat } from '../../../domain/entities/certificat.entity';
 import type { ConseillerCompliance } from '../../../domain/entities/conseiller-compliance.entity';
-import { FakeClock, FakeConformiteRepository } from '../../__tests__/_fakes';
+import {
+  FakeClock,
+  FakeConformiteRepository,
+  FakeConformiteStatusCache,
+} from '../../__tests__/_fakes';
 import { DeclarePermitRevokedUseCase } from '../declare-permit-revoked.use-case';
 
 class FakeUuidGenerator implements UuidGenerator {
@@ -28,11 +32,19 @@ const ADMIN_ID = AdminIdSchema.parse('00000000-0000-4000-8000-000000000aaa');
 function makeCtx(): {
   useCase: DeclarePermitRevokedUseCase;
   repo: FakeConformiteRepository;
+  cache: FakeConformiteStatusCache;
 } {
   const repo = new FakeConformiteRepository();
   const clock = new FakeClock(NOW);
-  const useCase = new DeclarePermitRevokedUseCase(repo, repo, clock, new FakeUuidGenerator());
-  return { useCase, repo };
+  const cache = new FakeConformiteStatusCache();
+  const useCase = new DeclarePermitRevokedUseCase(
+    repo,
+    repo,
+    clock,
+    new FakeUuidGenerator(),
+    cache,
+  );
+  return { useCase, repo, cache };
 }
 
 function seedConseillerAffiliated(
@@ -221,5 +233,39 @@ describe('DeclarePermitRevokedUseCase (T092)', () => {
       expect(entry.eventType).toBe('conformite.status.changed');
       expect((entry.payload as { cause: string }).cause).toBe('permit_cascade');
     }
+  });
+
+  it('cache invalidate synchrone pour chaque conseiller cascadé (eng review issue 1.1)', async () => {
+    seedConseillerAffiliated(ctx.repo, '0001', PERMIT);
+    seedConseillerAffiliated(ctx.repo, '0002', PERMIT);
+    seedConseillerAffiliated(ctx.repo, '0003', PERMIT);
+
+    await ctx.useCase.execute({
+      requestedBy: { id: ADMIN_ID, role: 'admin' },
+      agencyPermitNumber: PERMIT,
+      agencyProvince: 'QC',
+      reason: REASON,
+    });
+
+    // Promise.all ne garantit pas l'ordre → on compare sets
+    expect(ctx.cache.invalidations).toHaveLength(3);
+    expect(new Set(ctx.cache.invalidations)).toEqual(
+      new Set([
+        '00000000-0000-4000-8000-cccccccc0001',
+        '00000000-0000-4000-8000-cccccccc0002',
+        '00000000-0000-4000-8000-cccccccc0003',
+      ]),
+    );
+  });
+
+  it("n'invalide aucun cache si aucun conseiller affecté", async () => {
+    // Aucun seed → aucune affiliation → aucune transition
+    await ctx.useCase.execute({
+      requestedBy: { id: ADMIN_ID, role: 'admin' },
+      agencyPermitNumber: PERMIT,
+      agencyProvince: 'QC',
+      reason: REASON,
+    });
+    expect(ctx.cache.invalidations).toEqual([]);
   });
 });

@@ -34,6 +34,10 @@ import type {
 } from '../ports';
 import type { AuditEntryToCreate, AuditLogWriter } from '../ports/audit-log-writer.port';
 import type {
+  ConformiteStatusCache,
+  VerificationStatus,
+} from '../ports/conformite-status-cache.port';
+import type {
   DocumentStoragePort,
   ObjectMetadata,
   PresignDownloadOptions,
@@ -582,6 +586,28 @@ export class FakeOutboxWriter implements OutboxWriter {
 
   write(entry: OutboxEntryToCreate): Promise<void> {
     this.entries.push(entry);
+    return Promise.resolve();
+  }
+}
+
+// --- ConformiteStatusCache ---
+
+export class FakeConformiteStatusCache implements ConformiteStatusCache {
+  public readonly invalidations: ConseillerId[] = [];
+  public readonly storage = new Map<ConseillerId, VerificationStatus>();
+
+  get(conseillerId: ConseillerId): Promise<VerificationStatus | null> {
+    return Promise.resolve(this.storage.get(conseillerId) ?? null);
+  }
+
+  set(status: VerificationStatus): Promise<void> {
+    this.storage.set(status.conseillerId, status);
+    return Promise.resolve();
+  }
+
+  invalidate(conseillerId: ConseillerId): Promise<void> {
+    this.invalidations.push(conseillerId);
+    this.storage.delete(conseillerId);
     return Promise.resolve();
   }
 }

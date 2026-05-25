@@ -11,7 +11,11 @@ import type { UuidGenerator } from '../../../../../common/ports/uuid-generator.p
 import type { Affiliation } from '../../../domain/entities/affiliation.entity';
 import type { Certificat } from '../../../domain/entities/certificat.entity';
 import type { ConseillerCompliance } from '../../../domain/entities/conseiller-compliance.entity';
-import { FakeClock, FakeConformiteRepository } from '../../__tests__/_fakes';
+import {
+  FakeClock,
+  FakeConformiteRepository,
+  FakeConformiteStatusCache,
+} from '../../__tests__/_fakes';
 import { PropagateExpirationsUseCase } from '../propagate-expirations.use-case';
 
 class FakeUuidGenerator implements UuidGenerator {
@@ -29,12 +33,14 @@ const CONSEILLER_ID = ConseillerIdSchema.parse('00000000-0000-4000-8000-cccc0000
 function makeContext(): {
   useCase: PropagateExpirationsUseCase;
   repo: FakeConformiteRepository;
+  cache: FakeConformiteStatusCache;
 } {
   const repo = new FakeConformiteRepository();
   const clock = new FakeClock(NOW);
   const uuidGen = new FakeUuidGenerator();
-  const useCase = new PropagateExpirationsUseCase(repo, repo, clock, uuidGen);
-  return { useCase, repo };
+  const cache = new FakeConformiteStatusCache();
+  const useCase = new PropagateExpirationsUseCase(repo, repo, clock, uuidGen, cache);
+  return { useCase, repo, cache };
 }
 
 function seedVerifiedConseiller(repo: FakeConformiteRepository): void {
@@ -169,5 +175,17 @@ describe('PropagateExpirationsUseCase (T083)', () => {
     expect(ctx.repo.writerAuditEntries[0]?.idempotencyKey).toBe(
       `expiration:${COMPLIANCE_ID}:2026-05-24`,
     );
+  });
+
+  it('cache invalidate synchrone après auto-suspension (eng review issue 1.1)', async () => {
+    addCert(ctx.repo, '0001', new Date(NOW.getTime() - MS_PER_DAY));
+    await ctx.useCase.execute();
+    expect(ctx.cache.invalidations).toEqual([CONSEILLER_ID]);
+  });
+
+  it("n'invalide PAS le cache si aucune transition", async () => {
+    addCert(ctx.repo, '0001', new Date(NOW.getTime() + 30 * MS_PER_DAY)); // valide
+    await ctx.useCase.execute();
+    expect(ctx.cache.invalidations).toEqual([]);
   });
 });

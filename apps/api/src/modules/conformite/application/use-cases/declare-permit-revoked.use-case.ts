@@ -30,6 +30,10 @@ import type { Province } from '../../domain/value-objects/province.vo';
 import type { AuditEntryToCreate } from '../ports/audit-log-writer.port';
 import { CONFORMITE_READER, type ConformiteReader } from '../ports/conformite-reader.port';
 import {
+  CONFORMITE_STATUS_CACHE,
+  type ConformiteStatusCache,
+} from '../ports/conformite-status-cache.port';
+import {
   CONFORMITE_WRITER,
   type ConformiteWriter,
   type StatusTransition,
@@ -58,6 +62,7 @@ export class DeclarePermitRevokedUseCase {
     @Inject(CONFORMITE_WRITER) private readonly writer: ConformiteWriter,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UUID_GENERATOR) private readonly uuidGenerator: UuidGenerator,
+    @Inject(CONFORMITE_STATUS_CACHE) private readonly cache: ConformiteStatusCache,
   ) {}
 
   async execute(input: DeclarePermitRevokedInput): Promise<DeclarePermitRevokedOutput> {
@@ -97,6 +102,21 @@ export class DeclarePermitRevokedUseCase {
       auditEntries,
       outboxEntries,
     });
+
+    // Synchronous cache invalidate per cascaded suspension (eng review issue
+    // 1.1 — FR-022 negative SLO). Cascade is the worst-case fan-out for
+    // Principe I exposure: a single permit pull can flip 10+ conseillers
+    // simultaneously, all of whom must disappear from public consultation in
+    // < 10s. Pub/sub via outbox is best-effort across processes; this DEL
+    // closes the in-process gap.
+    await Promise.all(
+      transitions.map(async (t) => {
+        const compliance = await this.reader.findComplianceById(t.conseillerComplianceId);
+        if (compliance) {
+          await this.cache.invalidate(compliance.conseillerId as ConseillerId);
+        }
+      }),
+    );
 
     const uniqueConseillers = new Set(affectedAffils.map((a) => a.conseillerComplianceId));
     return {

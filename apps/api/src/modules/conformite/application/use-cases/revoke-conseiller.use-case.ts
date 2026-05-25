@@ -26,6 +26,10 @@ import type { AuthRole } from '../../../identite/application/ports/auth-session-
 import { isTransitionAllowed } from '../../domain/services/is-transition-allowed';
 import type { AuditEntryToCreate } from '../ports/audit-log-writer.port';
 import { CONFORMITE_READER, type ConformiteReader } from '../ports/conformite-reader.port';
+import {
+  CONFORMITE_STATUS_CACHE,
+  type ConformiteStatusCache,
+} from '../ports/conformite-status-cache.port';
 import { CONFORMITE_WRITER, type ConformiteWriter } from '../ports/conformite-writer.port';
 import type { OutboxEntryToCreate } from '../ports/outbox-writer.port';
 
@@ -45,6 +49,7 @@ export class RevokeConseillerUseCase {
     @Inject(CONFORMITE_WRITER) private readonly writer: ConformiteWriter,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UUID_GENERATOR) private readonly uuidGenerator: UuidGenerator,
+    @Inject(CONFORMITE_STATUS_CACHE) private readonly cache: ConformiteStatusCache,
   ) {}
 
   async execute(input: RevokeConseillerInput): Promise<void> {
@@ -113,6 +118,11 @@ export class RevokeConseillerUseCase {
       auditEntries,
       outboxEntries,
     });
+
+    // Synchronous cache invalidate (eng review issue 1.1 — FR-022 negative SLO).
+    // Revocation is the highest-risk negative transition (Principe I); pub/sub
+    // via outbox can drop messages, so we DEL the cache key in-process too.
+    await this.cache.invalidate(compliance.conseillerId as ConseillerId);
   }
 
   private enforceRbac(role: AuthRole): void {

@@ -17,6 +17,10 @@ import { computeConformiteStatus } from '../../domain/services/compute-conformit
 import { isTransitionAllowed } from '../../domain/services/is-transition-allowed';
 import type { AuditEntryToCreate } from '../ports/audit-log-writer.port';
 import { CONFORMITE_READER, type ConformiteReader } from '../ports/conformite-reader.port';
+import {
+  CONFORMITE_STATUS_CACHE,
+  type ConformiteStatusCache,
+} from '../ports/conformite-status-cache.port';
 import { CONFORMITE_WRITER, type ConformiteWriter } from '../ports/conformite-writer.port';
 import type { OutboxEntryToCreate } from '../ports/outbox-writer.port';
 
@@ -36,6 +40,7 @@ export class PropagateExpirationsUseCase {
     @Inject(CONFORMITE_WRITER) private readonly writer: ConformiteWriter,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UUID_GENERATOR) private readonly uuidGenerator: UuidGenerator,
+    @Inject(CONFORMITE_STATUS_CACHE) private readonly cache: ConformiteStatusCache,
   ) {}
 
   async execute(input: PropagateExpirationsInput = {}): Promise<PropagateExpirationsOutput> {
@@ -131,6 +136,12 @@ export class PropagateExpirationsUseCase {
       auditEntries: [auditEntry, statusChangedAudit],
       outboxEntries: [outboxEntry],
     });
+
+    // Synchronous cache invalidate (eng review issue 1.1 — FR-022 negative SLO).
+    // Auto-suspension on expiration is a negative transition; closing the
+    // in-process gap matters even though the job runs at 02:00 ca-central-1
+    // (consumer caches must reflect the new state by morning).
+    await this.cache.invalidate(compliance.conseillerId as ConseillerId);
     return true;
   }
 }

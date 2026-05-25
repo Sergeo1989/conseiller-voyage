@@ -9,7 +9,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { UuidGenerator } from '../../../../../common/ports/uuid-generator.port';
 import type { ConseillerCompliance } from '../../../domain/entities/conseiller-compliance.entity';
 import type { ConformiteStatus } from '../../../domain/value-objects/conformite-status.vo';
-import { FakeClock, FakeConformiteRepository } from '../../__tests__/_fakes';
+import {
+  FakeClock,
+  FakeConformiteRepository,
+  FakeConformiteStatusCache,
+} from '../../__tests__/_fakes';
 import { RevokeConseillerUseCase } from '../revoke-conseiller.use-case';
 
 class FakeUuidGenerator implements UuidGenerator {
@@ -28,11 +32,13 @@ const REASON = 'Conduite réglementaire inacceptable répétée.';
 function makeCtx(): {
   useCase: RevokeConseillerUseCase;
   repo: FakeConformiteRepository;
+  cache: FakeConformiteStatusCache;
 } {
   const repo = new FakeConformiteRepository();
   const clock = new FakeClock(NOW);
-  const useCase = new RevokeConseillerUseCase(repo, repo, clock, new FakeUuidGenerator());
-  return { useCase, repo };
+  const cache = new FakeConformiteStatusCache();
+  const useCase = new RevokeConseillerUseCase(repo, repo, clock, new FakeUuidGenerator(), cache);
+  return { useCase, repo, cache };
 }
 
 function seedCompliance(repo: FakeConformiteRepository, status: ConformiteStatus): void {
@@ -160,5 +166,15 @@ describe('RevokeConseillerUseCase (T102)', () => {
       reason: REASON,
     });
     expect((ctx.repo.writerOutboxEntries[0]?.payload as { reason: string }).reason).toBe(REASON);
+  });
+
+  it('cache invalidate synchrone après révocation (eng review issue 1.1)', async () => {
+    seedCompliance(ctx.repo, 'verified');
+    await ctx.useCase.execute({
+      requestedBy: { id: ADMIN_ID, role: 'admin' },
+      conseillerComplianceId: COMPLIANCE_ID,
+      reason: REASON,
+    });
+    expect(ctx.cache.invalidations).toEqual([CONSEILLER_ID]);
   });
 });

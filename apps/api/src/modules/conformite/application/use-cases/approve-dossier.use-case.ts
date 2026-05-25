@@ -33,6 +33,10 @@ import type { ConformiteStatus } from '../../domain/value-objects/conformite-sta
 import type { AuditEntryToCreate } from '../ports/audit-log-writer.port';
 import { CONFORMITE_READER, type ConformiteReader } from '../ports/conformite-reader.port';
 import {
+  CONFORMITE_STATUS_CACHE,
+  type ConformiteStatusCache,
+} from '../ports/conformite-status-cache.port';
+import {
   CONFORMITE_WRITER,
   type ConformiteWriter,
   type StatusTransition,
@@ -62,6 +66,7 @@ export class ApproveDossierUseCase {
     @Inject(CONFORMITE_WRITER) private readonly writer: ConformiteWriter,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UUID_GENERATOR) private readonly uuidGenerator: UuidGenerator,
+    @Inject(CONFORMITE_STATUS_CACHE) private readonly cache: ConformiteStatusCache,
   ) {}
 
   async execute(input: ApproveDossierInput): Promise<void> {
@@ -85,6 +90,13 @@ export class ApproveDossierUseCase {
       auditEntries,
       outboxEntries,
     });
+
+    // Synchronous cache invalidate (eng review issue 1.1 — FR-022 negative SLO).
+    // Pub/sub via outbox is best-effort across processes; this DEL closes the
+    // window where in-process consumers could serve stale `verified=true`.
+    if (transition !== null) {
+      await this.cache.invalidate(ctx.compliance.conseillerId as ConseillerId);
+    }
   }
 
   private enforceRbac(role: AuthRole): void {

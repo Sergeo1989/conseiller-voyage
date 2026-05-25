@@ -13,7 +13,11 @@ import {
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { UuidGenerator } from '../../../../../common/ports/uuid-generator.port';
 import type { ConformiteStatus } from '../../../domain/value-objects/conformite-status.vo';
-import { FakeClock, FakeConformiteRepository } from '../../__tests__/_fakes';
+import {
+  FakeClock,
+  FakeConformiteRepository,
+  FakeConformiteStatusCache,
+} from '../../__tests__/_fakes';
 import { type ApproveDossierInput, ApproveDossierUseCase } from '../approve-dossier.use-case';
 
 class FakeUuidGenerator implements UuidGenerator {
@@ -119,12 +123,14 @@ function makeUseCase(): {
   repo: FakeConformiteRepository;
   clock: FakeClock;
   uuidGen: FakeUuidGenerator;
+  cache: FakeConformiteStatusCache;
 } {
   const repo = new FakeConformiteRepository();
   const clock = new FakeClock(NOW);
   const uuidGen = new FakeUuidGenerator();
-  const useCase = new ApproveDossierUseCase(repo, repo, clock, uuidGen);
-  return { useCase, repo, clock, uuidGen };
+  const cache = new FakeConformiteStatusCache();
+  const useCase = new ApproveDossierUseCase(repo, repo, clock, uuidGen, cache);
+  return { useCase, repo, clock, uuidGen, cache };
 }
 
 function makeInput(
@@ -247,6 +253,20 @@ describe('ApproveDossierUseCase (T052)', () => {
       // Submission a quand même été marquée approved
       const sub = fresh.repo.submissions.get(s.submissionId);
       expect(sub?.status).toBe('approved');
+    });
+  });
+
+  describe('cache invalidate synchrone (eng review issue 1.1)', () => {
+    it('invalide le cache de statut quand transition pending → verified', async () => {
+      await ctx.useCase.execute(makeInput(seeded.submissionId));
+      expect(ctx.cache.invalidations).toEqual([CONSEILLER_ID]);
+    });
+
+    it("n'invalide PAS le cache si aucune transition (revoked sticky)", async () => {
+      const fresh = makeUseCase();
+      const s = await seedPendingDossier(fresh.repo, 'revoked');
+      await fresh.useCase.execute(makeInput(s.submissionId));
+      expect(fresh.cache.invalidations).toEqual([]);
     });
   });
 });
