@@ -51,9 +51,9 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 **Objet** : ajouter les dépendances et créer les nouveaux packages workspace. La stack v2.2.0 est déjà bootstrée par 001.
 
-- [ ] T001 Installer dépendances racine : `pnpm add -D -w @next/mdx @mdx-js/loader @mdx-js/react gray-matter` et `pnpm add -w ua-parser-js@^2` dans `apps/web/package.json` et `apps/api/package.json`
-- [ ] T002 [P] Créer package `packages/legal/` (`package.json`, `tsconfig.json`, `src/index.ts` vide) avec exports `version.ts`, `anonymization.ts`, `schemas.ts`, `document-types.ts`, `branded-ids.ts`
-- [ ] T003 [P] Créer package `packages/legal-content/` (`package.json`, structure `fr-CA/` et `en/`) référencé via workspace dans `pnpm-workspace.yaml`
+- [x] T001 Installer dépendances racine : `pnpm add -D -w @next/mdx @mdx-js/loader @mdx-js/react gray-matter` et `pnpm add -w ua-parser-js@^2` dans `apps/web/package.json` et `apps/api/package.json`
+- [x] T002 [P] Créer package `packages/legal/` (`package.json`, `tsconfig.json`, `src/index.ts` vide) avec exports `version.ts`, `anonymization.ts`, `schemas.ts`, `document-types.ts`, `branded-ids.ts`
+- [x] T003 [P] Créer package `packages/legal-content/` (`package.json`, structure `fr-CA/` et `en/`) référencé via workspace dans `pnpm-workspace.yaml`
 - [ ] T004 [P] Configurer `@next/mdx` dans `apps/web/next.config.ts` (extension `.mdx` activée, plugins MDX éventuels)
 - [ ] T005 [P] Générer secrets dev : `LEGAL_COOKIE_HMAC_SECRET` et `LOI25_SUBJECT_ANONYMIZATION_SALT` via 1Password CLI ; documenter procédure dans `docs/runbooks/legal-secrets-setup.md`
 - [ ] T006 [P] Ajouter à `infra/cdk/cv-prod-stack.ts` la création des deux secrets AWS Secrets Manager `ca-central-1` (vides, populés manuellement au déploiement initial — runbook documenté)
@@ -68,10 +68,10 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 ### Schéma Prisma et migrations
 
-- [ ] T007 Étendre `apps/api/prisma/schema.prisma` avec les 3 modèles `LegalDocument`, `LegalAcceptance`, `LegalAcceptanceAnonymization` + enums (cf. `data-model.md` section *Schéma Prisma proposé*)
-- [ ] T008 Migration Prisma initiale : `apps/api/prisma/migrations/0NNN_init_legal/migration.sql` (3 tables + indexes)
-- [ ] T009 Migration SQL des triggers immutables stricts : `apps/api/prisma/migrations/0NNN_init_legal_immutability/migration.sql` (3 triggers `BEFORE UPDATE OR DELETE` qui RAISE EXCEPTION sur chaque table)
-- [ ] T010 Migration SQL des privilèges DB : `apps/api/prisma/migrations/0NNN_init_legal_privileges/migration.sql` (REVOKE UPDATE/DELETE pour `app_identite`, SELECT only pour `app_conformite` et `app_intake`)
+- [x] T007 Étendre `apps/api/prisma/schema.prisma` avec les 3 modèles `LegalDocument`, `LegalAcceptance`, `LegalAcceptanceAnonymization` + enums (cf. `data-model.md` section *Schéma Prisma proposé*)
+- [x] T008 Migration Prisma initiale : `apps/api/prisma/migrations/0NNN_init_legal/migration.sql` (3 tables + indexes)
+- [x] T009 Migration SQL des triggers immutables stricts : `apps/api/prisma/migrations/0NNN_init_legal_immutability/migration.sql` (3 triggers `BEFORE UPDATE OR DELETE` qui RAISE EXCEPTION sur chaque table)
+- [x] T010 Migration SQL des privilèges DB : `apps/api/prisma/migrations/0NNN_init_legal_privileges/migration.sql` (REVOKE UPDATE/DELETE pour `app_identite`, SELECT only pour `app_conformite` et `app_intake`)
 
 ### Tests d'invariants des triggers (TDD bloquant)
 
@@ -81,35 +81,35 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 ### Types partagés et schemas Zod
 
-- [ ] T014 [P] Branded ID types (`LegalDocumentId`, `LegalAcceptanceId`, `LegalAcceptanceAnonymizationId`) dans `packages/legal/src/branded-ids.ts`
-- [ ] T015 [P] Enum `LegalDocumentType` partagé dans `packages/legal/src/document-types.ts`
-- [ ] T016 [P] Zod schemas API (AcceptCguB2bBody, VersionStatusResponse, AcceptanceRecord) dans `packages/legal/src/schemas.ts`
+- [x] T014 [P] Branded ID types (`LegalDocumentId`, `LegalAcceptanceId`, `LegalAcceptanceAnonymizationId`) dans `packages/legal/src/branded-ids.ts`
+- [x] T015 [P] Enum `LegalDocumentType` partagé dans `packages/legal/src/document-types.ts`
+- [x] T016 [P] Zod schemas API (AcceptCguB2bBody, VersionStatusResponse, AcceptanceRecord) dans `packages/legal/src/schemas.ts`
 
 ### Fonctions pures (TDD obligatoire — commits séparés red/green)
 
-- [ ] T017 [P] **TDD RED** Test `compareLegalVersion` (current=N, accepted=null → `'never_accepted'` ; accepted=N → `'up_to_date'` ; accepted<N → `'outdated'` ; inputs négatifs/zéro → exception) dans `packages/legal/src/__tests__/version.test.ts`
-- [ ] T018 [P] **TDD RED** Test `shouldRequireReacceptance(acceptance | null, currentVersion)` (cas nominal des 3 retours) dans `packages/legal/src/__tests__/version.test.ts`
-- [ ] T019 **TDD GREEN** Implémenter `compareLegalVersion` + `shouldRequireReacceptance` (GREEN contre T017 + T018) dans `packages/legal/src/version.ts`
-- [ ] T020 [P] **TDD RED** Test `extractBrowserFamily(ua: string)` avec fixtures (Firefox, Chrome, Safari, Edge, Opera, IE legacy, bot, vide, malformé) — chaque cas retourne valeur attendue ou `'unknown'` — dans `packages/legal/src/__tests__/anonymization.test.ts`
-- [ ] T021 [P] **TDD RED** Test `maskIpAddress` (IPv4 `192.168.1.42` → `192.0.0.0` ; IPv6 `2001:db8::ff42` → `2001:db8::` ; malformé → `'0.0.0.0'`) dans `packages/legal/src/__tests__/anonymization.test.ts`
-- [ ] T022 [P] **TDD RED** Test `hashSubjectId(subjectId, salt)` (déterminisme, 2 IDs différents → 2 hashs différents, même ID + 2 salts → 2 hashs différents, longueur 64 chars hex) dans `packages/legal/src/__tests__/anonymization.test.ts`
-- [ ] T023 **TDD GREEN** Implémenter `extractBrowserFamily` (via `ua-parser-js`), `maskIpAddress`, `hashSubjectId` (GREEN contre T020 + T021 + T022) dans `packages/legal/src/anonymization.ts`
-- [ ] T024 [P] **TDD RED** Test `signLegalVersionCookie` + `verifyLegalVersionCookie` HMAC : déterminisme, **détection de forge** (signature modifiée → null), TTL expiré → null, payload malformé → null, userId mismatch → null — dans `apps/web/test/unit/cookie-hmac.test.ts`
-- [ ] T025 **TDD GREEN** Implémenter `signLegalVersionCookie` + `verifyLegalVersionCookie` avec `crypto.timingSafeEqual` (GREEN contre T024) dans `apps/web/src/lib/legal/cookie-hmac.ts`
+- [x] T017 [P] **TDD RED** Test `compareLegalVersion` (current=N, accepted=null → `'never_accepted'` ; accepted=N → `'up_to_date'` ; accepted<N → `'outdated'` ; inputs négatifs/zéro → exception) dans `packages/legal/src/__tests__/version.test.ts`
+- [x] T018 [P] **TDD RED** Test `shouldRequireReacceptance(acceptance | null, currentVersion)` (cas nominal des 3 retours) dans `packages/legal/src/__tests__/version.test.ts`
+- [x] T019 **TDD GREEN** Implémenter `compareLegalVersion` + `shouldRequireReacceptance` (GREEN contre T017 + T018) dans `packages/legal/src/version.ts`
+- [x] T020 [P] **TDD RED** Test `extractBrowserFamily(ua: string)` avec fixtures (Firefox, Chrome, Safari, Edge, Opera, IE legacy, bot, vide, malformé) — chaque cas retourne valeur attendue ou `'unknown'` — dans `packages/legal/src/__tests__/anonymization.test.ts`
+- [x] T021 [P] **TDD RED** Test `maskIpAddress` (IPv4 `192.168.1.42` → `192.0.0.0` ; IPv6 `2001:db8::ff42` → `2001:db8::` ; malformé → `'0.0.0.0'`) dans `packages/legal/src/__tests__/anonymization.test.ts`
+- [x] T022 [P] **TDD RED** Test `hashSubjectId(subjectId, salt)` (déterminisme, 2 IDs différents → 2 hashs différents, même ID + 2 salts → 2 hashs différents, longueur 64 chars hex) dans `packages/legal/src/__tests__/anonymization.test.ts`
+- [x] T023 **TDD GREEN** Implémenter `extractBrowserFamily` (via `ua-parser-js`), `maskIpAddress`, `hashSubjectId` (GREEN contre T020 + T021 + T022) dans `packages/legal/src/anonymization.ts`
+- [x] T024 [P] **TDD RED** Test `signLegalVersionCookie` + `verifyLegalVersionCookie` HMAC : déterminisme, **détection de forge** (signature modifiée → null), TTL expiré → null, payload malformé → null, userId mismatch → null — dans `apps/web/test/unit/cookie-hmac.test.ts`
+- [x] T025 **TDD GREEN** Implémenter `signLegalVersionCookie` + `verifyLegalVersionCookie` avec `crypto.timingSafeEqual` (GREEN contre T024) dans `apps/web/src/lib/legal/cookie-hmac.ts`
 
 ### Domain layer (zéro framework, zéro Prisma)
 
-- [ ] T026 [P] Entité `LegalDocument` (TypeScript pur) dans `apps/api/src/modules/identite/domain/entities/legal-document.entity.ts`
-- [ ] T027 [P] Entité `LegalAcceptance` dans `apps/api/src/modules/identite/domain/entities/legal-acceptance.entity.ts`
-- [ ] T028 [P] Entité `LegalAcceptanceAnonymization` dans `apps/api/src/modules/identite/domain/entities/legal-acceptance-anonymization.entity.ts`
-- [ ] T029 [P] Value object `DocumentVersion` (entier positif monotone, méthode `isStrictlyGreaterThan`) dans `apps/api/src/modules/identite/domain/value-objects/document-version.vo.ts`
+- [x] T026 [P] Entité `LegalDocument` (TypeScript pur) dans `apps/api/src/modules/identite/domain/entities/legal-document.entity.ts`
+- [x] T027 [P] Entité `LegalAcceptance` dans `apps/api/src/modules/identite/domain/entities/legal-acceptance.entity.ts`
+- [x] T028 [P] Entité `LegalAcceptanceAnonymization` dans `apps/api/src/modules/identite/domain/entities/legal-acceptance-anonymization.entity.ts`
+- [x] T029 [P] Value object `DocumentVersion` (entier positif monotone, méthode `isStrictlyGreaterThan`) dans `apps/api/src/modules/identite/domain/value-objects/document-version.vo.ts`
 
 ### Application layer (ports)
 
-- [ ] T030 [P] Port `LegalDocumentRepository` dans `apps/api/src/modules/identite/application/ports/legal-document-repository.port.ts` (méthodes `findById`, `findCurrentByType`, `seedFromMdx`)
-- [ ] T031 [P] Port `LegalAcceptanceReader` dans `apps/api/src/modules/identite/application/ports/legal-acceptance-reader.port.ts` (`findLatestByUser`, `findWithAnonymization`)
-- [ ] T032 [P] Port `LegalAcceptanceWriter` dans `apps/api/src/modules/identite/application/ports/legal-acceptance-writer.port.ts` (`insert` idempotent sur `(subjectId, documentType, documentVersion)`)
-- [ ] T033 [P] Port `LegalAcceptanceAnonymizationWriter` dans `apps/api/src/modules/identite/application/ports/legal-acceptance-anonymization-writer.port.ts` (`insertAnonymization` unique sur `acceptanceId`)
+- [x] T030 [P] Port `LegalDocumentRepository` dans `apps/api/src/modules/identite/application/ports/legal-document-repository.port.ts` (méthodes `findById`, `findCurrentByType`, `seedFromMdx`)
+- [x] T031 [P] Port `LegalAcceptanceReader` dans `apps/api/src/modules/identite/application/ports/legal-acceptance-reader.port.ts` (`findLatestByUser`, `findWithAnonymization`)
+- [x] T032 [P] Port `LegalAcceptanceWriter` dans `apps/api/src/modules/identite/application/ports/legal-acceptance-writer.port.ts` (`insert` idempotent sur `(subjectId, documentType, documentVersion)`)
+- [x] T033 [P] Port `LegalAcceptanceAnonymizationWriter` dans `apps/api/src/modules/identite/application/ports/legal-acceptance-anonymization-writer.port.ts` (`insertAnonymization` unique sur `acceptanceId`)
 
 ### Infrastructure layer (Prisma adapters)
 
@@ -119,9 +119,9 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 ### Scripts CI
 
-- [ ] T037 [P] Script `tools/check-legal-mdx.ts` (parse MDX, vérifie frontmatter Zod, unicité (type, version), strict-croissance par type, `effectiveAt >= publishedAt`, drift de checksum si version inchangée) + wire `pnpm legal:verify` dans `package.json` racine + ajouter étape bloquante dans `.github/workflows/ci.yml`
+- [x] T037 [P] Script `tools/check-legal-mdx.ts` (parse MDX, vérifie frontmatter Zod, unicité (type, version), strict-croissance par type, `effectiveAt >= publishedAt`, drift de checksum si version inchangée) + wire `pnpm legal:verify` dans `package.json` racine + ajouter étape bloquante dans `.github/workflows/ci.yml`
 - [ ] T038 [P] Script `tools/seed-legal-documents.ts` (idempotent post-deploy : parse MDX, calcule checksum + `contentSnapshot`, insère row si absente, no-op si présente avec checksum identique, ERREUR si présente avec checksum différent — confluences avec T037)
-- [ ] T039 [P] **Test drift checksum** : modifier un MDX en mémoire (sans toucher version), exécuter `check-legal-mdx.ts` programmatiquement, vérifier exit ≠ 0 — dans `tools/__tests__/check-legal-mdx.test.ts`
+- [x] T039 [P] **Test drift checksum** : modifier un MDX en mémoire (sans toucher version), exécuter `check-legal-mdx.ts` programmatiquement, vérifier exit ≠ 0 — dans `tools/__tests__/check-legal-mdx.test.ts`
 - [ ] T040 [P] **Linter custom** `tools/check-legal-acceptance-access.ts` : refuse les imports directs de `prisma.legalAcceptance.find*` hors `PrismaLegalAcceptanceRepository`, force le passage par `findWithAnonymization()` — wired dans CI
 
 ### Wiring NestJS

@@ -30,6 +30,7 @@
     "docker:reset": "docker compose -f docker-compose.dev.yml down -v",
     "dev:up": "pnpm docker:up && pnpm db:migrate && pnpm dev",
     "check:boundaries": "tsx tools/check-module-boundaries.ts",
+    "legal:verify": "tsx tools/check-legal-mdx.ts",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -38,6 +39,7 @@
     "@commitlint/cli": "^19.6.0",
     "@commitlint/config-conventional": "^19.6.0",
     "@playwright/test": "^1.60.0",
+    "gray-matter": "^4.0.3",
     "husky": "^9.1.7",
     "license-checker-rseidelsohn": "^4.4.2",
     "lint-staged": "^15.2.10",

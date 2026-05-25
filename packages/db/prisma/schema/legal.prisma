@@ -1,0 +1,77 @@
+// Schéma Prisma des documents légaux et de leurs acceptations (spec 004).
+// Cf. specs/004-mentions-legales/data-model.md.
+//
+// Conventions :
+//   - Préfixe table `auth_` — cohérent avec auth.prisma (ces tables vivent
+//     dans le module identité, étendu par cette feature).
+//   - UUID v4 partout en @db.Uuid, aligné avec les branded types de
+//     packages/legal/src/branded-ids.ts.
+//   - 3 tables strictement append-only (cf. migration 0NNN_init_legal_immutability)
+//     pour traçabilité Loi 25 (Principe II NON-NÉGOCIABLE).
+//   - Anonymisation Loi 25 différée via LegalAcceptanceAnonymization
+//     (ADR-0008) — LegalAcceptance reste strictement immutable.
+//   - Privilèges DB restreints par rôle applicatif (cf. migration
+//     0NNN_init_legal_privileges), enforcement de la frontière modulaire
+//     Principe V.
+
+enum LegalDocumentType {
+  mentions_legales
+  cgu_b2c
+  cgu_b2b
+  confidentialite
+  comment_ca_marche
+}
+
+enum LegalAcceptanceSubjectType {
+  user
+  brief
+}
+
+model LegalDocument {
+  id              String            @id @default(uuid()) @db.Uuid
+  type            LegalDocumentType
+  version         Int
+  checksum        String            @db.Char(64)
+  contentSnapshot String            @db.Text
+  publishedAt     DateTime          @default(now())
+  effectiveAt     DateTime
+
+  acceptances LegalAcceptance[]
+
+  @@unique([type, version], map: "auth_legal_documents_type_version_key")
+  @@index([type, version(sort: Desc)], map: "auth_legal_documents_type_version_desc_idx")
+  @@map("auth_legal_documents")
+}
+
+model LegalAcceptance {
+  id              String                     @id @default(uuid()) @db.Uuid
+  subjectType     LegalAcceptanceSubjectType
+  subjectId       String                     @db.Uuid
+  documentType    LegalDocumentType
+  documentVersion Int
+  acceptedAt      DateTime                   @default(now())
+  ipAddress       String                     @db.VarChar(45)
+  userAgent       String                     @db.VarChar(512)
+
+  document      LegalDocument?                @relation(fields: [documentType, documentVersion], references: [type, version])
+  anonymization LegalAcceptanceAnonymization?
+
+  @@unique([subjectId, documentType, documentVersion], map: "auth_legal_acceptances_idempotency_key")
+  @@index([subjectId, documentType, acceptedAt(sort: Desc)], map: "auth_legal_acceptances_subject_history_idx")
+  @@index([documentType, documentVersion], map: "auth_legal_acceptances_by_document_idx")
+  @@map("auth_legal_acceptances")
+}
+
+model LegalAcceptanceAnonymization {
+  id                       String          @id @default(uuid()) @db.Uuid
+  acceptanceId             String          @unique @db.Uuid
+  acceptance               LegalAcceptance @relation(fields: [acceptanceId], references: [id], onDelete: Restrict)
+  subjectIdHash            String          @db.Char(64)
+  ipAddressMasked          String          @db.VarChar(45)
+  userAgentFamily          String          @db.VarChar(64)
+  anonymizedAt             DateTime        @default(now())
+  anonymizationSaltVersion Int             @default(1)
+
+  @@index([anonymizedAt], map: "auth_legal_acceptance_anonymizations_anonymized_at_idx")
+  @@map("auth_legal_acceptance_anonymizations")
+}

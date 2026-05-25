@@ -1,0 +1,15 @@
+{
+  "name": "@cv/legal-content",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Contenu éditorial des 5 documents légaux (MDX). Consommé par apps/web et validé en CI par tools/check-legal-mdx.ts.",
+  "exports": {
+    "./fr-CA/*": "./fr-CA/*",
+    "./en/*": "./en/*"
+  },
+  "scripts": {
+    "lint": "biome check --error-on-warnings .",
+    "test": "vitest run --passWithNoTests"
+  }
+}
