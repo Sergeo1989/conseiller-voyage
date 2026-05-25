@@ -22,11 +22,17 @@ import { prisma } from '@cv/db';
 import { cookies } from 'next/headers';
 
 /**
- * Noms de cookie acceptés — supporte à la fois prod (`__Host-` strict
- * HTTPS) et dev HTTP (`authjs.session-token` posé par devLoginAction).
- * L'ordre = priorité : on essaie le cookie prod en premier.
+ * Noms de cookie acceptés :
+ * - Prod : UNIQUEMENT `__Host-cv.session.token` (strict HTTPS + path=/).
+ * - Dev : on accepte aussi `authjs.session-token` (HTTP-compatible, posé
+ *   par devLoginAction). Gating par NODE_ENV pour éviter qu'un sous-
+ *   domaine compromis en prod pose un cookie non-`__Host-` qui serait
+ *   accepté — vecteur de fixation de session. Documenté par /review.
  */
-const SESSION_COOKIE_NAMES = ['__Host-cv.session.token', 'authjs.session-token'] as const;
+const SESSION_COOKIE_NAMES =
+  process.env.NODE_ENV === 'production'
+    ? (['__Host-cv.session.token'] as const)
+    : (['__Host-cv.session.token', 'authjs.session-token'] as const);
 
 export type AuthRole = 'voyageur' | 'conseiller' | 'admin';
 

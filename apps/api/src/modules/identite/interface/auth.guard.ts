@@ -17,10 +17,15 @@ import {
   type AuthenticatedUser,
 } from '../application/ports/auth-session-reader.port';
 
-// En prod : cookie strict __Host-cv.session.token (requires HTTPS).
-// En dev HTTP : le préfixe __Host- est rejeté par le navigateur, on
-// accepte donc aussi le nom standard Auth.js v5 (authjs.session-token).
-const COOKIE_NAMES = ['__Host-cv.session.token', 'authjs.session-token'] as const;
+// En prod : UNIQUEMENT le cookie strict `__Host-cv.session.token` (requires
+// HTTPS + path=/ + no Domain). Le fallback `authjs.session-token` est
+// activé seulement quand NODE_ENV !== 'production', sinon un sous-domaine
+// compromis pourrait poser un cookie non-`__Host-` qui serait accepté
+// (vecteur de fixation de session). Documenté par /review pré-merge.
+const COOKIE_NAMES =
+  process.env.NODE_ENV === 'production'
+    ? (['__Host-cv.session.token'] as const)
+    : (['__Host-cv.session.token', 'authjs.session-token'] as const);
 
 interface AuthenticatedRequest {
   cookies?: Record<string, string | undefined>;
