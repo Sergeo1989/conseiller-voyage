@@ -30,7 +30,9 @@
     "docker:reset": "docker compose -f docker-compose.dev.yml down -v",
     "dev:up": "pnpm docker:up && pnpm db:migrate && pnpm dev",
     "check:boundaries": "tsx tools/check-module-boundaries.ts",
+    "check:legal-access": "tsx tools/check-legal-acceptance-access.ts",
     "legal:verify": "tsx tools/check-legal-mdx.ts",
+    "legal:seed": "tsx tools/seed-legal-documents.ts",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -75,9 +75,9 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 ### Tests d'invariants des triggers (TDD bloquant)
 
-- [ ] T011 [P] Test intégration trigger : tentative UPDATE sur `auth_legal_documents` lève exception PostgreSQL — `apps/api/test/integration/identite/legal-documents-immutability.test.ts`
-- [ ] T012 [P] Test intégration trigger : tentative UPDATE et DELETE sur `auth_legal_acceptances` lèvent exception — `apps/api/test/integration/identite/legal-acceptances-immutability.test.ts`
-- [ ] T013 [P] Test intégration trigger : tentative UPDATE et DELETE sur `auth_legal_acceptance_anonymizations` lèvent exception — `apps/api/test/integration/identite/legal-anonymizations-immutability.test.ts`
+- [x] T011 [P] Test intégration trigger : tentative UPDATE sur `auth_legal_documents` lève exception PostgreSQL — `apps/api/test/integration/identite/legal-documents-immutability.test.ts`
+- [x] T012 [P] Test intégration trigger : tentative UPDATE et DELETE sur `auth_legal_acceptances` lèvent exception — `apps/api/test/integration/identite/legal-acceptances-immutability.test.ts`
+- [x] T013 [P] Test intégration trigger : tentative UPDATE et DELETE sur `auth_legal_acceptance_anonymizations` lèvent exception — `apps/api/test/integration/identite/legal-anonymizations-immutability.test.ts`
 
 ### Types partagés et schemas Zod
 
@@ -113,20 +113,20 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 ### Infrastructure layer (Prisma adapters)
 
-- [ ] T034 [P] `PrismaLegalDocumentRepository` dans `apps/api/src/modules/identite/infrastructure/prisma-legal-document-repository.ts`
-- [ ] T035 [P] `PrismaLegalAcceptanceRepository` dans `apps/api/src/modules/identite/infrastructure/prisma-legal-acceptance-repository.ts` — implémente `findWithAnonymization()` via LEFT JOIN
-- [ ] T036 [P] `PrismaLegalAcceptanceAnonymizationRepository` dans `apps/api/src/modules/identite/infrastructure/prisma-legal-acceptance-anonymization-repository.ts`
+- [x] T034 [P] `PrismaLegalDocumentRepository` dans `apps/api/src/modules/identite/infrastructure/prisma-legal-document-repository.ts`
+- [x] T035 [P] `PrismaLegalAcceptanceRepository` dans `apps/api/src/modules/identite/infrastructure/prisma-legal-acceptance-repository.ts` — implémente `findWithAnonymization()` via LEFT JOIN
+- [x] T036 [P] `PrismaLegalAcceptanceAnonymizationRepository` dans `apps/api/src/modules/identite/infrastructure/prisma-legal-acceptance-anonymization-repository.ts`
 
 ### Scripts CI
 
 - [x] T037 [P] Script `tools/check-legal-mdx.ts` (parse MDX, vérifie frontmatter Zod, unicité (type, version), strict-croissance par type, `effectiveAt >= publishedAt`, drift de checksum si version inchangée) + wire `pnpm legal:verify` dans `package.json` racine + ajouter étape bloquante dans `.github/workflows/ci.yml`
-- [ ] T038 [P] Script `tools/seed-legal-documents.ts` (idempotent post-deploy : parse MDX, calcule checksum + `contentSnapshot`, insère row si absente, no-op si présente avec checksum identique, ERREUR si présente avec checksum différent — confluences avec T037)
+- [x] T038 [P] Script `tools/seed-legal-documents.ts` (idempotent post-deploy : parse MDX, calcule checksum + `contentSnapshot`, insère row si absente, no-op si présente avec checksum identique, ERREUR si présente avec checksum différent — confluences avec T037)
 - [x] T039 [P] **Test drift checksum** : modifier un MDX en mémoire (sans toucher version), exécuter `check-legal-mdx.ts` programmatiquement, vérifier exit ≠ 0 — dans `tools/__tests__/check-legal-mdx.test.ts`
-- [ ] T040 [P] **Linter custom** `tools/check-legal-acceptance-access.ts` : refuse les imports directs de `prisma.legalAcceptance.find*` hors `PrismaLegalAcceptanceRepository`, force le passage par `findWithAnonymization()` — wired dans CI
+- [x] T040 [P] **Linter custom** `tools/check-legal-acceptance-access.ts` : refuse les imports directs de `prisma.legalAcceptance.find*` hors `PrismaLegalAcceptanceRepository`, force le passage par `findWithAnonymization()` — wired dans CI
 
 ### Wiring NestJS
 
-- [ ] T041 Étendre `IdentiteModule` (`apps/api/src/modules/identite/identite.module.ts`) : enregistrer les 3 repositories, les 4 use cases (déclarés en Phase 3-6), la facade `LegalAcceptanceFacade`, et le secret salt via `useFactory: loadSaltFromSecretsManager`
+- [x] T041 Étendre `IdentiteModule` (`apps/api/src/modules/identite/identite.module.ts`) : enregistrer les 3 repositories, les 4 use cases (déclarés en Phase 3-6), la facade `LegalAcceptanceFacade`, et le secret salt via `useFactory: loadSaltFromSecretsManager`
 
 **Checkpoint** : foundation prête → implémentation user stories peut commencer en parallèle.
 
