@@ -31,8 +31,16 @@ BEGIN
 END
 $$;
 
--- Privilèges de connexion + usage du schéma public
-GRANT CONNECT ON DATABASE current_database() TO app_identite;
+-- Privilèges de connexion + usage du schéma public.
+-- Note : GRANT ON DATABASE exige un identifiant littéral, pas une expression
+-- comme current_database() — on passe par EXECUTE format() pour résoudre
+-- dynamiquement le nom (compatible Postgres standard + shadow database Prisma).
+-- Pattern repris de la migration 0000_setup_db_roles de 001.
+DO $$
+BEGIN
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO app_identite', current_database());
+END
+$$;
 GRANT USAGE ON SCHEMA public TO app_identite;
 
 -- ---------------------------------------------------------------------
