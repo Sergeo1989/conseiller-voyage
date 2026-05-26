@@ -9,6 +9,11 @@
 
 model AuthUser {
   id            String    @id @default(uuid()) @db.Uuid
+  // Note feature 002 : l'unicité non-NULL est appliquée par un INDEX
+  // PARTIEL Postgres `WHERE email IS NOT NULL` (cf. migration
+  // 20260527000000_init_auth_credentials). Le `@unique` Prisma reste
+  // pour la lisibilité du modèle ; l'index sous-jacent est remplacé
+  // manuellement par la migration.
   email         String?   @unique
   emailVerified DateTime?
   name          String?
@@ -37,6 +42,14 @@ model AuthUser {
   mfaAuditEventsAsTarget MfaAuditEvent[]  @relation("MfaAuditTarget")
   mfaOutboxEmails        MfaOutboxEmail[]
 
+  // Relations feature 002 (auth credentials). Models dans
+  // auth-credentials.prisma. Note H7 : auth_audit_events n'a PAS de
+  // relation ici (déconnecté pour résoudre Principe IX × Loi 25, ADR-0012).
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+  authOutboxEmails        AuthOutboxEmail[]
+  adminInvitationsSent    AdminInvitationToken[]   @relation("AdminInviter")
+
   @@map("auth_users")
 }
 
@@ -52,6 +65,11 @@ model AuthAccount {
   type              String
   provider          String
   providerAccountId String
+  // Feature 002 — hash bcrypt cost 11 sur SHA-256 base64 du plaintext.
+  // NULL pour les providers non-credentials (OAuth, magic-link).
+  // Contrainte CHECK Postgres : provider='credentials' ⇒ password_hash NOT NULL
+  // (cf. migration 20260527000000_init_auth_credentials).
+  password_hash     String?  @db.Text
   refresh_token     String?  @db.Text
   access_token      String?  @db.Text
   expires_at        Int?

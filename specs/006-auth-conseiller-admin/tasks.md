@@ -39,56 +39,56 @@ description: "Décomposition exécutable — Auth conseiller + admin (feature 00
 
 ### Schéma + migrations Prisma
 
-- [ ] T009 Étendre `packages/db/prisma/schema/auth.prisma` : ajouter colonne `password_hash String?` à `AuthAccount`, ajouter relations `emailVerificationTokens`, `passwordResetTokens`, `authOutboxEmails`, `adminInvitationsSent` à `AuthUser`. Commenter le partial unique index (appliqué par migration manuelle).
-- [ ] T010 Créer `packages/db/prisma/schema/auth-credentials.prisma` (nouveau fichier multi-file) : `EmailVerificationToken`, `PasswordResetToken`, `AdminInvitationToken`, `AuthAuditEvent`, `LoginLockoutBucket`, `AuthOutboxEmail` + enums `AuthAuditEventType`, `LoginLockoutKind`, `AuthEmailTemplate`. Suit data-model.md.
-- [ ] T011 Générer la migration `pnpm --filter @cv/db migrate dev --name init_auth_credentials --create-only`. Éditer le fichier généré pour ajouter : (a) `ALTER TABLE auth_accounts ADD CONSTRAINT credential_password_required CHECK (provider != 'credentials' OR password_hash IS NOT NULL)`, (b) `DROP INDEX auth_users_email_key; CREATE UNIQUE INDEX auth_users_email_unique_not_null ON auth_users(email) WHERE email IS NOT NULL`, (c) `ALTER TABLE auth_login_lockout_buckets ADD CONSTRAINT login_lockout_key_xor CHECK (...)`. Appliquer.
-- [ ] T012 Créer migration `20260527000001_auth_audit_immutability` : `CREATE FUNCTION reject_auth_audit_mutation()` + 3 triggers `BEFORE UPDATE/DELETE/TRUNCATE` sur `auth_audit_events`. Suit le pattern 002a `mfa_audit_immutability`. Tester en local que UPDATE/DELETE est bien rejeté.
-- [ ] T013 Créer migration `20260527000002_auth_credentials_grants` : pattern DO + format() (bug_026 002a). GRANT SELECT/INSERT/UPDATE/DELETE sur les 6 nouvelles tables au rôle `app_conformite` (dette M11 inscrite roadmap). GRANT USAGE sur les enums.
-- [ ] T014 Régénérer le client Prisma : `pnpm --filter @cv/db generate`. Vérifier que les nouveaux modèles sont accessibles via `prisma.emailVerificationToken`, `prisma.authAuditEvent`, etc.
+- [X] T009 Étendre `packages/db/prisma/schema/auth.prisma` : ajouter colonne `password_hash String?` à `AuthAccount`, ajouter relations `emailVerificationTokens`, `passwordResetTokens`, `authOutboxEmails`, `adminInvitationsSent` à `AuthUser`. Commenter le partial unique index (appliqué par migration manuelle).
+- [X] T010 Créer `packages/db/prisma/schema/auth-credentials.prisma` (nouveau fichier multi-file) : `EmailVerificationToken`, `PasswordResetToken`, `AdminInvitationToken`, `AuthAuditEvent`, `LoginLockoutBucket`, `AuthOutboxEmail` + enums `AuthAuditEventType`, `LoginLockoutKind`, `AuthEmailTemplate`. Suit data-model.md.
+- [X] T011 Générer la migration `pnpm --filter @cv/db migrate dev --name init_auth_credentials --create-only`. Éditer le fichier généré pour ajouter : (a) `ALTER TABLE auth_accounts ADD CONSTRAINT credential_password_required CHECK (provider != 'credentials' OR password_hash IS NOT NULL)`, (b) `DROP INDEX auth_users_email_key; CREATE UNIQUE INDEX auth_users_email_unique_not_null ON auth_users(email) WHERE email IS NOT NULL`, (c) `ALTER TABLE auth_login_lockout_buckets ADD CONSTRAINT login_lockout_key_xor CHECK (...)`. Appliquer.
+- [X] T012 Créer migration `20260527000001_auth_audit_immutability` : `CREATE FUNCTION reject_auth_audit_mutation()` + 3 triggers `BEFORE UPDATE/DELETE/TRUNCATE` sur `auth_audit_events`. Suit le pattern 002a `mfa_audit_immutability`. Tester en local que UPDATE/DELETE est bien rejeté.
+- [X] T013 Créer migration `20260527000002_auth_credentials_grants` : pattern DO + format() (bug_026 002a). GRANT SELECT/INSERT/UPDATE/DELETE sur les 6 nouvelles tables au rôle `app_conformite` (dette M11 inscrite roadmap). GRANT USAGE sur les enums.
+- [X] T014 Régénérer le client Prisma : `pnpm --filter @cv/db generate`. Vérifier que les nouveaux modèles sont accessibles via `prisma.emailVerificationToken`, `prisma.authAuditEvent`, etc.
 
 ### Domaine pur `@cv/auth-domain` (TDD strict — RED avant GREEN)
 
-- [ ] T015 [P] **Tests RED** — `packages/auth-domain/tests/normalize-email.test.ts` : couvre `trim()`, `toLowerCase()`, `NFC`, IDN, espaces, casse mixte, emoji-emails (cas pratique). Aligner sur R9.
-- [ ] T016 [P] **Tests RED** — `packages/auth-domain/tests/password-policy.test.ts` : 12 chars min, 128 max, 4 classes obligatoires, refus si contient email/prénom (insensible casse), refus de string vide, UTF-8 (emoji compte comme 1 char).
-- [ ] T017 [P] **Tests RED** — `packages/auth-domain/tests/single-use-tokens.test.ts` : `issueToken({purpose, userId, ttlSec})` + `verifyToken(token, expectedPurpose, now)`. Couvre signature OK, signature falsifiée, exp expiré, purpose mismatch (cross-purpose attack), nonce structure.
-- [ ] T018 [P] **Tests RED** — `packages/auth-domain/tests/lockout-policy.test.ts` : `shouldLockout({accountFailures, ipFailures, now, accountWindow, ipWindow})`. Couvre 5/15min, 20/1h, bordures fenêtres glissantes, reset compteur quand fenêtre expirée, deux buckets indépendants.
-- [ ] T019 [P] **Tests RED** — `packages/auth-domain/tests/auth-error-normalizer.test.ts` : 4 raisons internes (`USER_NOT_FOUND`, `INVALID_PASSWORD`, `ACCOUNT_DISABLED`, `EMAIL_NOT_VERIFIED`) → toutes retournent `INVALID_CREDENTIALS` (anti-énumération, R5).
-- [ ] T020 [P] **Tests RED** — `packages/auth-domain/tests/password-hash.test.ts` : `prehashAndHash(plaintext) → bcrypt(base64(sha256(plaintext)), cost=11)`. Vérifie le pré-hash neutralise la limite 72 octets de bcrypt (mots de passe > 72 chars distincts produisent des hash distincts).
-- [ ] T021 Implémentation **GREEN** — `packages/auth-domain/src/email-normalizer.ts` : `normalizeEmail(raw: string) → string`. Test T015 doit passer.
-- [ ] T022 Implémentation **GREEN** — `packages/auth-domain/src/password-policy.ts` : `validatePasswordPolicy(password, email?, firstName?) → ValidationResult`. Test T016 doit passer.
-- [ ] T023 Implémentation **GREEN** — `packages/auth-domain/src/single-use-tokens.ts` : `issueToken` + `verifyToken` via `jose` HS256. Test T017 doit passer.
-- [ ] T024 Implémentation **GREEN** — `packages/auth-domain/src/lockout-policy.ts` : `shouldLockout()` pure fn. Test T018 doit passer.
-- [ ] T025 Implémentation **GREEN** — `packages/auth-domain/src/auth-error-normalizer.ts` : `normalizeAuthError(reason) → 'INVALID_CREDENTIALS'`. Test T019 doit passer.
-- [ ] T026 Implémentation **GREEN** — `packages/auth-domain/src/password-hash.ts` : `prehashAndHash` + `verifyPrehashed`. Test T020 doit passer.
+- [X] T015 [P] **Tests RED** — `packages/auth-domain/tests/normalize-email.test.ts` : couvre `trim()`, `toLowerCase()`, `NFC`, IDN, espaces, casse mixte, emoji-emails (cas pratique). Aligner sur R9.
+- [X] T016 [P] **Tests RED** — `packages/auth-domain/tests/password-policy.test.ts` : 12 chars min, 128 max, 4 classes obligatoires, refus si contient email/prénom (insensible casse), refus de string vide, UTF-8 (emoji compte comme 1 char).
+- [X] T017 [P] **Tests RED** — `packages/auth-domain/tests/single-use-tokens.test.ts` : `issueToken({purpose, userId, ttlSec})` + `verifyToken(token, expectedPurpose, now)`. Couvre signature OK, signature falsifiée, exp expiré, purpose mismatch (cross-purpose attack), nonce structure.
+- [X] T018 [P] **Tests RED** — `packages/auth-domain/tests/lockout-policy.test.ts` : `shouldLockout({accountFailures, ipFailures, now, accountWindow, ipWindow})`. Couvre 5/15min, 20/1h, bordures fenêtres glissantes, reset compteur quand fenêtre expirée, deux buckets indépendants.
+- [X] T019 [P] **Tests RED** — `packages/auth-domain/tests/auth-error-normalizer.test.ts` : 4 raisons internes (`USER_NOT_FOUND`, `INVALID_PASSWORD`, `ACCOUNT_DISABLED`, `EMAIL_NOT_VERIFIED`) → toutes retournent `INVALID_CREDENTIALS` (anti-énumération, R5).
+- [X] T020 [P] **Tests RED** — `packages/auth-domain/tests/password-hash.test.ts` : `prehashAndHash(plaintext) → bcrypt(base64(sha256(plaintext)), cost=11)`. Vérifie le pré-hash neutralise la limite 72 octets de bcrypt (mots de passe > 72 chars distincts produisent des hash distincts).
+- [X] T021 Implémentation **GREEN** — `packages/auth-domain/src/email-normalizer.ts` : `normalizeEmail(raw: string) → string`. Test T015 doit passer.
+- [X] T022 Implémentation **GREEN** — `packages/auth-domain/src/password-policy.ts` : `validatePasswordPolicy(password, email?, firstName?) → ValidationResult`. Test T016 doit passer.
+- [X] T023 Implémentation **GREEN** — `packages/auth-domain/src/single-use-tokens.ts` : `issueToken` + `verifyToken` via `jose` HS256. Test T017 doit passer.
+- [X] T024 Implémentation **GREEN** — `packages/auth-domain/src/lockout-policy.ts` : `shouldLockout()` pure fn. Test T018 doit passer.
+- [X] T025 Implémentation **GREEN** — `packages/auth-domain/src/auth-error-normalizer.ts` : `normalizeAuthError(reason) → 'INVALID_CREDENTIALS'`. Test T019 doit passer.
+- [X] T026 Implémentation **GREEN** — `packages/auth-domain/src/password-hash.ts` : `prehashAndHash` + `verifyPrehashed`. Test T020 doit passer.
 
 ### DTOs Zod partagés
 
-- [ ] T027 [P] Créer `packages/auth-domain/src/dtos/signup.dto.ts` (Zod schema + type, sans `.refine()` async — M5).
-- [ ] T028 [P] Créer `packages/auth-domain/src/dtos/login.dto.ts`.
-- [ ] T029 [P] Créer `packages/auth-domain/src/dtos/request-reset.dto.ts`.
-- [ ] T030 [P] Créer `packages/auth-domain/src/dtos/complete-reset.dto.ts`.
-- [ ] T031 [P] Créer `packages/auth-domain/src/dtos/change-password.dto.ts`.
-- [ ] T032 [P] Créer `packages/auth-domain/src/dtos/invite-admin.dto.ts` + `accept-invitation.dto.ts`.
-- [ ] T033 Exporter tout depuis `packages/auth-domain/src/index.ts`. Build : `pnpm --filter @cv/auth-domain build`. Vérifier exports via `pnpm --filter @cv/api typecheck`.
+- [X] T027 [P] Créer `packages/auth-domain/src/dtos/signup.dto.ts` (Zod schema + type, sans `.refine()` async — M5).
+- [X] T028 [P] Créer `packages/auth-domain/src/dtos/login.dto.ts`.
+- [X] T029 [P] Créer `packages/auth-domain/src/dtos/request-reset.dto.ts`.
+- [X] T030 [P] Créer `packages/auth-domain/src/dtos/complete-reset.dto.ts`.
+- [X] T031 [P] Créer `packages/auth-domain/src/dtos/change-password.dto.ts`.
+- [X] T032 [P] Créer `packages/auth-domain/src/dtos/invite-admin.dto.ts` + `accept-invitation.dto.ts`.
+- [X] T033 Exporter tout depuis `packages/auth-domain/src/index.ts`. Build : `pnpm --filter @cv/auth-domain build`. Vérifier exports via `pnpm --filter @cv/api typecheck`.
 
 ### Ports application + infrastructure
 
-- [ ] T034 [P] Créer ports `apps/api/src/modules/identite/application/ports/credential-account-repository.port.ts`.
-- [ ] T035 [P] Créer ports `apps/api/src/modules/identite/application/ports/email-verification-token-repository.port.ts`.
-- [ ] T036 [P] Créer ports `apps/api/src/modules/identite/application/ports/password-reset-token-repository.port.ts`.
-- [ ] T037 [P] Créer ports `apps/api/src/modules/identite/application/ports/admin-invitation-token-repository.port.ts`.
-- [ ] T038 [P] Créer ports `apps/api/src/modules/identite/application/ports/login-lockout-repository.port.ts`.
-- [ ] T039 [P] Créer port `apps/api/src/modules/identite/application/ports/auth-audit-writer.port.ts` (séparé du `mfa-audit-writer.port.ts` existant — propre traçabilité).
-- [ ] T040 [P] Créer port `apps/api/src/modules/identite/application/ports/auth-outbox-writer.port.ts`.
-- [ ] T041 [P] Créer port `apps/api/src/modules/identite/application/ports/token-issuer.port.ts` (abstraction `jose` HS256).
+- [X] T034 [P] Créer ports `apps/api/src/modules/identite/application/ports/credential-account-repository.port.ts`.
+- [X] T035 [P] Créer ports `apps/api/src/modules/identite/application/ports/email-verification-token-repository.port.ts`.
+- [X] T036 [P] Créer ports `apps/api/src/modules/identite/application/ports/password-reset-token-repository.port.ts`.
+- [X] T037 [P] Créer ports `apps/api/src/modules/identite/application/ports/admin-invitation-token-repository.port.ts`.
+- [X] T038 [P] Créer ports `apps/api/src/modules/identite/application/ports/login-lockout-repository.port.ts`.
+- [X] T039 [P] Créer port `apps/api/src/modules/identite/application/ports/auth-audit-writer.port.ts` (séparé du `mfa-audit-writer.port.ts` existant — propre traçabilité).
+- [X] T040 [P] Créer port `apps/api/src/modules/identite/application/ports/auth-outbox-writer.port.ts`.
+- [X] T041 [P] Créer port `apps/api/src/modules/identite/application/ports/token-issuer.port.ts` (abstraction `jose` HS256).
 
 ### ADR-0012 (résolution H7)
 
-- [ ] T042 Créer `docs/adr/0012-audit-vs-loi-25-no-fk-policy.md` au format MADR : contexte (contradiction Principe IX × Principe II), décision (pas de FK + hash anonymisé), alternatives rejetées (FK SetNull + whitelist trigger ; cascade complète ; table séparée), conséquences. Aligner sur les ADR-0010/0011 de 002a pour le style.
+- [X] T042 Créer `docs/adr/0012-audit-vs-loi-25-no-fk-policy.md` au format MADR : contexte (contradiction Principe IX × Principe II), décision (pas de FK + hash anonymisé), alternatives rejetées (FK SetNull + whitelist trigger ; cascade complète ; table séparée), conséquences. Aligner sur les ADR-0010/0011 de 002a pour le style.
 
 ### Module boundaries
 
-- [ ] T043 Étendre `tools/check-module-boundaries.ts` : `@cv/auth-domain` ne doit jamais importer NestJS, Prisma, Next.js, Auth.js. Test que le check échoue si on ajoute un import interdit.
+- [X] T043 Étendre `tools/check-module-boundaries.ts` : `@cv/auth-domain` ne doit jamais importer NestJS, Prisma, Next.js, Auth.js. Test que le check échoue si on ajoute un import interdit.
 
 **Checkpoint Phase 2** : `pnpm --filter @cv/auth-domain test` 100% vert (≥ 95% couverture), `pnpm --filter @cv/db generate` OK, `pnpm exec tsx tools/check-module-boundaries.ts` OK, migrations appliquées sur la BD dev.
 
