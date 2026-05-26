@@ -23,6 +23,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { readActorIp } from '../../../common/actor-ip.util';
 import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe';
 import type { AuthenticatedUser } from '../application/ports/auth-session-reader.port';
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
@@ -43,26 +44,6 @@ interface AuthenticatedRequest {
   user?: AuthenticatedUser;
   headers: Record<string, string | string[] | undefined>;
   ip?: string;
-}
-
-function readActorIp(req: AuthenticatedRequest): string | undefined {
-  const xff = req.headers['x-forwarded-for'];
-  if (typeof xff === 'string') {
-    const first = xff.split(',')[0]?.trim();
-    if (first) return abridgeIp(first);
-  }
-  if (req.ip) return abridgeIp(req.ip);
-  return undefined;
-}
-
-function abridgeIp(ip: string): string {
-  if (ip.includes(':')) {
-    const parts = ip.split(':');
-    return `${parts.slice(0, 3).join(':')}::`;
-  }
-  const parts = ip.split('.');
-  if (parts.length === 4) return `${parts.slice(0, 3).join('.')}.0`;
-  return ip;
 }
 
 @ApiTags('mfa-admin')

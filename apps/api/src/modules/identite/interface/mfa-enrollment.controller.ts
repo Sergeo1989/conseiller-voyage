@@ -24,6 +24,7 @@ import {
 } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { readActorIp } from '../../../common/actor-ip.util';
 import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe';
 import type { AuthenticatedUser } from '../application/ports/auth-session-reader.port';
 import { MFA_RATE_LIMITER, type MfaRateLimiter } from '../application/ports/mfa-rate-limiter.port';
@@ -61,30 +62,6 @@ function readSessionToken(req: AuthenticatedRequest): string | null {
     if (match) return decodeURIComponent(match[1] ?? '');
   }
   return null;
-}
-
-function readActorIp(req: AuthenticatedRequest): string | undefined {
-  const xff = req.headers['x-forwarded-for'];
-  if (typeof xff === 'string') {
-    const first = xff.split(',')[0]?.trim();
-    if (first) return abridgeIp(first);
-  }
-  if (req.ip) return abridgeIp(req.ip);
-  return undefined;
-}
-
-// Abrégement basique IPv4 /24, IPv6 /48. Cohérent ADR-0008 (réutilisera
-// le helper `maskIpAddress` de @cv/legal quand 004 sera merged sur main).
-function abridgeIp(ip: string): string {
-  if (ip.includes(':')) {
-    // IPv6 — garde les 3 premiers groupes.
-    const parts = ip.split(':');
-    return `${parts.slice(0, 3).join(':')}::`;
-  }
-  // IPv4 — garde les 3 premiers octets.
-  const parts = ip.split('.');
-  if (parts.length === 4) return `${parts.slice(0, 3).join('.')}.0`;
-  return ip;
 }
 
 @ApiTags('mfa-enrollment')

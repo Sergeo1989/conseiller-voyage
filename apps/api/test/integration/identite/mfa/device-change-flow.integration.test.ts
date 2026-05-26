@@ -18,11 +18,9 @@ import { RegenerateBackupCodesUseCase } from '../../../../src/modules/identite/a
 import { BcryptBackupCodeHasher } from '../../../../src/modules/identite/infrastructure/bcrypt-backup-code-hasher';
 import { NodeCryptoTotpSecretEncrypter } from '../../../../src/modules/identite/infrastructure/node-crypto-totp-secret-encrypter';
 import { OtplibTotpValidator } from '../../../../src/modules/identite/infrastructure/otplib-totp-validator';
-import { PrismaActiveSessionRevoker } from '../../../../src/modules/identite/infrastructure/prisma-active-session-revoker';
 import { PrismaBackupCodeRepository } from '../../../../src/modules/identite/infrastructure/prisma-backup-code-repository';
 import { PrismaMfaAuditWriter } from '../../../../src/modules/identite/infrastructure/prisma-mfa-audit-writer';
 import { PrismaMfaSecretRepository } from '../../../../src/modules/identite/infrastructure/prisma-mfa-secret-repository';
-import { SesMfaNotificationMailer } from '../../../../src/modules/identite/infrastructure/ses-mfa-notification-mailer';
 import { StubPasswordVerifier } from '../../../../src/modules/identite/infrastructure/stub-password-verifier';
 
 authenticator.options = { step: 30, window: 1, digits: 6 };
@@ -104,9 +102,6 @@ function buildChangeDevice(): ChangeDeviceUseCase {
     new OtplibTotpValidator(),
     new NodeCryptoTotpSecretEncrypter(FAKE_ENV),
     new BcryptBackupCodeHasher(),
-    new PrismaActiveSessionRevoker(),
-    new PrismaMfaAuditWriter(),
-    new SesMfaNotificationMailer(),
     new StubPasswordVerifier(),
   );
 }

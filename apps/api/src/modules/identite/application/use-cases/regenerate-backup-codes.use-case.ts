@@ -59,17 +59,28 @@ export class RegenerateBackupCodesUseCase {
     const clearCodes = generateBatch();
     const batchId = crypto.randomUUID();
 
-    // Atomique : DELETE ancien lot + INSERT nouveau lot.
+    // BUG_015 ultraréview : bcrypt cost 12 hors transaction Prisma.
+    // 10 hashes × ~250 ms = ~2.5 s CPU bound (bcryptjs pure JS, pas
+    // de parallélisme réel via Promise.all). Garder ce travail dans
+    // la $transaction tenait une connexion Postgres pour 2.5 s →
+    // famine du pool + risque de transaction timeout (défaut Prisma
+    // 5 s) + SLO p95 < 800 ms violé (Principe X).
+    //
+    // Pattern aligné avec EnrollTotpUseCase.start et
+    // ChangeDeviceUseCase.execute qui hashent OUTSIDE puis insèrent
+    // INSIDE.
+    const hashed = await Promise.all(
+      clearCodes.map(async (code, idx) => ({
+        mfaSecretId: active.id,
+        codeHash: (await this.hasher.hash(code)) as string,
+        batchId,
+        position: idx + 1,
+      })),
+    );
+
+    // Atomique : DELETE ancien lot + INSERT nouveau lot (rapide).
     await prisma.$transaction(async (tx) => {
       await tx.mfaBackupCode.deleteMany({ where: { mfaSecretId: active.id } });
-      const hashed = await Promise.all(
-        clearCodes.map(async (code, idx) => ({
-          mfaSecretId: active.id,
-          codeHash: (await this.hasher.hash(code)) as string,
-          batchId,
-          position: idx + 1,
-        })),
-      );
       await tx.mfaBackupCode.createMany({ data: hashed });
     });
 

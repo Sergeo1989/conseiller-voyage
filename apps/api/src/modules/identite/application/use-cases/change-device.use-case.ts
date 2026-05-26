@@ -13,23 +13,13 @@
 // reporté Phase 9) enverra un rappel FR-015f après 24h.
 
 import { prisma } from '@cv/db';
-import { normalizeCode } from '@cv/mfa';
-import { generateBatch } from '@cv/mfa';
+import { generateBatch, normalizeCode } from '@cv/mfa';
 import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import {
-  ACTIVE_SESSION_REVOKER,
-  type ActiveSessionRevoker,
-} from '../ports/active-session-revoker.port';
 import { BACKUP_CODE_HASHER, type BackupCodeHasher } from '../ports/backup-code-hasher.port';
 import {
   BACKUP_CODE_REPOSITORY,
   type BackupCodeRepository,
 } from '../ports/backup-code-repository.port';
-import { MFA_AUDIT_WRITER, type MfaAuditWriter } from '../ports/mfa-audit-writer.port';
-import {
-  MFA_NOTIFICATION_MAILER,
-  type MfaNotificationMailer,
-} from '../ports/mfa-notification-mailer.port';
 import {
   MFA_SECRET_REPOSITORY,
   type MfaSecretRepository,
@@ -60,6 +50,7 @@ export interface ChangeDeviceResult {
   readonly keyUri: string;
   readonly backupCodes: readonly string[];
   readonly enrollmentRequestId: string;
+  readonly sessionsRevokedCount: number;
 }
 
 @Injectable()
@@ -70,9 +61,6 @@ export class ChangeDeviceUseCase {
     @Inject(TOTP_VALIDATOR) private readonly totpValidator: TotpValidator,
     @Inject(TOTP_SECRET_ENCRYPTER) private readonly encrypter: TotpSecretEncrypter,
     @Inject(BACKUP_CODE_HASHER) private readonly hasher: BackupCodeHasher,
-    @Inject(ACTIVE_SESSION_REVOKER) private readonly sessionRevoker: ActiveSessionRevoker,
-    @Inject(MFA_AUDIT_WRITER) private readonly audit: MfaAuditWriter,
-    @Inject(MFA_NOTIFICATION_MAILER) private readonly mailer: MfaNotificationMailer,
     @Inject(PASSWORD_VERIFIER) private readonly passwords: PasswordVerifier,
   ) {}
 
@@ -99,59 +87,101 @@ export class ChangeDeviceUseCase {
       throw new BadRequestException({ code: 'INVALID_SECOND_FACTOR' });
     }
 
-    // 4. Atomique : DELETE ancien secret + supersede par nouveau pending
-    //    + DELETE other sessions (sauf courante).
+    // 4. Préparation des données pour la transaction (CPU bound,
+    //    hors tx pour ne pas tenir une connexion Postgres).
     const newSecretClear = this.totpValidator.generateSecret();
     const newEncrypted = this.encrypter.encrypt(newSecretClear);
+    const clearCodes = generateBatch();
+    const batchId = crypto.randomUUID();
+    const hashedCodes = await Promise.all(
+      clearCodes.map(async (code, idx) => ({
+        batchId,
+        position: idx + 1,
+        codeHash: (await this.hasher.hash(code)) as string,
+      })),
+    );
 
-    let sessionsRevokedCount = 0;
-    const created = await prisma.$transaction(async (tx) => {
+    // 5. BUG_002 ultraréview : VRAIMENT atomique cette fois. Toutes
+    //    les écritures DB dans une seule transaction. Si l'une
+    //    échoue, AUCUNE n'est appliquée. Garanties Loi 25 + FR-015b
+    //    + Principe IX (mutation sans audit interdite) préservées.
+    //
+    //    Inclut :
+    //      - DELETE ancien secret (cascade backup codes via FK)
+    //      - INSERT nouveau secret pending
+    //      - INSERT nouveaux backup codes
+    //      - DELETE other sessions (FR-015b session invalidation)
+    //      - DELETE buckets stepup orphelins des sessions supprimées
+    //      - INSERT audit mfa_device_changed_self
+    //      - INSERT mfa_outbox_emails (= équivalent SesMfaNotificationMailer
+    //        stub MVP — quand 003 livre le worker SES, il drainera
+    //        l'outbox sans qu'on change ce use case)
+    const result = await prisma.$transaction(async (tx) => {
+      // a. Swap atomique du secret
       await tx.mfaSecret.deleteMany({ where: { userId: input.userId } });
-      return tx.mfaSecret.create({
+      const created = await tx.mfaSecret.create({
         data: {
           userId: input.userId,
           encryptedSecret: newEncrypted as string,
           enrollmentRequestId: input.enrollmentRequestId,
         },
       });
-    });
-    // Sessions other-than-current (FR-015b).
-    sessionsRevokedCount = await this.sessionRevoker.revokeAllExcept(
-      input.userId,
-      input.sessionToken,
-    );
 
-    // 5. Génère + hash 10 nouveaux backup codes.
-    const clearCodes = generateBatch();
-    const batchId = crypto.randomUUID();
-    const hashed = await Promise.all(
-      clearCodes.map(async (code, idx) => ({
-        mfaSecretId: created.id,
-        batchId,
-        position: idx + 1,
-        codeHash: await this.hasher.hash(code),
-      })),
-    );
-    await this.backupCodes.createBatch(hashed);
+      // b. Backup codes du nouveau lot
+      await tx.mfaBackupCode.createMany({
+        data: hashedCodes.map((c) => ({
+          mfaSecretId: created.id,
+          batchId: c.batchId,
+          position: c.position,
+          codeHash: c.codeHash,
+        })),
+      });
 
-    // 6. Audit + courriel FR-015e.
-    await this.audit.append({
-      eventType: 'mfa_device_changed_self',
-      actorUserId: input.userId,
-      targetUserId: input.userId,
-      method: input.secondFactor.kind === 'totp' ? 'totp' : 'backup_code',
-      ...(input.actorIp ? { actorIp: input.actorIp } : {}),
-      metadata: {
-        previousMfaSecretId: active.id,
-        newEnrollmentRequestId: input.enrollmentRequestId,
-        sessionsRevokedCount,
-      },
-    });
-    await this.mailer.sendDeviceChangedNotice({
-      recipientUserId: input.userId,
-      recipientEmail: input.userEmail,
-      changedAt: new Date(),
-      actorIp: input.actorIp ?? 'unknown',
+      // c. Sessions other-than-current + cleanup buckets stepup
+      const targetSessions = await tx.authSession.findMany({
+        where: { userId: input.userId, sessionToken: { not: input.sessionToken } },
+        select: { id: true },
+      });
+      const sessionIds = targetSessions.map((s) => s.id);
+      const sessionsResult = await tx.authSession.deleteMany({
+        where: { userId: input.userId, sessionToken: { not: input.sessionToken } },
+      });
+      if (sessionIds.length > 0) {
+        await tx.mfaRateLimitBucket.deleteMany({
+          where: { userId: input.userId, kind: 'stepup_totp', sessionId: { in: sessionIds } },
+        });
+      }
+
+      // d. Audit immuable
+      await tx.mfaAuditEvent.create({
+        data: {
+          eventType: 'mfa_device_changed_self',
+          actorUserId: input.userId,
+          targetUserId: input.userId,
+          method: input.secondFactor.kind === 'totp' ? 'totp' : 'backup_code',
+          actorIp: input.actorIp ?? null,
+          metadata: {
+            previousMfaSecretId: active.id,
+            newEnrollmentRequestId: input.enrollmentRequestId,
+            sessionsRevokedCount: sessionsResult.count,
+          },
+        },
+      });
+
+      // e. Outbox email FR-015e (worker SES drainera plus tard)
+      await tx.mfaOutboxEmail.create({
+        data: {
+          recipientUserId: input.userId,
+          templateKind: 'device_changed',
+          payload: {
+            changedAt: new Date().toISOString(),
+            actorIp: input.actorIp ?? 'unknown',
+            recipientEmail: input.userEmail,
+          },
+        },
+      });
+
+      return { sessionsRevokedCount: sessionsResult.count };
     });
 
     return {
@@ -159,6 +189,7 @@ export class ChangeDeviceUseCase {
       keyUri: this.totpValidator.buildKeyUri(input.userEmail, newSecretClear),
       backupCodes: clearCodes,
       enrollmentRequestId: input.enrollmentRequestId,
+      sessionsRevokedCount: result.sessionsRevokedCount,
     };
   }
 

@@ -93,11 +93,27 @@ export class EnrollTotpUseCase {
     const encrypted = this.encrypter.encrypt(secret);
 
     // 3. Supersede : invalide tout pending existant + insert nouveau.
-    const created = await this.secrets.supersedePending({
-      userId: input.userId,
-      encryptedSecret: encrypted,
-      enrollmentRequestId: input.enrollmentRequestId,
-    });
+    //
+    // BUG_008 ultraréview : race TOCTOU possible — entre la
+    // findActiveByUserId ligne 86 et l'INSERT ici, un autre flow
+    // peut activer un secret (via /confirm concurrent). Le repository
+    // re-check sous transaction et throw `new Error('MFA_ALREADY_ENROLLED')`
+    // — sans catch, le défaut NestJS produit 500 Internal Server
+    // Error. Translation explicite en 409 ConflictException pour
+    // contrat API cohérent.
+    let created: Awaited<ReturnType<MfaSecretRepository['supersedePending']>>;
+    try {
+      created = await this.secrets.supersedePending({
+        userId: input.userId,
+        encryptedSecret: encrypted,
+        enrollmentRequestId: input.enrollmentRequestId,
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message === 'MFA_ALREADY_ENROLLED') {
+        throw new ConflictException({ code: 'MFA_ALREADY_ENROLLED' });
+      }
+      throw e;
+    }
 
     // 4. Génère 10 backup codes clairs + hash bcrypt.
     const clearCodes = generateBatch();

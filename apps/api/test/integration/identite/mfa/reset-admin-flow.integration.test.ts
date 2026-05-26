@@ -18,11 +18,9 @@ import { ResetMfaAdminUseCase } from '../../../../src/modules/identite/applicati
 import { BcryptBackupCodeHasher } from '../../../../src/modules/identite/infrastructure/bcrypt-backup-code-hasher';
 import { NodeCryptoTotpSecretEncrypter } from '../../../../src/modules/identite/infrastructure/node-crypto-totp-secret-encrypter';
 import { OtplibTotpValidator } from '../../../../src/modules/identite/infrastructure/otplib-totp-validator';
-import { PrismaActiveSessionRevoker } from '../../../../src/modules/identite/infrastructure/prisma-active-session-revoker';
 import { PrismaBackupCodeRepository } from '../../../../src/modules/identite/infrastructure/prisma-backup-code-repository';
 import { PrismaMfaAuditWriter } from '../../../../src/modules/identite/infrastructure/prisma-mfa-audit-writer';
 import { PrismaMfaSecretRepository } from '../../../../src/modules/identite/infrastructure/prisma-mfa-secret-repository';
-import { SesMfaNotificationMailer } from '../../../../src/modules/identite/infrastructure/ses-mfa-notification-mailer';
 
 authenticator.options = { step: 30, window: 1, digits: 6 };
 
@@ -114,12 +112,7 @@ async function seedEnrolledUser(
 }
 
 function buildUseCase(): ResetMfaAdminUseCase {
-  return new ResetMfaAdminUseCase(
-    new PrismaMfaSecretRepository(),
-    new PrismaActiveSessionRevoker(),
-    new PrismaMfaAuditWriter(),
-    new SesMfaNotificationMailer(),
-  );
+  return new ResetMfaAdminUseCase(new PrismaMfaSecretRepository());
 }
 
 const HEAVY = 60_000;

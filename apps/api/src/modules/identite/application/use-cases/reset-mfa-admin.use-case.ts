@@ -24,16 +24,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  ACTIVE_SESSION_REVOKER,
-  type ActiveSessionRevoker,
-} from '../ports/active-session-revoker.port';
 import type { AuthRole } from '../ports/auth-session-reader.port';
-import { MFA_AUDIT_WRITER, type MfaAuditWriter } from '../ports/mfa-audit-writer.port';
-import {
-  MFA_NOTIFICATION_MAILER,
-  type MfaNotificationMailer,
-} from '../ports/mfa-notification-mailer.port';
 import {
   MFA_SECRET_REPOSITORY,
   type MfaSecretRepository,
@@ -56,12 +47,7 @@ export interface ResetMfaAdminResult {
 
 @Injectable()
 export class ResetMfaAdminUseCase {
-  constructor(
-    @Inject(MFA_SECRET_REPOSITORY) private readonly secrets: MfaSecretRepository,
-    @Inject(ACTIVE_SESSION_REVOKER) private readonly sessionRevoker: ActiveSessionRevoker,
-    @Inject(MFA_AUDIT_WRITER) private readonly audit: MfaAuditWriter,
-    @Inject(MFA_NOTIFICATION_MAILER) private readonly mailer: MfaNotificationMailer,
-  ) {}
+  constructor(@Inject(MFA_SECRET_REPOSITORY) private readonly secrets: MfaSecretRepository) {}
 
   async execute(input: ResetMfaAdminInput): Promise<ResetMfaAdminResult> {
     // 1. Auto-reset interdit (FR-022a).
@@ -89,39 +75,79 @@ export class ResetMfaAdminUseCase {
     const adminCountBefore = targetUser.role === 'admin' ? await this.countActiveAdmins() : 0;
     const warningDisplayedLastAdmin = targetUser.role === 'admin' && adminCountBefore === 2;
 
-    // 5. DELETE secret + cascade + sessions + buckets orphelins
-    //    + audit + mailer. Atomicité Prisma transaction.
+    // 5. BUG_002 ultraréview : VRAIMENT atomique. Le code précédent
+    //    enchaînait `await` séquentiels (delete secret → revoke
+    //    sessions → audit.append → mailer.send) — si l'audit ou le
+    //    mailer plantait, le secret + les sessions étaient déjà
+    //    supprimés sans trace immuable. Violation Principe IX
+    //    (mutation sans audit), violation Loi 25 + FR-022.
+    //
+    //    Inclut maintenant dans UNE transaction :
+    //      - DELETE secret (cascade backup codes via FK)
+    //      - DELETE sessions du target
+    //      - DELETE buckets stepup orphelins
+    //      - INSERT audit immuable
+    //      - INSERT mfa_outbox_emails (drainé async par worker SES)
     const now = new Date();
-    await this.secrets.deleteAllByUserId(input.targetUserId);
-    const sessionsRevokedCount = await this.sessionRevoker.revokeAll(input.targetUserId);
-
-    await this.audit.append({
-      eventType: 'mfa_reset_by_admin',
-      actorUserId: input.actor.id,
-      targetUserId: input.targetUserId,
-      targetRole: targetUser.role as AuthRole,
-      ...(input.actorIp ? { actorIp: input.actorIp } : {}),
-      justification: input.justification,
-      metadata: {
-        previousMfaSecretId: activeSecret.id,
-        sessionsRevokedCount,
-        warningDisplayedLastAdmin,
-        idempotencyKey: input.idempotencyKey,
-      },
-    });
-
-    // Courriel FR-026.
-    // Côté conseiller : actorLabel = "équipe support".
-    // Côté admin cible : actorLabel = prénom + nom de l'admin acteur
-    // (traçabilité pair-à-pair).
     const actorLabel =
       targetUser.role === 'admin' && input.actor.name ? input.actor.name : 'équipe support';
-    await this.mailer.sendAdminResetNotice({
-      recipientUserId: input.targetUserId,
-      recipientEmail: targetUser.email ?? `user-${input.targetUserId}`,
-      resetAt: now,
-      justification: input.justification,
-      actorAdminName: actorLabel,
+
+    const sessionsRevokedCount = await prisma.$transaction(async (tx) => {
+      // a. DELETE secret cible (cascade FK backup codes).
+      await tx.mfaSecret.deleteMany({ where: { userId: input.targetUserId } });
+
+      // b. DELETE sessions du target + buckets stepup orphelins.
+      const targetSessions = await tx.authSession.findMany({
+        where: { userId: input.targetUserId },
+        select: { id: true },
+      });
+      const sessionIds = targetSessions.map((s) => s.id);
+      const sessionsDeleted = await tx.authSession.deleteMany({
+        where: { userId: input.targetUserId },
+      });
+      if (sessionIds.length > 0) {
+        await tx.mfaRateLimitBucket.deleteMany({
+          where: {
+            userId: input.targetUserId,
+            kind: 'stepup_totp',
+            sessionId: { in: sessionIds },
+          },
+        });
+      }
+
+      // c. Audit immuable.
+      await tx.mfaAuditEvent.create({
+        data: {
+          eventType: 'mfa_reset_by_admin',
+          actorUserId: input.actor.id,
+          targetUserId: input.targetUserId,
+          targetRole: targetUser.role as AuthRole,
+          actorIp: input.actorIp ?? null,
+          justification: input.justification,
+          metadata: {
+            previousMfaSecretId: activeSecret.id,
+            sessionsRevokedCount: sessionsDeleted.count,
+            warningDisplayedLastAdmin,
+            idempotencyKey: input.idempotencyKey,
+          },
+        },
+      });
+
+      // d. Outbox email FR-026 (drainé par worker SES feature 003).
+      await tx.mfaOutboxEmail.create({
+        data: {
+          recipientUserId: input.targetUserId,
+          templateKind: 'admin_reset',
+          payload: {
+            resetAt: now.toISOString(),
+            justification: input.justification,
+            actorAdminName: actorLabel,
+            recipientEmail: targetUser.email ?? `user-${input.targetUserId}`,
+          },
+        },
+      });
+
+      return sessionsDeleted.count;
     });
 
     return {
