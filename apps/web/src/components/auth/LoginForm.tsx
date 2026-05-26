@@ -5,7 +5,7 @@
 // Validation client-side via react-hook-form + zod resolver.
 // Affiche un countdown lisible (M2) en cas de lockout — `aria-live="polite"`.
 
-import { type LoginDto, LoginDtoSchema } from '@cv/auth-domain';
+import { type LoginDto, LoginDtoSchema } from '@cv/auth-domain/dtos';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
