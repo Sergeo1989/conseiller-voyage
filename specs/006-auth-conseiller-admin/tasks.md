@@ -145,32 +145,32 @@ description: "Décomposition exécutable — Auth conseiller + admin (feature 00
 
 ### Tests US2 (TDD, RED avant GREEN)
 
-- [ ] T062 [P] [US2] **Test RED** — `apps/api/test/integration/identite/auth/login.integration.test.ts` : login nominal conseiller, login mauvais password, login email inconnu (anti-énumération), lockout compte 5e échec, lockout IP 20e échec sur comptes différents, redirect post-login (verified MFA, verified non-MFA, admin J1, email non vérifié).
-- [ ] T063 [P] [US2] **Test RED** — chronométrage SC-007 dans la même suite : compte existe vs n'existe pas → écart-type < 50 ms (validate cf. R5).
+- [X] T062 [P] [US2] **Test RED** — `apps/api/test/integration/identite/auth/login.integration.test.ts` : login nominal conseiller, login mauvais password, login email inconnu (anti-énumération), lockout compte 5e échec, lockout IP 20e échec sur comptes différents, redirect post-login (verified MFA, verified non-MFA, admin J1, email non vérifié).
+- [X] T063 [P] [US2] **Test RED** — chronométrage SC-007 dans la même suite : compte existe vs n'existe pas → écart-type < 50 ms (validate cf. R5).
 
 ### PrismaPasswordVerifier + rewiring (cœur du remplacement de 002a)
 
-- [ ] T064 [US2] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-password-verifier.ts` : implémente le port `PasswordVerifier` (002a) via `prehashAndHash` + `bcrypt.compare`. Méthode signature inchangée — drop-in replacement.
-- [ ] T065 [US2] Rewire `apps/api/src/modules/identite/identite.module.ts` : `{ provide: PASSWORD_VERIFIER, useClass: PrismaPasswordVerifier }` (remplace `StubPasswordVerifier` mais le stub reste exporté pour tests — garde son throw NODE_ENV=production cf. C5).
-- [ ] T066 [US2] Vérifier que les tests intégration 002a (MFA US6 device change) restent verts avec `PrismaPasswordVerifier`. Pas de régression.
+- [X] T064 [US2] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-password-verifier.ts` : implémente le port `PasswordVerifier` (002a) via `prehashAndHash` + `bcrypt.compare`. Méthode signature inchangée — drop-in replacement.
+- [X] T065 [US2] Rewire `apps/api/src/modules/identite/identite.module.ts` : `{ provide: PASSWORD_VERIFIER, useClass: PrismaPasswordVerifier }` (remplace `StubPasswordVerifier` mais le stub reste exporté pour tests — garde son throw NODE_ENV=production cf. C5).
+- [X] T066 [US2] Vérifier que les tests intégration 002a (MFA US6 device change) restent verts avec `PrismaPasswordVerifier`. Pas de régression.
 
 ### LoginUseCase + controller
 
-- [ ] T067 [US2] Implémenter `apps/api/src/modules/identite/application/use-cases/login.use-case.ts` : lookup symétrique JOIN (R5/C6), bcrypt compare (réel ou dummy), incrément bucket account + IP atomique, audit `login_success`/`login_failed`/`login_locked`, retour `{ userId, role, redirect }` (logique de redirect héritée 002a).
-- [ ] T068 [US2] Implémenter `apps/api/src/modules/identite/interface/auth-login.controller.ts` : `POST /api/auth/login` consommé par Auth.js v5 callback `authorize` (server-to-server) OU directement par tests intégration. Header `Retry-After` exposé sur 423.
+- [X] T067 [US2] Implémenter `apps/api/src/modules/identite/application/use-cases/login.use-case.ts` : lookup symétrique JOIN (R5/C6), bcrypt compare (réel ou dummy), incrément bucket account + IP atomique, audit `login_success`/`login_failed`/`login_locked`, retour `{ userId, role, redirect }` (logique de redirect héritée 002a).
+- [X] T068 [US2] Implémenter `apps/api/src/modules/identite/interface/auth-login.controller.ts` : `POST /api/auth/login` consommé par Auth.js v5 callback `authorize` (server-to-server) OU directement par tests intégration. Header `Retry-After` exposé sur 423.
 
 ### Auth.js v5 wiring côté `apps/web`
 
-- [ ] T069 [US2] Étendre `apps/web/src/auth.ts` : activer le provider `Credentials` avec callback `authorize` qui POST `${API_URL}/api/auth/login` server-to-server. Cookie config dev/prod override (`__Host-cv.session.token` prod, `cv.session.token` dev, cf. H5).
-- [ ] T070 [US2] Configurer `session.maxAge = 30 * 24 * 60 * 60` + `session.updateAge = 24 * 60 * 60` (R7).
-- [ ] T071 [US2] Vérifier que le middleware Next.js existant (002a) supporte la redirection post-login conditionnelle (verified MFA → `/mfa/verify`, etc.). Adapter si nécessaire.
+- [X] T069 [US2] Étendre `apps/web/src/auth.ts` : activer le provider `Credentials` avec callback `authorize` qui POST `${API_URL}/api/auth/login` server-to-server. Cookie config dev/prod override (`__Host-cv.session.token` prod, `cv.session.token` dev, cf. H5).
+- [X] T070 [US2] Configurer `session.maxAge = 30 * 24 * 60 * 60` + `session.updateAge = 24 * 60 * 60` (R7).
+- [X] T071 [US2] Vérifier que le middleware Next.js existant (002a) supporte la redirection post-login conditionnelle (verified MFA → `/mfa/verify`, etc.). Adapter si nécessaire.
 
 ### Page web `/connexion`
 
-- [ ] T072 [P] [US2] Créer `apps/web/src/app/(auth)/connexion/page.tsx` (Server Component, `noindex`, bandeau "vérifié" si `?verified=1`).
-- [ ] T073 [P] [US2] Créer `apps/web/src/app/(auth)/connexion/_components/login-form.tsx` ('use client', react-hook-form, bouton "Mot de passe oublié").
-- [ ] T074 [P] [US2] Créer Server Action `apps/web/src/app/(auth)/connexion/actions.ts` : appelle `signIn('credentials', { email, password, redirect: false })`. Gère erreurs (INVALID_CREDENTIALS, ACCOUNT_LOCKED avec countdown UI — M2).
-- [ ] T075 [P] [US2] Créer composant `<RetryAfterCountdown />` réutilisable dans `apps/web/src/components/auth/` (lit le header Retry-After, affiche countdown `aria-live="polite"`). Pattern aligné sur `<ResendCountdownButton />`.
+- [X] T072 [P] [US2] Créer `apps/web/src/app/(auth)/connexion/page.tsx` (Server Component, `noindex`, bandeau "vérifié" si `?verified=1`).
+- [X] T073 [P] [US2] Créer `apps/web/src/app/(auth)/connexion/_components/login-form.tsx` ('use client', react-hook-form, bouton "Mot de passe oublié").
+- [X] T074 [P] [US2] Créer Server Action `apps/web/src/app/(auth)/connexion/actions.ts` : appelle `signIn('credentials', { email, password, redirect: false })`. Gère erreurs (INVALID_CREDENTIALS, ACCOUNT_LOCKED avec countdown UI — M2).
+- [X] T075 [P] [US2] Créer composant `<RetryAfterCountdown />` réutilisable dans `apps/web/src/components/auth/` (lit le header Retry-After, affiche countdown `aria-live="polite"`). Pattern aligné sur `<ResendCountdownButton />`.
 
 ### Validation US2
 

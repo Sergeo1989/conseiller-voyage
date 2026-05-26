@@ -26,6 +26,7 @@ import { TOTP_VALIDATOR } from './application/ports/totp-validator.port';
 import { ChangeDeviceUseCase } from './application/use-cases/change-device.use-case';
 import { CountActiveAdminsUseCase } from './application/use-cases/count-active-admins.use-case';
 import { EnrollTotpUseCase } from './application/use-cases/enroll-totp.use-case';
+import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RegenerateBackupCodesUseCase } from './application/use-cases/regenerate-backup-codes.use-case';
 import { ResetMfaAdminUseCase } from './application/use-cases/reset-mfa-admin.use-case';
 import { SignupConseillerUseCase } from './application/use-cases/signup-conseiller.use-case';
@@ -50,8 +51,12 @@ import { PrismaEmailVerificationTokenRepository } from './infrastructure/prisma-
 import { PrismaLoginLockoutRepository } from './infrastructure/prisma-login-lockout-repository';
 import { PrismaMfaAuditWriter } from './infrastructure/prisma-mfa-audit-writer';
 import { PrismaMfaSecretRepository } from './infrastructure/prisma-mfa-secret-repository';
+import { PrismaPasswordVerifier } from './infrastructure/prisma-password-verifier';
 import { SesMfaNotificationMailer } from './infrastructure/ses-mfa-notification-mailer';
-import { StubPasswordVerifier } from './infrastructure/stub-password-verifier';
+// StubPasswordVerifier reste disponible pour les tests d'intégration
+// MFA US6 (overrideProvider). Import retiré du module — il est wiré
+// uniquement par les test files qui en ont besoin.
+import { AuthLoginController } from './interface/auth-login.controller';
 import { AuthSignupController } from './interface/auth-signup.controller';
 import { AuthGuard } from './interface/auth.guard';
 import { MfaAdminResetController } from './interface/mfa-admin-reset.controller';
@@ -66,6 +71,7 @@ import { StepUpGuard } from './interface/step-up.guard';
   controllers: [
     // Auth (feature 002)
     AuthSignupController,
+    AuthLoginController,
     // MFA (feature 002a)
     MfaEnrollmentController,
     MfaStepUpController,
@@ -90,10 +96,14 @@ import { StepUpGuard } from './interface/step-up.guard';
 
     // Use cases — feature 002 (auth conseiller + admin)
     SignupConseillerUseCase,
+    LoginUseCase,
 
-    // Password verifier (stub MVP — vrai impl Prisma via 002, Phase 4).
-    // Le stub garde son throw NODE_ENV=production (C5).
-    { provide: PASSWORD_VERIFIER, useClass: StubPasswordVerifier },
+    // Password verifier — feature 002 Phase 4 : PrismaPasswordVerifier
+    // remplace StubPasswordVerifier (résout bug_007 du review 002a).
+    // Le stub reste exporté en infrastructure/ avec son throw
+    // NODE_ENV=production (C5 — défense en profondeur) ; il est injecté
+    // par les tests d'intégration MFA US6 via overrideProvider().
+    { provide: PASSWORD_VERIFIER, useClass: PrismaPasswordVerifier },
 
     // Session Auth.js (livré par 001)
     { provide: AUTH_SESSION_READER, useClass: PrismaAuthSessionReader },
