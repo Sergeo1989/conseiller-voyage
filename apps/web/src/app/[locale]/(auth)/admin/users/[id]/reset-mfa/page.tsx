@@ -38,6 +38,17 @@ export default async function AdminResetMfaPage({ params }: PageProps) {
     redirect(`/${toUrlLocale(locale)}`);
   }
 
+  // US5 — MFA admin obligatoire dès J1. Si l'admin courant n'a pas
+  // de MFA actif, redirect vers l'enrôlement admin avant tout accès
+  // à la console.
+  const actorSecret = await prisma.mfaSecret.findFirst({
+    where: { userId: session.user.id, enabledAt: { not: null } },
+    select: { id: true },
+  });
+  if (!actorSecret) {
+    redirect(`/${toUrlLocale(locale)}/admin/mfa/enroll`);
+  }
+
   // Lookup target avec MFA actif
   const target = await prisma.authUser.findUnique({
     where: { id: targetUserId },
