@@ -60,6 +60,26 @@ const EnvSchema = z
           return false;
         }
       }, 'MFA_KEK_BASE64 must decode to exactly 32 bytes (256 bits) of base64'),
+
+    // Auth — Clé de signature des tokens JWT à usage unique (feature 002).
+    // 32 octets aléatoires encodés Base64 (= 44 caractères avec padding).
+    // Signe les tokens de vérification email, reset password, invitation admin.
+    // Mirror du pattern MFA_KEK_BASE64 : refus de zéros en production.
+    AUTH_TOKEN_SECRET: z
+      .string()
+      .min(1, 'AUTH_TOKEN_SECRET is required (32 random bytes encoded base64)')
+      .refine((v) => {
+        try {
+          return Buffer.from(v, 'base64').length === 32;
+        } catch {
+          return false;
+        }
+      }, 'AUTH_TOKEN_SECRET must decode to exactly 32 bytes (256 bits) of base64'),
+
+    // Auth — Confiance dans l'en-tête X-Forwarded-For pour l'audit IP (feature 002).
+    // En prod derrière CloudFront/ALB : 'true'. En dev local : 'false' (défaut).
+    // Cf. apps/api/src/common/actor-ip.util.ts (002a) + research R9.
+    TRUSTED_PROXY_HEADERS: z.enum(['true', 'false']).default('false'),
   })
   .superRefine((env, ctx) => {
     // T006 — refus de la KEK de test (32 octets de zéro) en production.
@@ -75,6 +95,18 @@ const EnvSchema = z
           message:
             'MFA_KEK_BASE64 must not be the all-zeros test value in production. ' +
             'Provision a real KEK via AWS Secrets Manager (cv-mfa-kek).',
+        });
+      }
+
+      // Feature 002 — même garde pour AUTH_TOKEN_SECRET en prod.
+      const authSecret = Buffer.from(env.AUTH_TOKEN_SECRET, 'base64');
+      if (authSecret.length === 32 && authSecret.every((byte) => byte === 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['AUTH_TOKEN_SECRET'],
+          message:
+            'AUTH_TOKEN_SECRET must not be the all-zeros test value in production. ' +
+            'Provision a real secret via AWS Secrets Manager (cv-auth-token-secret).',
         });
       }
     }

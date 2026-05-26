@@ -22,14 +22,14 @@ description: "Décomposition exécutable — Auth conseiller + admin (feature 00
 
 **Objectif** : Préparer le terrain — nouveau package `@cv/auth-domain`, dépendances, variables d'environnement, configuration logger.
 
-- [ ] T001 Créer le workspace `packages/auth-domain` avec `package.json`, `tsconfig.json`, `tsup.config.ts` (build CommonJS + ESM), `vitest.config.ts`. Aligner sur la structure de `packages/mfa` (002a).
-- [ ] T002 [P] Mettre à jour `pnpm-workspace.yaml` pour inclure `packages/auth-domain`. Vérifier `pnpm install` sans erreur.
-- [ ] T003 [P] Ajouter `jose@^5` aux dépendances de `apps/api/package.json` (signature JWT HS256, cf. R2).
-- [ ] T004 [P] Ajouter `react-hook-form@^7` et `@hookform/resolvers@^3` aux dépendances de `apps/web/package.json` (formulaires accessibles).
-- [ ] T005 [P] Ajouter `AUTH_TOKEN_SECRET` (32 octets base64) à `.env.dev`, `.env.example`. Documenter dans `apps/api/src/env.ts` la validation au boot (refus de valeur < 32 octets ou zeros, mirror du pattern `MFA_KEK_BASE64` de 002a).
-- [ ] T006 [P] Étendre `apps/api/src/env.ts` (ajout schéma Zod pour `AUTH_TOKEN_SECRET` + `TRUSTED_PROXY_HEADERS`).
-- [ ] T007 Configurer le logger Pino global dans `apps/api/src/main.ts` avec `redact: ['req.body.password', 'req.body.newPassword', 'req.body.currentPassword', 'req.body.newPasswordConfirmation', 'req.headers.authorization', 'req.headers.cookie']` (R12 / H10). Vérifier que le bootstrap n'est pas régressé par cette config.
-- [ ] T008 [P] Ajouter `ipaddr.js` déjà présent (réutilisation 002a `actor-ip.util.ts`) — vérifier juste l'import correct dans `apps/api`.
+- [X] T001 Créer le workspace `packages/auth-domain` avec `package.json`, `tsconfig.json`, `tsup.config.ts` (build CommonJS + ESM), `vitest.config.ts`. Aligner sur la structure de `packages/mfa` (002a).
+- [X] T002 [P] Mettre à jour `pnpm-workspace.yaml` pour inclure `packages/auth-domain`. Vérifier `pnpm install` sans erreur.
+- [X] T003 [P] Ajouter `jose@^5` aux dépendances de `apps/api/package.json` (signature JWT HS256, cf. R2).
+- [X] T004 [P] Ajouter `react-hook-form@^7` et `@hookform/resolvers@^3` aux dépendances de `apps/web/package.json` (formulaires accessibles).
+- [X] T005 [P] Ajouter `AUTH_TOKEN_SECRET` (32 octets base64) à `.env.dev`, `.env.example`. Documenter dans `apps/api/src/env.ts` la validation au boot (refus de valeur < 32 octets ou zeros, mirror du pattern `MFA_KEK_BASE64` de 002a).
+- [X] T006 [P] Étendre `apps/api/src/env.ts` (ajout schéma Zod pour `AUTH_TOKEN_SECRET` + `TRUSTED_PROXY_HEADERS`).
+- [X] T007 Configurer le logger Pino global dans `apps/api/src/main.ts` avec `redact: ['req.body.password', 'req.body.newPassword', 'req.body.currentPassword', 'req.body.newPasswordConfirmation', 'req.headers.authorization', 'req.headers.cookie']` (R12 / H10). Vérifier que le bootstrap n'est pas régressé par cette config.
+- [X] T008 [P] Ajouter `ipaddr.js` déjà présent (réutilisation 002a `actor-ip.util.ts`) — vérifier juste l'import correct dans `apps/api`.
 
 ---
 
