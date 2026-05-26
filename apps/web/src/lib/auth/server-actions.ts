@@ -185,6 +185,232 @@ export async function resendVerificationEmailAction(email: string): Promise<Rese
 }
 
 // ---------------------------------------------------------------------
+// requestPasswordResetAction (US5)
+// ---------------------------------------------------------------------
+
+export type RequestResetResult = { readonly kind: 'ok' } | { readonly kind: 'error' };
+
+export async function requestPasswordResetAction(email: string): Promise<RequestResetResult> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/password-reset-request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+    cache: 'no-store',
+  });
+  if (res.status === 202) return { kind: 'ok' };
+  return { kind: 'error' };
+}
+
+// ---------------------------------------------------------------------
+// completePasswordResetAction (US5)
+// ---------------------------------------------------------------------
+
+export type CompleteResetResult =
+  | { readonly kind: 'ok' }
+  | { readonly kind: 'invalid_or_expired' }
+  | { readonly kind: 'validation_error'; readonly errors: readonly string[] }
+  | { readonly kind: 'error' };
+
+export async function completePasswordResetAction(
+  token: string,
+  newPassword: string,
+): Promise<CompleteResetResult> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/password-reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, newPassword }),
+    cache: 'no-store',
+  });
+  if (res.status === 200) return { kind: 'ok' };
+  if (res.status === 400) {
+    const data = (await res.json().catch(() => null)) as {
+      code?: string;
+      errors?: unknown;
+    } | null;
+    if (data?.code === 'INVALID_OR_EXPIRED_TOKEN') return { kind: 'invalid_or_expired' };
+    if (data?.code === 'VALIDATION_FAILED' && Array.isArray(data.errors)) {
+      return {
+        kind: 'validation_error',
+        errors: data.errors.map((e) => (typeof e === 'string' ? e : String(e))),
+      };
+    }
+  }
+  return { kind: 'error' };
+}
+
+// ---------------------------------------------------------------------
+// changePasswordAction (US6)
+// ---------------------------------------------------------------------
+
+export type ChangePasswordResult =
+  | { readonly kind: 'ok'; readonly sessionsRevokedCount: number }
+  | { readonly kind: 'invalid_current' }
+  | { readonly kind: 'password_reuse' }
+  | { readonly kind: 'validation_error'; readonly errors: readonly string[] }
+  | { readonly kind: 'step_up_required' }
+  | { readonly kind: 'error' };
+
+export async function changePasswordAction(
+  currentPassword: string,
+  newPassword: string,
+  newPasswordConfirmation: string,
+): Promise<ChangePasswordResult> {
+  const cookieStore = await cookies();
+  const cookie = cookieStore
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join('; ');
+  const res = await fetch(`${API_BASE_URL}/api/auth/password-change`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    body: JSON.stringify({ currentPassword, newPassword, newPasswordConfirmation }),
+    cache: 'no-store',
+  });
+  const data = (await res.json().catch(() => null)) as {
+    sessionsRevokedCount?: number;
+    code?: string;
+    errors?: unknown;
+  } | null;
+  if (res.status === 200 && typeof data?.sessionsRevokedCount === 'number') {
+    return { kind: 'ok', sessionsRevokedCount: data.sessionsRevokedCount };
+  }
+  if (data?.code === 'STEP_UP_REQUIRED') return { kind: 'step_up_required' };
+  if (data?.code === 'INVALID_CURRENT_PASSWORD') return { kind: 'invalid_current' };
+  if (data?.code === 'PASSWORD_REUSE') return { kind: 'password_reuse' };
+  if (data?.code === 'VALIDATION_FAILED' && Array.isArray(data.errors)) {
+    return {
+      kind: 'validation_error',
+      errors: data.errors.map((e) => (typeof e === 'string' ? e : String(e))),
+    };
+  }
+  return { kind: 'error' };
+}
+
+// ---------------------------------------------------------------------
+// inviteAdminAction + acceptAdminInvitationAction (US7)
+// ---------------------------------------------------------------------
+
+export type InviteAdminResult =
+  | { readonly kind: 'ok'; readonly invitationId: string; readonly expiresAt: string }
+  | { readonly kind: 'self_invitation_forbidden' }
+  | { readonly kind: 'target_already_registered' }
+  | { readonly kind: 'invitation_already_active'; readonly expiresAt: string }
+  | { readonly kind: 'error' };
+
+export async function inviteAdminAction(targetEmail: string): Promise<InviteAdminResult> {
+  const cookieStore = await cookies();
+  const cookie = cookieStore
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join('; ');
+  const res = await fetch(`${API_BASE_URL}/admin/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: cookie,
+      'Idempotency-Key': randomBytes(16).toString('hex'),
+    },
+    body: JSON.stringify({ targetEmail }),
+    cache: 'no-store',
+  });
+  const data = (await res.json().catch(() => null)) as {
+    invitationId?: string;
+    expiresAt?: string;
+    code?: string;
+  } | null;
+  if (res.status === 202 && data?.invitationId && data.expiresAt) {
+    return { kind: 'ok', invitationId: data.invitationId, expiresAt: data.expiresAt };
+  }
+  if (data?.code === 'SELF_INVITATION_FORBIDDEN') return { kind: 'self_invitation_forbidden' };
+  if (data?.code === 'TARGET_EMAIL_ALREADY_REGISTERED')
+    return { kind: 'target_already_registered' };
+  if (data?.code === 'INVITATION_ALREADY_ACTIVE' && data.expiresAt) {
+    return { kind: 'invitation_already_active', expiresAt: data.expiresAt };
+  }
+  return { kind: 'error' };
+}
+
+export type AcceptInvitationResult =
+  | { readonly kind: 'ok'; readonly redirect: string }
+  | { readonly kind: 'invalid_or_expired' }
+  | { readonly kind: 'target_already_registered' }
+  | { readonly kind: 'validation_error'; readonly errors: readonly string[] }
+  | { readonly kind: 'error' };
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: orchestrator C1 — 3 étapes (consume → login → session) avec branchements d'erreur typés.
+export async function acceptAdminInvitationAction(
+  token: string,
+  firstName: string,
+  lastName: string,
+  password: string,
+): Promise<AcceptInvitationResult> {
+  // 1. Consume côté API (crée user + account)
+  const consumeRes = await fetch(`${API_BASE_URL}/api/auth/admin-invitation/consume`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token,
+      firstName,
+      lastName,
+      password,
+      acceptedTerms: true,
+      acceptedPrivacyPolicy: true,
+    }),
+    cache: 'no-store',
+  });
+  const consumeData = (await consumeRes.json().catch(() => null)) as {
+    email?: string;
+    code?: string;
+    errors?: unknown;
+  } | null;
+  if (consumeRes.status !== 200 || !consumeData?.email) {
+    if (consumeData?.code === 'INVALID_OR_EXPIRED_TOKEN') return { kind: 'invalid_or_expired' };
+    if (consumeData?.code === 'TARGET_EMAIL_ALREADY_REGISTERED') {
+      return { kind: 'target_already_registered' };
+    }
+    if (consumeData?.code === 'VALIDATION_FAILED' && Array.isArray(consumeData.errors)) {
+      return {
+        kind: 'validation_error',
+        errors: consumeData.errors.map((e) => (typeof e === 'string' ? e : String(e))),
+      };
+    }
+    return { kind: 'error' };
+  }
+
+  // 2. Login automatique
+  const loginRes = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: consumeData.email, password }),
+    cache: 'no-store',
+  });
+  if (loginRes.status !== 200) return { kind: 'error' };
+  const loginPayload = (await loginRes.json()) as {
+    userId: string;
+    role: 'voyageur' | 'conseiller' | 'admin';
+    redirect: string;
+  };
+
+  // 3. Crée session + cookie
+  const sessionToken = randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
+  await prisma.authSession.create({
+    data: { sessionToken, userId: loginPayload.userId, expires },
+  });
+  const isProd = process.env.NODE_ENV === 'production';
+  const cookieStore = await cookies();
+  cookieStore.set(isProd ? SESSION_COOKIE_NAME_PROD : SESSION_COOKIE_NAME_DEV, sessionToken, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: isProd,
+    path: '/',
+    expires,
+  });
+
+  return { kind: 'ok', redirect: loginPayload.redirect };
+}
+
+// ---------------------------------------------------------------------
 // logoutAction (US4)
 // ---------------------------------------------------------------------
 //

@@ -5,4 +5,7 @@
 //   US5 — password-reset, password-changed (Phase 7)
 //   US7 — admin-invitation (Phase 9)
 
+export * from './admin-invitation';
 export * from './email-verification';
+export * from './password-changed';
+export * from './password-reset';
