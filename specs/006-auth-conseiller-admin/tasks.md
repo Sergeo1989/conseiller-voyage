@@ -186,20 +186,20 @@ description: "Décomposition exécutable — Auth conseiller + admin (feature 00
 
 ### Tests US3 (TDD)
 
-- [ ] T077 [P] [US3] **Test RED** — `apps/api/test/integration/identite/auth/verify-email.integration.test.ts` : GET avec token valide, expiré, déjà consommé, signature invalide ; POST resend pour compte non-vérifié, déjà-vérifié, inexistant, 4ᵉ resend (rate-limit).
+- [X] T077 [P] [US3] **Test RED** — `apps/api/test/integration/identite/auth/verify-email.integration.test.ts` : GET avec token valide, expiré, déjà consommé, signature invalide ; POST resend pour compte non-vérifié, déjà-vérifié, inexistant, 4ᵉ resend (rate-limit).
 
 ### Use cases + controller
 
-- [ ] T078 [US3] Implémenter `apps/api/src/modules/identite/application/use-cases/verify-email.use-case.ts` : vérif JWT signature + purpose + exp + DB nonce + `UPDATE auth_users SET emailVerified` + UPDATE token consumedAt + audit `email_verified` (transaction).
-- [ ] T079 [US3] Implémenter `apps/api/src/modules/identite/application/use-cases/resend-email-verification.use-case.ts` : lookup compte non-vérifié + check bucket `email_verification_resend` (3/h/compte) + INSERT nouveau token + INSERT outbox.
-- [ ] T080 [US3] Implémenter `apps/api/src/modules/identite/interface/auth-email-verification.controller.ts` : `GET /api/auth/verify-email?token=...` (redirect 302) + `POST /api/auth/verify-email/resend`.
+- [X] T078 [US3] Implémenter `apps/api/src/modules/identite/application/use-cases/verify-email.use-case.ts` : vérif JWT signature + purpose + exp + DB nonce + `UPDATE auth_users SET emailVerified` + UPDATE token consumedAt + audit `email_verified` (transaction).
+- [X] T079 [US3] Implémenter `apps/api/src/modules/identite/application/use-cases/resend-email-verification.use-case.ts` : lookup compte non-vérifié + check bucket `email_verification_resend` (3/h/compte) + INSERT nouveau token + INSERT outbox.
+- [X] T080 [US3] Implémenter `apps/api/src/modules/identite/interface/auth-email-verification.controller.ts` : `GET /api/auth/verify-email?token=...` (redirect 302) + `POST /api/auth/verify-email/resend`.
 
 ### Pages web US3
 
-- [ ] T081 [P] [US3] Créer `apps/web/src/app/(auth)/verifier-email/[token]/page.tsx` : Server Component, appelle l'API GET au mount via Server Action, redirige selon résultat. Inutile si on consomme l'API directement côté web — route purement de passage.
-- [ ] T082 [P] [US3] Créer `apps/web/src/app/(auth)/verifier-email/erreur/page.tsx` : page d'erreur "lien expiré" + bouton "renvoyer".
-- [ ] T083 [P] [US3] Créer composant réutilisable `apps/web/src/components/auth/resend-countdown-button.tsx` ('use client', `useState` countdown + `sessionStorage.resend_last_at` pour persister cf. M8, `aria-live="polite"`).
-- [ ] T084 [P] [US3] Brancher `<ResendCountdownButton />` sur `inscription/confirmation/page.tsx` (T060) et `verifier-email/erreur/page.tsx`.
+- [X] T081 [P] [US3] Créer `apps/web/src/app/(auth)/verifier-email/[token]/page.tsx` : Server Component, appelle l'API GET au mount via Server Action, redirige selon résultat. Inutile si on consomme l'API directement côté web — route purement de passage.
+- [X] T082 [P] [US3] Créer `apps/web/src/app/(auth)/verifier-email/erreur/page.tsx` : page d'erreur "lien expiré" + bouton "renvoyer".
+- [X] T083 [P] [US3] Créer composant réutilisable `apps/web/src/components/auth/resend-countdown-button.tsx` ('use client', `useState` countdown + `sessionStorage.resend_last_at` pour persister cf. M8, `aria-live="polite"`).
+- [X] T084 [P] [US3] Brancher `<ResendCountdownButton />` sur `inscription/confirmation/page.tsx` (T060) et `verifier-email/erreur/page.tsx`.
 
 ### Validation US3
 

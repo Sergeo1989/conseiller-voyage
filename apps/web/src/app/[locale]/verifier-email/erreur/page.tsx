@@ -1,16 +1,15 @@
-// Page /inscription/confirmation — Server Component post-signup US1.
+// Page /verifier-email/erreur — Server Component US3.
 //
-// Affiche le message statique « vérifiez vos spams » + bouton « Renvoyer »
-// avec countdown 60s (US3 / M8).
-//
-// noindex (page privée).
+// Affichée par le redirect du GET /api/auth/verify-email quand le token
+// est invalide, expiré, ou déjà consommé. Propose un renvoi de courriel
+// si l'utilisateur saisit son email.
 
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { ResendCountdownButton } from '../../../../components/auth/ResendCountdownButton';
 
 export const metadata: Metadata = {
-  title: 'Vérifiez votre courriel — Conseiller Voyage',
+  title: 'Lien expiré — Conseiller Voyage',
   robots: { index: false, follow: false },
 };
 
@@ -19,7 +18,7 @@ interface PageProps {
   searchParams: Promise<{ email?: string }>;
 }
 
-export default async function ConfirmationPage({
+export default async function VerifyEmailErrorPage({
   params,
   searchParams,
 }: PageProps): Promise<ReactNode> {
@@ -28,30 +27,24 @@ export default async function ConfirmationPage({
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="mb-2 text-2xl font-semibold text-slate-900">Vérifiez votre courriel</h1>
+      <h1 className="mb-2 text-2xl font-semibold text-slate-900">Lien expiré ou invalide</h1>
       <p className="mb-4 text-slate-700">
-        Nous venons d'envoyer un courriel de vérification
-        {email ? (
-          <>
-            {' '}
-            à <strong>{email}</strong>
-          </>
-        ) : null}
-        . Cliquez le lien dans ce courriel pour activer votre compte.
+        Le lien de vérification que vous avez utilisé n'est plus valide. C'est peut-être parce que :
       </p>
-      <p className="mb-6 text-slate-600">
-        Le courriel peut prendre quelques minutes à arriver. Pensez à vérifier vos courriels
-        indésirables ou spam.
-      </p>
+      <ul className="mb-6 list-inside list-disc space-y-1 text-slate-700">
+        <li>il a déjà été utilisé,</li>
+        <li>il a expiré (24 h après l'envoi),</li>
+        <li>il a été remplacé par un courriel plus récent.</li>
+      </ul>
       {email ? (
         <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
           <p className="mb-3 text-sm text-slate-700">
-            Vous n'avez rien reçu après quelques minutes ?
+            Demandez un nouveau lien pour <strong>{email}</strong>.
           </p>
           <ResendCountdownButton email={email} />
         </div>
       ) : (
-        <p className="text-sm text-slate-600">
+        <p className="text-slate-600">
           Retournez sur la{' '}
           <a href={`/${locale}/connexion`} className="text-blue-600 underline">
             page de connexion

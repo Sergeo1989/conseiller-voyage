@@ -28,10 +28,12 @@ import { CountActiveAdminsUseCase } from './application/use-cases/count-active-a
 import { EnrollTotpUseCase } from './application/use-cases/enroll-totp.use-case';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RegenerateBackupCodesUseCase } from './application/use-cases/regenerate-backup-codes.use-case';
+import { ResendEmailVerificationUseCase } from './application/use-cases/resend-email-verification.use-case';
 import { ResetMfaAdminUseCase } from './application/use-cases/reset-mfa-admin.use-case';
 import { SignupConseillerUseCase } from './application/use-cases/signup-conseiller.use-case';
 import { StepUpUseCase } from './application/use-cases/step-up.use-case';
 import { VerifyBackupCodeUseCase } from './application/use-cases/verify-backup-code.use-case';
+import { VerifyEmailUseCase } from './application/use-cases/verify-email.use-case';
 import { VerifyTotpUseCase } from './application/use-cases/verify-totp.use-case';
 import { BcryptBackupCodeHasher } from './infrastructure/bcrypt-backup-code-hasher';
 import { JoseTokenIssuer } from './infrastructure/jose-token-issuer';
@@ -56,6 +58,7 @@ import { SesMfaNotificationMailer } from './infrastructure/ses-mfa-notification-
 // StubPasswordVerifier reste disponible pour les tests d'intégration
 // MFA US6 (overrideProvider). Import retiré du module — il est wiré
 // uniquement par les test files qui en ont besoin.
+import { AuthEmailVerificationController } from './interface/auth-email-verification.controller';
 import { AuthLoginController } from './interface/auth-login.controller';
 import { AuthSignupController } from './interface/auth-signup.controller';
 import { AuthGuard } from './interface/auth.guard';
@@ -72,6 +75,7 @@ import { StepUpGuard } from './interface/step-up.guard';
     // Auth (feature 002)
     AuthSignupController,
     AuthLoginController,
+    AuthEmailVerificationController,
     // MFA (feature 002a)
     MfaEnrollmentController,
     MfaStepUpController,
@@ -97,6 +101,8 @@ import { StepUpGuard } from './interface/step-up.guard';
     // Use cases — feature 002 (auth conseiller + admin)
     SignupConseillerUseCase,
     LoginUseCase,
+    VerifyEmailUseCase,
+    ResendEmailVerificationUseCase,
 
     // Password verifier — feature 002 Phase 4 : PrismaPasswordVerifier
     // remplace StubPasswordVerifier (résout bug_007 du review 002a).
