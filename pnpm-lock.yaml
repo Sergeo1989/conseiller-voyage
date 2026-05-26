@@ -298,6 +298,9 @@ importers:
 
   packages/mfa:
     dependencies:
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
       otplib:
         specifier: ^12.0.1
         version: 12.0.1
@@ -305,6 +308,9 @@ importers:
         specifier: ^3.23.0
         version: 3.25.76
     devDependencies:
+      '@types/bcryptjs':
+        specifier: ^2.4.6
+        version: 2.4.6
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.19
