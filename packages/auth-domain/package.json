@@ -1,0 +1,60 @@
+{
+  "name": "@cv/auth-domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./email-normalizer": {
+      "types": "./src/email-normalizer.ts",
+      "default": "./dist/email-normalizer.js"
+    },
+    "./password-policy": {
+      "types": "./src/password-policy.ts",
+      "default": "./dist/password-policy.js"
+    },
+    "./single-use-tokens": {
+      "types": "./src/single-use-tokens.ts",
+      "default": "./dist/single-use-tokens.js"
+    },
+    "./lockout-policy": {
+      "types": "./src/lockout-policy.ts",
+      "default": "./dist/lockout-policy.js"
+    },
+    "./auth-error-normalizer": {
+      "types": "./src/auth-error-normalizer.ts",
+      "default": "./dist/auth-error-normalizer.js"
+    },
+    "./password-hash": {
+      "types": "./src/password-hash.ts",
+      "default": "./dist/password-hash.js"
+    },
+    "./dtos": {
+      "types": "./src/dtos/index.ts",
+      "default": "./dist/dtos/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "lint": "biome check --error-on-warnings src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jose": "^5.9.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.0"
+  }
+}

@@ -106,10 +106,12 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/005-mfa-conseiller/plan.md`](specs/005-mfa-conseiller/plan.md)
-(MFA conseiller et élévation de session — branche `005-mfa-conseiller`).
+**Plan courant** : [`specs/006-auth-conseiller-admin/plan.md`](specs/006-auth-conseiller-admin/plan.md)
+(Auth conseiller + admin + RBAC — feature 002 de la roadmap, branche
+`006-auth-conseiller-admin`).
 
 Pour le contexte technologique détaillé et la structure de répertoires de la
 feature courante, lire ce plan ainsi que `data-model.md`, `contracts/`,
-`research.md` et `quickstart.md` du même répertoire `specs/005-mfa-conseiller/`.
+`research.md` et `quickstart.md` du même répertoire
+`specs/006-auth-conseiller-admin/`.
 <!-- SPECKIT END -->
