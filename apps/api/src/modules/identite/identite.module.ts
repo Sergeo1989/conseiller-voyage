@@ -17,6 +17,7 @@ import { MFA_SECRET_REPOSITORY } from './application/ports/mfa-secret-repository
 import { TOTP_SECRET_ENCRYPTER } from './application/ports/totp-secret-encrypter.port';
 import { TOTP_VALIDATOR } from './application/ports/totp-validator.port';
 import { EnrollTotpUseCase } from './application/use-cases/enroll-totp.use-case';
+import { StepUpUseCase } from './application/use-cases/step-up.use-case';
 import { BcryptBackupCodeHasher } from './infrastructure/bcrypt-backup-code-hasher';
 import {
   ENV_TOKEN,
@@ -32,18 +33,20 @@ import { PrismaMfaSecretRepository } from './infrastructure/prisma-mfa-secret-re
 import { SesMfaNotificationMailer } from './infrastructure/ses-mfa-notification-mailer';
 import { AuthGuard } from './interface/auth.guard';
 import { MfaEnrollmentController } from './interface/mfa-enrollment.controller';
+import { MfaStepUpController } from './interface/mfa-step-up.controller';
 import { RoleGuard } from './interface/role.guard';
 import { StepUpGuard } from './interface/step-up.guard';
 
 @Module({
-  controllers: [MfaEnrollmentController],
+  controllers: [MfaEnrollmentController, MfaStepUpController],
   providers: [
     // Env injecté (cf. NodeCryptoTotpSecretEncrypter qui en a besoin
     // pour MFA_KEK_BASE64).
     { provide: ENV_TOKEN, useValue: env },
 
-    // Use cases (Phase 3 — feature 005)
+    // Use cases (Phase 3+ — feature 005)
     EnrollTotpUseCase,
+    StepUpUseCase,
 
     // Session Auth.js (livré par 001)
     { provide: AUTH_SESSION_READER, useClass: PrismaAuthSessionReader },

@@ -19,6 +19,7 @@
     "@cv/db": "workspace:*",
     "@cv/mfa": "workspace:*",
     "@cv/shared": "workspace:*",
+    "@radix-ui/react-dialog": "^1.1.4",
     "@sentry/nextjs": "^8.40.0",
     "next": "^15.0.0",
     "next-auth": "5.0.0-beta.25",
