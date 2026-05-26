@@ -20,6 +20,8 @@
     "@aws-sdk/client-sesv2": "^3.685.0",
     "@aws-sdk/s3-request-presigner": "^3.685.0",
     "@cv/db": "workspace:*",
+    "@cv/email-templates": "workspace:*",
+    "@cv/mfa": "workspace:*",
     "@cv/shared": "workspace:*",
     "@fastify/helmet": "^11.1.1",
     "@fastify/static": "^7",
@@ -39,6 +41,7 @@
     "@opentelemetry/sdk-node": "^0.55.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
     "@sentry/nestjs": "^8.40.0",
+    "bcryptjs": "^2.4.3",
     "bullmq": "^5.28.0",
     "dotenv": "^17.4.2",
     "ioredis": "^5.4.1",
@@ -47,6 +50,7 @@
     "pino-http": "^10.3.0",
     "pino-pretty": "^11.3.0",
     "reflect-metadata": "^0.2.0",
+    "qrcode": "^1.5.4",
     "rxjs": "^7.8.0",
     "zod": "^3.23.0"
   },
@@ -55,7 +59,9 @@
     "@nestjs/testing": "^10.4.0",
     "@swc/cli": "^0.5.2",
     "@swc/core": "^1.7.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.0.0",
+    "@types/qrcode": "^1.5.5",
     "typescript": "^5.6.3",
     "vitest": "^2.1.0"
   }

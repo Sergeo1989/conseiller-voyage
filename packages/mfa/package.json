@@ -1,0 +1,54 @@
+{
+  "name": "@cv/mfa",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./totp": {
+      "types": "./src/totp.ts",
+      "default": "./dist/totp.js"
+    },
+    "./backup-codes": {
+      "types": "./src/backup-codes.ts",
+      "default": "./dist/backup-codes.js"
+    },
+    "./encryption": {
+      "types": "./src/encryption.ts",
+      "default": "./dist/encryption.js"
+    },
+    "./freshness": {
+      "types": "./src/freshness.ts",
+      "default": "./dist/freshness.js"
+    },
+    "./schemas": {
+      "types": "./src/schemas.ts",
+      "default": "./dist/schemas.js"
+    },
+    "./errors": {
+      "types": "./src/errors.ts",
+      "default": "./dist/errors.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "lint": "biome check --error-on-warnings src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "otplib": "^12.0.1",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.0"
+  }
+}

@@ -81,6 +81,10 @@ jobs:
     env:
       DATABASE_URL: postgresql://cv_dev:cv_dev@localhost:5432/cv_dev
       REDIS_URL: redis://localhost:6379
+      # MFA KEK (feature 005, T006) — 32 octets de zéro encodés base64,
+      # uniquement pour environnement CI/test. La validation au startup
+      # d'apps/api refuse cette valeur si NODE_ENV=production.
+      MFA_KEK_BASE64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -110,6 +114,9 @@ jobs:
       # Auth.js v5 exige AUTH_SECRET au build (sinon throws). Valeur
       # bidon — la vraie viendra d'AWS Secrets Manager en prod runtime.
       AUTH_SECRET: build-time-placeholder-32-chars-min-required
+      # MFA KEK (feature 005, T006) — placeholder build-time. La validation
+      # runtime refuse cette valeur si NODE_ENV=production.
+      MFA_KEK_BASE64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
       NEXTAUTH_URL: http://localhost:3000
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
     steps:
