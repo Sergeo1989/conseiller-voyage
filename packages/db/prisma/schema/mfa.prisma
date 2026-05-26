@@ -1,0 +1,227 @@
+// Schéma MFA — feature 005-mfa-conseiller (Principe IX NON-NÉGOCIABLE).
+//
+// 4 tables :
+//   - mfa_secrets : secret TOTP chiffré AES-256-GCM (ADR-0010) par
+//     utilisateur enrôlé. Au plus un secret enabled par user — index
+//     partiel `WHERE "enabledAt" IS NOT NULL`. Plusieurs secrets pending
+//     (enabledAt = null) tolérés transitoirement pendant les retries
+//     d'enrôlement (P0-4 du review).
+//   - mfa_backup_codes : 10 codes de récupération hashés bcrypt par lot.
+//     Consommation atomique via UPDATE conditionnel (P0-5).
+//   - mfa_audit_events : journal append-only de tous les événements MFA.
+//     Triggers Postgres bloquent UPDATE/DELETE/TRUNCATE (R8).
+//   - mfa_rate_limit_buckets : compteur de tentatives avec scoping par
+//     session (P0-3). Incrément atomique via INSERT ON CONFLICT DO
+//     UPDATE (P0-2).
+//   - mfa_outbox_emails : stub Mailer (P1-3) — courriels MFA stockés en
+//     attendant que 003 branche AWS SES.
+//
+// Cf. specs/005-mfa-conseiller/data-model.md.
+
+model MfaSecret {
+  id                  String        @id @default(uuid()) @db.Uuid
+  userId              String        @db.Uuid
+  kind                MfaSecretKind @default(totp)
+  // Chiffré AES-256-GCM (ADR-0010). Format : version || iv ||
+  // ciphertext || tag, encodé Base64.
+  encryptedSecret     String        @db.Text
+  enrolledAt          DateTime      @default(now())
+  // null tant que le premier code TOTP n'a pas été vérifié (FR-003).
+  // L'authentification considère le user comme non enrôlé tant que
+  // enabledAt IS NULL.
+  enabledAt           DateTime?
+  lastUsedAt          DateTime?
+  // UUID généré côté web pour traçabilité d'un essai d'enrôlement.
+  // NB : pas idempotent au sens strict (cf. supersede sémantique
+  // P0-1 — un nouvel /enroll/start invalide les pending existants).
+  enrollmentRequestId String        @unique @db.Uuid
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  user        AuthUser        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  backupCodes MfaBackupCode[]
+
+  @@index([userId])
+  @@map("mfa_secrets")
+}
+
+// Index partiel Postgres « un seul secret enabled par user » créé en
+// SQL pur dans la migration init_mfa (Prisma ne supporte pas les index
+// partiels nativement) :
+//   CREATE UNIQUE INDEX mfa_secrets_one_enabled_per_user
+//     ON mfa_secrets ("userId") WHERE "enabledAt" IS NOT NULL;
+
+enum MfaSecretKind {
+  totp
+  // Reserved pour expansion future (passkey/WebAuthn) — Principe VIII
+  // (Open/Closed).
+}
+
+model MfaBackupCode {
+  id          String   @id @default(uuid()) @db.Uuid
+  mfaSecretId String   @db.Uuid
+  // bcrypt hash du code clair (60 chars). Jamais le clair en BD.
+  codeHash    String   @db.Text
+  // Identifiant du lot de génération — permet la régénération atomique
+  // (FR-015 invalide tout l'ancien lot d'un coup).
+  batchId     String   @db.Uuid
+  // Position dans le lot (1-10), affichée à l'utilisateur pour
+  // numérotation visuelle.
+  position    Int
+  generatedAt DateTime @default(now())
+  // Mis à jour lors de la consommation (FR-011). null = code non consommé.
+  // L'UPDATE est conditionnel `WHERE usedAt IS NULL` pour atomicité
+  // (P0-5 du review).
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  mfaSecret MfaSecret @relation(fields: [mfaSecretId], references: [id], onDelete: Cascade)
+
+  @@unique([mfaSecretId, batchId, position])
+  @@index([batchId])
+  @@index([mfaSecretId, usedAt])
+  @@map("mfa_backup_codes")
+}
+
+model MfaAuditEvent {
+  id            String           @id @default(uuid()) @db.Uuid
+  eventType     MfaEventType
+  // Acteur de l'événement. Null pour les événements système (lockout
+  // automatique, expiration). Sur effacement Loi 25 du user :
+  // onDelete SetNull (l'événement reste, l'identité est rompue).
+  actorUserId   String?          @db.Uuid
+  // Utilisateur affecté par l'événement.
+  targetUserId  String?          @db.Uuid
+  // Type de cible — permet de distinguer reset conseiller / reset
+  // admin dans le journal (FR-025).
+  targetRole    AuthRole?
+  // IP source abrégée (IPv4 /24, IPv6 /48) — cohérent avec le pattern
+  // d'anonymisation de feature 004 (ADR-0008).
+  actorIp       String?          @db.VarChar(45)
+  // Méthode utilisée pour les events de verification (TOTP vs backup).
+  method        MfaVerifyMethod?
+  // Justification texte libre pour les events admin (FR-023, min 20
+  // chars). NULL pour les autres types d'événements.
+  justification String?          @db.Text
+  // Métadonnées additionnelles typées par eventType (cf.
+  // specs/005-mfa-conseiller/contracts/events.md).
+  metadata      Json?
+  occurredAt    DateTime         @default(now())
+  // Pas de updatedAt — la table est strictement append-only (triggers
+  // Postgres dans la migration init_mfa_immutability).
+
+  actor  AuthUser? @relation("MfaAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  target AuthUser? @relation("MfaAuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([targetUserId, occurredAt])
+  @@index([actorUserId, occurredAt])
+  @@index([eventType, occurredAt])
+  @@map("mfa_audit_events")
+}
+
+enum MfaEventType {
+  // Enrôlement et activation
+  mfa_enrollment_started
+  mfa_enrolled
+  mfa_enrollment_cancelled
+
+  // Vérifications au login
+  mfa_login_verified
+  mfa_login_failed
+  mfa_login_locked
+  mfa_login_unlocked
+
+  // Step-up intra-session
+  mfa_stepup_verified
+  mfa_stepup_failed
+  mfa_stepup_session_killed
+
+  // Backup codes
+  mfa_backup_code_consumed
+  mfa_backup_codes_regenerated_self
+  mfa_backup_codes_warning_low
+
+  // Device change auto-service (US6)
+  mfa_device_changed_self
+
+  // Reset admin (US4)
+  mfa_reset_by_admin
+
+  // Loi 25
+  mfa_secret_anonymized
+}
+
+enum MfaVerifyMethod {
+  totp
+  backup_code
+}
+
+model MfaRateLimitBucket {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @db.Uuid
+  kind            MfaRateLimitKind
+  // Scope de session pour stepup_totp (P0-3). NULL pour les buckets
+  // par-user (login_totp, enroll_start, device_change).
+  sessionId       String?          @db.Uuid
+  windowStartedAt DateTime         @default(now())
+  windowEndsAt    DateTime
+  attempts        Int              @default(0)
+  lockedUntil     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([windowEndsAt])
+  @@index([userId, kind])
+  @@map("mfa_rate_limit_buckets")
+}
+
+// Index uniques partiels créés en SQL pur dans la migration init_mfa
+// pour gérer les semantics NULL de Postgres :
+//   CREATE UNIQUE INDEX mfa_rate_limit_buckets_per_session
+//     ON mfa_rate_limit_buckets ("userId", kind, "sessionId")
+//     WHERE "sessionId" IS NOT NULL;
+//   CREATE UNIQUE INDEX mfa_rate_limit_buckets_per_user
+//     ON mfa_rate_limit_buckets ("userId", kind)
+//     WHERE "sessionId" IS NULL;
+
+enum MfaRateLimitKind {
+  // 5 échecs en 5 min → lockout 15 min (FR-013). sessionId = NULL.
+  login_totp
+  // 3 échecs dans un modal → session killed (FR-020). sessionId = courant.
+  stepup_totp
+  // 10 starts max par heure (P1-1 anti-DoS). sessionId = NULL.
+  enroll_start
+  // 5 échecs en 10 min sur la phase de re-auth forte du device change
+  // (US6) pour éviter le brute-force du second facteur. sessionId = NULL.
+  device_change
+}
+
+model MfaOutboxEmail {
+  id              String                 @id @default(uuid()) @db.Uuid
+  // Destinataire (FK vers auth_users). Cascade onDelete Cascade pour
+  // que l'effacement Loi 25 nettoie aussi les courriels en attente.
+  recipientUserId String                 @db.Uuid
+  templateKind    MfaEmailTemplateKind
+  // Payload typé par templateKind (cf. packages/email-templates/mfa/*).
+  payload         Json
+  queuedAt        DateTime               @default(now())
+  // null tant que le courriel n'a pas été envoyé (stub MVP — sera mis
+  // à jour quand 003 branche AWS SES).
+  sentAt          DateTime?
+  attempts        Int                    @default(0)
+  lastError       String?                @db.Text
+
+  recipient AuthUser @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
+
+  @@index([sentAt, queuedAt])
+  @@index([recipientUserId])
+  @@map("mfa_outbox_emails")
+}
+
+enum MfaEmailTemplateKind {
+  login_locked              // FR-013 — verrouillage 15 min après 5 échecs
+  stepup_session_killed     // FR-020a — 3 échecs step-up → session killed
+  admin_reset               // FR-026 — reset par admin
+  device_changed            // FR-015e — confirmation device change
+  device_change_incomplete  // FR-015f — rappel après 24h sans complétion
+}

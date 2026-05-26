@@ -21,6 +21,22 @@ model AuthUser {
   accounts AuthAccount[]
   sessions AuthSession[]
 
+  // Relations MFA (feature 005). Ajoutées ici pour satisfaire la
+  // résolution Prisma multi-file ; les models eux-mêmes vivent dans
+  // mfa.prisma.
+  //
+  // mfaSecrets est intentionnellement modélisé en `[]` (one-to-many)
+  // côté Prisma, MAIS l'invariant métier « au plus un secret enabled
+  // par user » est appliqué par un **index partiel Postgres**
+  // (cf. mfa.prisma ligne 38). Plusieurs `MfaSecret` peuvent coexister
+  // transitoirement avec `enabledAt IS NULL` pendant la sémantique
+  // supersede (P0-1) — l'index partiel ne contraint que les lignes
+  // `enabledAt IS NOT NULL`.
+  mfaSecrets             MfaSecret[]
+  mfaAuditEventsAsActor  MfaAuditEvent[]  @relation("MfaAuditActor")
+  mfaAuditEventsAsTarget MfaAuditEvent[]  @relation("MfaAuditTarget")
+  mfaOutboxEmails        MfaOutboxEmail[]
+
   @@map("auth_users")
 }
 
