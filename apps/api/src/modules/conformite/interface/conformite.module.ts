@@ -62,8 +62,8 @@ import { AdminConformiteController } from './http/admin-conformite.controller';
 import { ConseillerConformiteController } from './http/conseiller-conformite.controller';
 import { ConformiteQueryFacade } from './public-api/conformite-query.facade';
 
-/** Intervalle drain outbox publisher (5 s — adaptable selon volumétrie). */
-const OUTBOX_DRAIN_INTERVAL_MS = 5_000;
+/** Intervalle drain outbox publisher (5 s prod, 30 s dev pour réduire le bruit). */
+const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000 : 5_000;
 /** Intervalle sweep expirations (24 h — production tournera via cron 02:00 ca-central-1). */
 const EXPIRATION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 /** Phase N — Intervalles cleanup quotidiens. */

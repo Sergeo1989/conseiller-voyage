@@ -1,0 +1,25 @@
+# Force LF line endings on tous les fichiers texte, sur tous les
+# systèmes (Linux, macOS, Windows). Biome est configuré
+# `formatter.lineEnding: "lf"` dans biome.json — sans ce fichier,
+# Windows Git autocrlf convertit LF→CRLF au checkout et Biome lint
+# échoue sur tous les fichiers déjà commités proprement par macOS/Linux.
+
+* text=auto eol=lf
+
+# Binaires explicites (ne pas tenter de normaliser)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.heic binary
+*.pdf binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.zip binary
+*.gz binary
+*.tgz binary

@@ -106,10 +106,10 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/001-conformite-module/plan.md`](specs/001-conformite-module/plan.md)
-(Module Conformité — branche `001-conformite-module`).
+**Plan courant** : [`specs/005-mfa-conseiller/plan.md`](specs/005-mfa-conseiller/plan.md)
+(MFA conseiller et élévation de session — branche `005-mfa-conseiller`).
 
 Pour le contexte technologique détaillé et la structure de répertoires de la
 feature courante, lire ce plan ainsi que `data-model.md`, `contracts/`,
-et `quickstart.md` du même répertoire `specs/001-conformite-module/`.
+`research.md` et `quickstart.md` du même répertoire `specs/005-mfa-conseiller/`.
 <!-- SPECKIT END -->
