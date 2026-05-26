@@ -6,7 +6,13 @@ entrée numérotée est destinée à devenir une spec détaillée via
 (ajouts, repriorisations, suppressions) ; chaque modification est
 référencée par commit.
 
-**Dernière mise à jour** : 2026-05-22
+**Dernière mise à jour** : 2026-05-25
+
+> **Note de numérotation** : les IDs de cette roadmap (001, 002, …) sont des
+> identifiants logiques de feature. Les dossiers de spec sous `specs/`
+> utilisent leur propre numérotation Spec Kit (`specs/<NNN>-<short-name>/`)
+> qui peut diverger. Le mapping est tenu à jour dans la colonne *Spec* du
+> tableau ci-dessous quand une spec a été créée.
 
 ---
 
@@ -44,12 +50,13 @@ Scope : **S** (1 spec, < 5 user stories) · **M** (~5 US, ~20 FR, équivalent au
 
 ## Tier 0 — Fondations (bloquent tout)
 
-| ID | Feature | Module | Scope | État | Pourquoi en premier |
-|---|---|---|---|---|---|
-| **001** | Module conformité (statut vérifié, source de vérité) | conformité | M | 🔵 plan en cours | Gardien Principe I. Bloque toute visibilité publique de conseiller et toute éligibilité matching. |
-| 002 | Identité — auth conseiller + admin avec MFA, RBAC | identité | L (à scinder) | ⏳ | Bloque tout consommateur authentifié. MFA conseiller exigé par Principe IX. AuthGuard NestJS partagé. |
-| 003 | Identité — notifications + courriel transactionnel | identité | M | ⏳ | Bloque FR-005 conformité, rappels d'expiration, accusés de soumission. Provider canadien (ADR à venir). |
-| 004 | Mentions légales, CGU, page « Pas un agent de voyages » | transverse | S | ⏳ | Obligation contractuelle dès première mise en ligne publique. Texte FR-CA. |
+| ID | Feature | Module | Scope | État | Spec | Pourquoi en premier |
+|---|---|---|---|---|---|---|
+| **001** | Module conformité (statut vérifié, source de vérité) | conformité | M | 🔵 implémentation en cours | `specs/001-conformite-module/` | Gardien Principe I. Bloque toute visibilité publique de conseiller et toute éligibilité matching. |
+| 002 | Identité — auth conseiller + admin, RBAC (base AuthGuard) | identité | M | ⏳ | — | Bloque tout consommateur authentifié. AuthGuard NestJS partagé Auth.js v5 (ADR-0004). MFA scope extrait dans 002a. |
+| **002a** | Identité — MFA conseiller TOTP + step-up + reset admin | identité | M | 🟡 spec en cours | `specs/005-mfa-conseiller/` | Extraction du scope MFA de l'ancien 002. Exigence Principe IX NON-NÉGOCIABLE. Auth.js v5 natif TOTP, pas de dépendance externe. |
+| 003 | Identité — notifications + courriel transactionnel | identité | M | ⏳ | — | Bloque FR-005 conformité, rappels d'expiration, accusés de soumission. Provider canadien (ADR à venir). |
+| 004 | Mentions légales, CGU, page « Comment ça marche », politique Loi 25 | transverse | M | 🟡 PR ouverte (#12) | `specs/004-mentions-legales/` | Obligation contractuelle dès première mise en ligne publique. Texte FR-CA. Page « Comment ça marche » = pédagogie modèle anti-marketplace (ADR-0002). |
 
 ---
 
@@ -232,9 +239,9 @@ cas via un `/speckit.specify` quand le moment vient.
 
 | Sprint | Features visées | Justification |
 |---|---|---|
-| **0** | 001 (en cours) | Spec + plan fait. Implémentation à venir via `/speckit.tasks`. |
-| **1** | 002, 004 | Auth + mentions légales en parallèle. Bloquant pour Tier 1+. |
-| **2** | 003, 005 | Notifications + profil. 005 dépend de 001+002 (déjà faits). |
+| **0** | 001 (en cours), 004 (PR #12 ouverte) | 001 finalisation DoD. 004 = mentions légales + CGU + Loi 25 + Comment ça marche, livrable web public minimal. |
+| **1** | 002, 002a | Auth de base + MFA conseiller en parallèle. 002a (spec 005) = Principe IX NON-NÉGOCIABLE, bloquant pour tout accès conseiller `verified`. |
+| **2** | 003, 005 | Notifications + profil conseiller. 005 dépend de 001 + 002 + 002a (MFA actif avant accès aux leads). |
 | **3** | 006, 008 | Facturation onboarding + intake brief. Parallélisable. |
 | **4** | 009, 010, 011, 024 | Enrichissement LLM, magic-link, scoring matching, infra i18n. |
 | **5** | 012, 013, 007 | Notifs + état de lead, conversation, facturation récurrence. |
