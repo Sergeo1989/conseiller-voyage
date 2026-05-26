@@ -16,8 +16,12 @@ import { MFA_RATE_LIMITER } from './application/ports/mfa-rate-limiter.port';
 import { MFA_SECRET_REPOSITORY } from './application/ports/mfa-secret-repository.port';
 import { TOTP_SECRET_ENCRYPTER } from './application/ports/totp-secret-encrypter.port';
 import { TOTP_VALIDATOR } from './application/ports/totp-validator.port';
+import { CountActiveAdminsUseCase } from './application/use-cases/count-active-admins.use-case';
 import { EnrollTotpUseCase } from './application/use-cases/enroll-totp.use-case';
+import { ResetMfaAdminUseCase } from './application/use-cases/reset-mfa-admin.use-case';
 import { StepUpUseCase } from './application/use-cases/step-up.use-case';
+import { VerifyBackupCodeUseCase } from './application/use-cases/verify-backup-code.use-case';
+import { VerifyTotpUseCase } from './application/use-cases/verify-totp.use-case';
 import { BcryptBackupCodeHasher } from './infrastructure/bcrypt-backup-code-hasher';
 import {
   ENV_TOKEN,
@@ -32,13 +36,20 @@ import { PrismaMfaAuditWriter } from './infrastructure/prisma-mfa-audit-writer';
 import { PrismaMfaSecretRepository } from './infrastructure/prisma-mfa-secret-repository';
 import { SesMfaNotificationMailer } from './infrastructure/ses-mfa-notification-mailer';
 import { AuthGuard } from './interface/auth.guard';
+import { MfaAdminResetController } from './interface/mfa-admin-reset.controller';
 import { MfaEnrollmentController } from './interface/mfa-enrollment.controller';
 import { MfaStepUpController } from './interface/mfa-step-up.controller';
+import { MfaVerificationController } from './interface/mfa-verification.controller';
 import { RoleGuard } from './interface/role.guard';
 import { StepUpGuard } from './interface/step-up.guard';
 
 @Module({
-  controllers: [MfaEnrollmentController, MfaStepUpController],
+  controllers: [
+    MfaEnrollmentController,
+    MfaStepUpController,
+    MfaVerificationController,
+    MfaAdminResetController,
+  ],
   providers: [
     // Env injecté (cf. NodeCryptoTotpSecretEncrypter qui en a besoin
     // pour MFA_KEK_BASE64).
@@ -47,6 +58,10 @@ import { StepUpGuard } from './interface/step-up.guard';
     // Use cases (Phase 3+ — feature 005)
     EnrollTotpUseCase,
     StepUpUseCase,
+    VerifyTotpUseCase,
+    VerifyBackupCodeUseCase,
+    ResetMfaAdminUseCase,
+    CountActiveAdminsUseCase,
 
     // Session Auth.js (livré par 001)
     { provide: AUTH_SESSION_READER, useClass: PrismaAuthSessionReader },

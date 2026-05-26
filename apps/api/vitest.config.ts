@@ -10,6 +10,10 @@ export default defineConfig({
     include: ['**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     reporters: ['default'],
+    // Les tests d'intégration partagent une DB Postgres unique. Les
+    // teardown font deleteMany({}) sur certaines tables ; deux files
+    // exécutés en parallèle se polluent mutuellement. Forcer séquentiel.
+    fileParallelism: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
