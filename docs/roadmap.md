@@ -6,7 +6,7 @@ entrée numérotée est destinée à devenir une spec détaillée via
 (ajouts, repriorisations, suppressions) ; chaque modification est
 référencée par commit.
 
-**Dernière mise à jour** : 2026-05-25
+**Dernière mise à jour** : 2026-05-26
 
 > **Note de numérotation** : les IDs de cette roadmap (001, 002, …) sont des
 > identifiants logiques de feature. Les dossiers de spec sous `specs/`
@@ -54,7 +54,7 @@ Scope : **S** (1 spec, < 5 user stories) · **M** (~5 US, ~20 FR, équivalent au
 |---|---|---|---|---|---|---|
 | **001** | Module conformité (statut vérifié, source de vérité) | conformité | M | 🔵 implémentation en cours | `specs/001-conformite-module/` | Gardien Principe I. Bloque toute visibilité publique de conseiller et toute éligibilité matching. |
 | 002 | Identité — auth conseiller + admin, RBAC (base AuthGuard) | identité | M | ⏳ | — | Bloque tout consommateur authentifié. AuthGuard NestJS partagé Auth.js v5 (ADR-0004). MFA scope extrait dans 002a. |
-| **002a** | Identité — MFA conseiller TOTP + step-up + reset admin | identité | M | 🟡 spec en cours | `specs/005-mfa-conseiller/` | Extraction du scope MFA de l'ancien 002. Exigence Principe IX NON-NÉGOCIABLE. Auth.js v5 natif TOTP, pas de dépendance externe. |
+| **002a** | Identité — MFA conseiller TOTP + step-up + reset admin + auto-service device + admin J1 | identité | M | ✅ PR #13 ouverte (review) | `specs/005-mfa-conseiller/` | Extraction du scope MFA de l'ancien 002. Exigence Principe IX NON-NÉGOCIABLE. 6 user stories livrées (US1-US6), 11 commits, 60 tests pure + 55 tests intégration verts. Stub `PasswordVerifier` à remplacer quand 002 livre. |
 | 003 | Identité — notifications + courriel transactionnel | identité | M | ⏳ | — | Bloque FR-005 conformité, rappels d'expiration, accusés de soumission. Provider canadien (ADR à venir). |
 | 004 | Mentions légales, CGU, page « Comment ça marche », politique Loi 25 | transverse | M | 🟡 PR ouverte (#12) | `specs/004-mentions-legales/` | Obligation contractuelle dès première mise en ligne publique. Texte FR-CA. Page « Comment ça marche » = pédagogie modèle anti-marketplace (ADR-0002). |
 

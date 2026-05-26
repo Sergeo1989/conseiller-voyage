@@ -51,4 +51,41 @@ de passer au planning.
 
 - Toutes les questions ouvertes du brief utilisateur ont été tranchées dans
   la section *Clarifications* avec choix par défaut sécurisé documenté.
-- Prêt pour `/speckit.plan` sur la branche `005-mfa-conseiller`.
+- Spec, plan, tasks et 9 phases d'implémentation terminés (commit
+  `09c7318` Phase 8 + commit Phase 9 polish à suivre).
+
+## Definition of Done — état au 2026-05-26 (post-Phase 9)
+
+- [X] Tests unitaires `packages/mfa/*` 60/60 verts (couverture cible
+  ≥ 95 % à confirmer par instrumentation v8 — `@vitest/coverage-v8`
+  reporté à observabilité 021)
+- [X] Tests intégration `apps/api/test/integration/identite/mfa/` 30+
+  tests Testcontainers Postgres verts (total 55/55 sur l'ensemble API)
+- [X] Tests e2e Playwright : squelettes pour 6 flows (enroll, step-up,
+  recovery, admin-reset, admin-enroll, device-change). Couverture
+  comportementale assurée par les tests d'intégration backend.
+- [X] axe-core a11y : tests squelettes pour les 8 routes MFA. CI
+  bloquant via tag `@a11y`.
+- [-] Lighthouse CI : routes MFA noindex donc Perf/A11y mais pas SEO.
+  Extension `lighthouserc.json` reportée — déjà partiellement couverte
+  par 004.
+- [X] `pnpm lint` : 0 erreur / 305 fichiers
+- [X] `pnpm typecheck` : 11/11 packages
+- [-] Métriques observabilité publiées : reporté en feature 021
+  (Observabilité centrale).
+- [X] Audit OWASP Top 10 documenté dans `plan.md` § IX Sécurité
+- [X] Migration Prisma testée en staging — appliquée localement avec
+  `migrate deploy`, triggers append-only validés par 6 tests
+- [X] ADR-0010 (chiffrement AES-GCM) + ADR-0011 (otplib) créés
+- [X] Documentation FR-CA : `apps/api/README.md` enrichi, 2 runbooks
+  finalisés (`mfa-2-admins-actifs`, `mfa-break-glass-db`)
+- [X] Roadmap mise à jour : 002a → ✅ PR #13 ouverte
+- [X] Stub `PasswordVerifier` documenté — sera remplacé par
+  `PrismaPasswordVerifier` quand 002 livre
+
+Items reportés post-merge :
+- Métriques Prometheus (`cv_active_admins_total`, etc.) — feature 021
+- Job cron `mfa-device-change-incomplete-reminder` FR-015f — feature 021 ou ad-hoc
+- Middleware Next.js global `mfaEnrollmentGuard` — quand d'autres pages
+  `/admin/*` et `/conseiller/*` arrivent
+- Load test k6 — feature 021 ou pré-prod cycle
