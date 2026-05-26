@@ -27,6 +27,7 @@ import { ChangeDeviceUseCase } from './application/use-cases/change-device.use-c
 import { CountActiveAdminsUseCase } from './application/use-cases/count-active-admins.use-case';
 import { EnrollTotpUseCase } from './application/use-cases/enroll-totp.use-case';
 import { LoginUseCase } from './application/use-cases/login.use-case';
+import { LogoutUseCase } from './application/use-cases/logout.use-case';
 import { RegenerateBackupCodesUseCase } from './application/use-cases/regenerate-backup-codes.use-case';
 import { ResendEmailVerificationUseCase } from './application/use-cases/resend-email-verification.use-case';
 import { ResetMfaAdminUseCase } from './application/use-cases/reset-mfa-admin.use-case';
@@ -60,6 +61,7 @@ import { SesMfaNotificationMailer } from './infrastructure/ses-mfa-notification-
 // uniquement par les test files qui en ont besoin.
 import { AuthEmailVerificationController } from './interface/auth-email-verification.controller';
 import { AuthLoginController } from './interface/auth-login.controller';
+import { AuthLogoutController } from './interface/auth-logout.controller';
 import { AuthSignupController } from './interface/auth-signup.controller';
 import { AuthGuard } from './interface/auth.guard';
 import { MfaAdminResetController } from './interface/mfa-admin-reset.controller';
@@ -76,6 +78,7 @@ import { StepUpGuard } from './interface/step-up.guard';
     AuthSignupController,
     AuthLoginController,
     AuthEmailVerificationController,
+    AuthLogoutController,
     // MFA (feature 002a)
     MfaEnrollmentController,
     MfaStepUpController,
@@ -101,6 +104,7 @@ import { StepUpGuard } from './interface/step-up.guard';
     // Use cases — feature 002 (auth conseiller + admin)
     SignupConseillerUseCase,
     LoginUseCase,
+    LogoutUseCase,
     VerifyEmailUseCase,
     ResendEmailVerificationUseCase,
 

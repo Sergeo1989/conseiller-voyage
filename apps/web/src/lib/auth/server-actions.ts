@@ -183,3 +183,24 @@ export async function resendVerificationEmailAction(email: string): Promise<Rese
   if (res.status === 202) return { kind: 'ok' };
   return { kind: 'error' };
 }
+
+// ---------------------------------------------------------------------
+// logoutAction (US4)
+// ---------------------------------------------------------------------
+//
+// DELETE auth_sessions WHERE sessionToken = currentSessionToken + clear
+// cookie. Pattern aligné sur devLogoutAction (héritage 002a). L'endpoint
+// NestJS /api/auth/logout reste disponible pour tests et future
+// force-logout admin (H9 review).
+
+export async function logoutAction(): Promise<void> {
+  const cookieStore = await cookies();
+  const tokenProd = cookieStore.get(SESSION_COOKIE_NAME_PROD)?.value;
+  const tokenDev = cookieStore.get(SESSION_COOKIE_NAME_DEV)?.value;
+  const token = tokenProd ?? tokenDev;
+  if (token) {
+    await prisma.authSession.deleteMany({ where: { sessionToken: token } });
+    if (tokenProd) cookieStore.delete(SESSION_COOKIE_NAME_PROD);
+    if (tokenDev) cookieStore.delete(SESSION_COOKIE_NAME_DEV);
+  }
+}

@@ -215,10 +215,10 @@ description: "Décomposition exécutable — Auth conseiller + admin (feature 00
 
 ### Tests + implémentation
 
-- [ ] T086 [P] [US4] **Test RED** — `apps/api/test/integration/identite/auth/logout.integration.test.ts` : logout session valide, logout sans cookie, logout autres sessions du même user restent actives (FR-027).
-- [ ] T087 [US4] Implémenter `apps/api/src/modules/identite/application/use-cases/logout.use-case.ts` : DELETE `auth_sessions` WHERE `sessionToken = currentSessionToken` + audit `logout` avec `sessionTokenHash` en metadata.
-- [ ] T088 [US4] Implémenter `apps/api/src/modules/identite/interface/auth-logout.controller.ts` : `POST /api/auth/logout` (AuthGuard 002a). Documenter dans le commentaire de classe que c'est pour tests / future force-logout admin (H9).
-- [ ] T089 [US4] Côté `apps/web`, vérifier que le bouton « Se déconnecter » du menu utilisateur (déjà existant via 002a `<UserMenu />`) appelle bien `signOut({ callbackUrl: '/connexion' })` Auth.js v5.
+- [X] T086 [P] [US4] **Test RED** — `apps/api/test/integration/identite/auth/logout.integration.test.ts` : logout session valide, logout sans cookie, logout autres sessions du même user restent actives (FR-027).
+- [X] T087 [US4] Implémenter `apps/api/src/modules/identite/application/use-cases/logout.use-case.ts` : DELETE `auth_sessions` WHERE `sessionToken = currentSessionToken` + audit `logout` avec `sessionTokenHash` en metadata.
+- [X] T088 [US4] Implémenter `apps/api/src/modules/identite/interface/auth-logout.controller.ts` : `POST /api/auth/logout` (AuthGuard 002a). Documenter dans le commentaire de classe que c'est pour tests / future force-logout admin (H9).
+- [X] T089 [US4] Côté `apps/web`, vérifier que le bouton « Se déconnecter » du menu utilisateur (déjà existant via 002a `<UserMenu />`) appelle bien `signOut({ callbackUrl: '/connexion' })` Auth.js v5.
 - [ ] T090 [US4] Test Playwright e2e logout : session ouverte → click logout → redirige `/connexion` → tentative `/conseiller` redirige aussi.
 
 **Checkpoint Phase 6** : logout fonctionnel.
