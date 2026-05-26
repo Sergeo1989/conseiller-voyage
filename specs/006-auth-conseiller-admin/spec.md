@@ -20,6 +20,20 @@
 - Q: Durée de vie de la session post-login → A: Session DB **30 jours glissants** — chaque requête authentifiée rafraîchit l'expiration. Le re-MFA toutes les 30 min pour actions sensibles (héritage step-up 002a) reste le rempart sur les actions critiques. Standard B2B SaaS (Stripe, Notion, Vercel).
 - Q: Métriques d'observabilité (signup conversion, login success rate, lockout rate, password reset rate) instrumentées dès 002 OU déférées à 021 ? → A: **Déférées à 021**. Source de vérité = événements d'audit immuables (FR-033). La feature 021 dérivera les compteurs par sourcing d'événements (pattern déjà appliqué à 002a pour `cv_active_admins_total`). Pas de double instrumentation, scope 002 strictement auth.
 
+### Session 2026-05-26 (suite — revue architecte)
+
+Issues remontées par la revue d'architecture sénior post-plan, intégrées dans la spec :
+
+- **C2** — Politique mot de passe : ajout d'un **maximum de 128 caractères** (FR-003) ET pré-hashing SHA-256 avant bcrypt côté infrastructure pour neutraliser le 72-byte limit de bcrypt. Décision documentée dans `research.md` R3b.
+- **C5** — Le `StubPasswordVerifier` garde son throw `NODE_ENV=production` (défense en profondeur). Les tests injectent le stub via `Test.overrideProvider()`, pas via `NODE_ENV`.
+- **C7** — Procédure de rollback des triggers `auth_audit_events` documentée dans `docs/runbooks/auth-rollback.md` avant merge.
+- **H1** — bcrypt cost ajusté à **11** (au lieu de 12) pour absorber le surcoût `bcryptjs` JS pur sur Fargate t4g ARM. Détails dans `research.md` R3b.
+- **H6** — Nouveau code d'erreur `TARGET_EMAIL_ALREADY_REGISTERED` pour le flow invitation admin si l'email cible est déjà un compte conseiller (ou autre admin). Empêche un *upgrade* implicite de rôle ; oblige le support à nettoyer manuellement avant invitation.
+- **H7** — `auth_audit_events` n'a **PAS** de FK Prisma vers `auth_users` pour `actorUserId` ni `targetUserId`. La trace est anonymisée par hash SHA-256(email) en metadata (irréversible mais corrélable pendant le compte vivant). Résout la contradiction structurelle Principe IX (audit immuable) × Principe II (effacement Loi 25). ADR-0012 à créer.
+- **H8** — Email normalisé via fonction pure `normalizeEmail(raw) → string` qui fait `raw.trim().toLowerCase().normalize('NFC')`. Pas de strip des `+aliases` (préserve l'intention utilisateur). Détails dans `research.md` R9.
+- **H10** — Logger Pino configuré avec `redact: ['req.body.password', 'req.body.newPassword', 'req.body.currentPassword', 'req.body.newPasswordConfirmation']` dès le boot d'`apps/api`. Test de non-régression : un log de requête de signup ne contient jamais le mot de passe en clair.
+- **M9** — Liste de mots de passe communs interdits (top 10k) : reportée post-MVP. Inscrit dans `Items reportés post-merge` ci-dessous.
+
 ---
 
 ## Contexte produit
@@ -172,7 +186,8 @@ L'équipe interne provisionne un premier admin lors du déploiement initial (boo
 **Scénarios d'acceptation** :
 
 1. **Étant donné** une base de données sans aucun admin existant, **quand** un opérateur infrastructure exécute la commande de bootstrap d'admin (avec un courriel et un mot de passe initial fournis par une source sécurisée — variable d'env, prompt local), **alors** un compte admin est créé avec `role = admin`, `emailVerifiedAt = NOW` (bootstrap = email considéré pré-vérifié), `mfaEnrolledAt = null` (force `/admin/mfa/enroll` au premier login), et un événement d'audit `admin_bootstrap` est enregistré avec une mention explicite « pas d'acteur — bootstrap initial ».
-2. **Étant donné** un admin authentifié et MFA actif sur la console interne `/admin/utilisateurs/nouveau`, **quand** il crée un nouvel admin en saisissant le courriel cible, **alors** un nouveau compte admin est créé avec un mot de passe temporaire d'usage unique, un courriel d'invitation est envoyé au nouvel admin (lien d'activation avec choix de mot de passe + obligation MFA J1 héritée), et un événement d'audit `admin_created_by_admin` est enregistré (avec acteur identifié).
+2. **Étant donné** un admin authentifié et MFA actif sur la console interne `/admin/utilisateurs/nouveau`, **quand** il crée un nouvel admin en saisissant le courriel cible **qui n'existe pas encore dans le système** (ni conseiller, ni admin), **alors** une invitation admin est émise avec un lien d'activation à usage unique (TTL 72h), un courriel d'invitation est envoyé au nouvel admin (qui choisira son mot de passe + obligation MFA J1 héritée), et un événement d'audit `admin_invitation_sent` est enregistré (avec acteur identifié). À la consommation du lien, le compte admin est créé et un événement `admin_created_by_admin` est enregistré.
+2a. **Étant donné** un admin authentifié qui tente d'inviter un courriel cible **déjà associé à un compte existant** (conseiller ou autre admin), **quand** il soumet, **alors** le système refuse avec `TARGET_EMAIL_ALREADY_REGISTERED` (409). Aucun *upgrade* implicite de rôle. Pour promouvoir un conseiller existant en admin, un opérateur doit d'abord supprimer le compte conseiller via la procédure Loi 25 (feature 023) puis inviter le même courriel.
 3. **Étant donné** une base de données sans aucun admin existant, **quand** la commande de bootstrap est exécutée, **alors** l'admin est créé avec `mfaEnrolledAt = null` et l'audit enregistre `admin_bootstrap` ; au tout premier login, le système redirige obligatoirement vers `/admin/mfa/enroll` (héritage US5 de 002a — politique J1 unifiée pour TOUS les admins, y compris le bootstrap initial). Aucun chemin alternatif d'enrôlement MFA n'est exposé par la CLI ; la fenêtre de non-MFA est strictement bornée à l'intervalle « création CLI → première connexion » sur un déploiement encore non-public.
 
 ---
@@ -196,8 +211,8 @@ L'équipe interne provisionne un premier admin lors du déploiement initial (boo
 
 - **FR-001** : Le système DOIT permettre à un visiteur anonyme de créer un compte conseiller en fournissant un courriel, un mot de passe conforme à la politique de complexité, un prénom, un nom, et une acceptation explicite des CGU + politique Loi 25 (feature 004).
 - **FR-002** : Le système DOIT refuser silencieusement (réponse identique au cas succès) une inscription dont le courriel correspond à un compte existant — protection anti-énumération.
-- **FR-003** : Le système DOIT appliquer une politique de mot de passe avec un minimum de 12 caractères, présence d'au moins un caractère minuscule + majuscule + chiffre + symbole, et refus si le mot de passe contient le courriel ou le prénom.
-- **FR-004** : Le système DOIT hacher tout mot de passe en stockage par un algorithme adaptatif moderne reconnu (bcrypt, Argon2id ou équivalent), avec un facteur de coût aligné avec le matériel cible (cible : > 250 ms par hash).
+- **FR-003** : Le système DOIT appliquer une politique de mot de passe avec un **minimum de 12 caractères et un maximum de 128 caractères**, présence d'au moins un caractère minuscule + majuscule + chiffre + symbole, et refus si le mot de passe contient le courriel ou le prénom. Le maximum 128 est une borne haute pour borner la mémoire allouée au hash ; un pré-hashing SHA-256 est appliqué côté infrastructure pour neutraliser la limite de 72 octets de bcrypt sans imposer cette limite à l'utilisateur final.
+- **FR-004** : Le système DOIT hacher tout mot de passe en stockage par un algorithme adaptatif moderne reconnu (bcrypt cost 11 retenu pour cette feature, Argon2id ou équivalent acceptables pour évolutions futures), avec un facteur de coût aligné avec le matériel cible (cible : entre 250 et 600 ms par hash sur Fargate t4g.medium). Un pré-hash SHA-256 (base64) est appliqué avant bcrypt pour neutraliser la limite de 72 octets de bcrypt sur les mots de passe longs ou riches en multi-octets UTF-8 (emojis).
 - **FR-005** : Le système DOIT créer le compte avec un statut « email non vérifié » et envoyer un courriel de vérification contenant un lien à usage unique valide 24 heures.
 - **FR-006** : Le système DOIT empêcher tout accès aux fonctionnalités authentifiées tant que l'email n'est pas vérifié, sauf la fonction « renvoyer un courriel de vérification ».
 
@@ -209,6 +224,7 @@ L'équipe interne provisionne un premier admin lors du déploiement initial (boo
   - **Bucket par compte** : 5 échecs de connexion dans une fenêtre glissante de 15 minutes → verrouillage du compte 15 minutes (alignement avec la policy MFA verify de la feature 002a — cohérence opérationnelle pour le support).
   - **Bucket par IP** : 20 échecs de connexion dans une fenêtre glissante de 1 heure depuis la même IP source → blocage de toutes les nouvelles tentatives depuis cette IP pendant 1 heure (double rempart contre credential stuffing distribué qui cycle entre comptes connus pour contourner un lockout strictement par-compte).
   - Les deux buckets s'évaluent indépendamment ; un échec incrémente les deux. Le déclenchement de l'un ou l'autre suffit à refuser la tentative.
+  - La réponse HTTP en cas de verrouillage inclut un en-tête `Retry-After` indiquant le nombre de secondes restantes ; l'UI affiche un countdown lisible (« réessayer dans X min Y s ») accessible (`aria-live="polite"`).
   - Un événement d'audit `login_locked` est enregistré au moment du verrouillage, avec la métadonnée indiquant lequel des deux buckets a déclenché (account ou ip ou both).
 - **FR-010** : Le système DOIT, après une connexion réussie d'un conseiller statut « vérifié » sans MFA actif, rediriger vers l'enrôlement MFA avant tout autre accès (héritage feature 002a).
 - **FR-011** : Le système DOIT, après une connexion réussie d'un admin sans MFA actif, rediriger vers l'enrôlement MFA admin J1 (héritage feature 002a).
@@ -329,6 +345,15 @@ L'équipe interne provisionne un premier admin lors du déploiement initial (boo
 - Suppression auto-service du compte par l'utilisateur — feature 023 (effacement Loi 25 cross-module).
 - Vrai sender de courriel SES — feature 003.
 - Instrumentation de métriques Prometheus / OTel (signup conversion, login success rate, lockout rate, password reset rate) — feature 021 (observabilité centrale). Les événements d'audit immuables de FR-033 sont la source de vérité dérivée par 021.
+- **Liste de mots de passe communs interdits** (top 10k, zxcvbn ou équivalent) — différé post-002, à reconsidérer si signal d'usage de mots de passe faibles malgré la politique 12 chars mixtes. Décision suite à H7 / M9 de la revue architecte.
+- **Refactor rôle Postgres `app_identite`** distinct d'`app_conformite` (least-privilege strict) — différé. Aujourd'hui, 002 réutilise le rôle `app_conformite` par pragmatisme (cohérence 002a). Inscrit dans la roadmap pour une future feature de durcissement opérationnel.
+- **Liste de mots de passe interdits du domaine** (e.g., « ConseillerVoyage2026!ConCV ») — différé. Le refus de mots de passe contenant l'email ou le prénom (FR-003) suffit au MVP.
+
+## Procédures opérationnelles à livrer avant merge
+
+- `docs/runbooks/auth-rollback.md` (≤ 1 page) — procédure de rollback des migrations 002 incluant le DROP des triggers `auth_audit_events` avant le DROP de la table en cas d'urgence. Nécessaire car Prisma ne sait pas inverser automatiquement une migration avec triggers.
+- `docs/runbooks/bootstrap-admin.md` (≤ 1 page) — déjà prévue (US7 / SC-009).
+- `docs/adr/0012-audit-vs-loi-25-no-fk-policy.md` — ADR de la décision « `auth_audit_events` n'a pas de FK Prisma vers `auth_users` ; les acteurs/cibles sont identifiés par UUID nu + hash SHA-256 d'email en metadata » qui résout la contradiction entre Principe IX (audit immuable) et Principe II (effacement Loi 25).
 
 ---
 
