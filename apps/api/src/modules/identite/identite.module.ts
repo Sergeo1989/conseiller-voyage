@@ -16,6 +16,7 @@ import { MFA_RATE_LIMITER } from './application/ports/mfa-rate-limiter.port';
 import { MFA_SECRET_REPOSITORY } from './application/ports/mfa-secret-repository.port';
 import { TOTP_SECRET_ENCRYPTER } from './application/ports/totp-secret-encrypter.port';
 import { TOTP_VALIDATOR } from './application/ports/totp-validator.port';
+import { EnrollTotpUseCase } from './application/use-cases/enroll-totp.use-case';
 import { BcryptBackupCodeHasher } from './infrastructure/bcrypt-backup-code-hasher';
 import {
   ENV_TOKEN,
@@ -30,14 +31,19 @@ import { PrismaMfaAuditWriter } from './infrastructure/prisma-mfa-audit-writer';
 import { PrismaMfaSecretRepository } from './infrastructure/prisma-mfa-secret-repository';
 import { SesMfaNotificationMailer } from './infrastructure/ses-mfa-notification-mailer';
 import { AuthGuard } from './interface/auth.guard';
+import { MfaEnrollmentController } from './interface/mfa-enrollment.controller';
 import { RoleGuard } from './interface/role.guard';
 import { StepUpGuard } from './interface/step-up.guard';
 
 @Module({
+  controllers: [MfaEnrollmentController],
   providers: [
     // Env injecté (cf. NodeCryptoTotpSecretEncrypter qui en a besoin
     // pour MFA_KEK_BASE64).
     { provide: ENV_TOKEN, useValue: env },
+
+    // Use cases (Phase 3 — feature 005)
+    EnrollTotpUseCase,
 
     // Session Auth.js (livré par 001)
     { provide: AUTH_SESSION_READER, useClass: PrismaAuthSessionReader },
