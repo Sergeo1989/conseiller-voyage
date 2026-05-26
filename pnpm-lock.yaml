@@ -204,6 +204,9 @@ importers:
       '@auth/prisma-adapter':
         specifier: ^2.7.0
         version: 2.11.2(@prisma/client@5.22.0(prisma@5.22.0))
+      '@cv/auth-domain':
+        specifier: workspace:*
+        version: link:../../packages/auth-domain
       '@cv/db':
         specifier: workspace:*
         version: link:../../packages/db

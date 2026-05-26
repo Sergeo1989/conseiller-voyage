@@ -102,32 +102,32 @@ description: "Décomposition exécutable — Auth conseiller + admin (feature 00
 
 ### Tests US1 (TDD, RED avant GREEN)
 
-- [ ] T044 [P] [US1] **Test RED** — `apps/api/test/integration/identite/auth/signup.integration.test.ts` : signup nominal, email déjà utilisé (anti-énumération), mot de passe trop court, CGU non cochées, rate-limit 11ᵉ tentative/IP. Suit `contracts/api-signup.md`.
-- [ ] T045 [P] [US1] **Test RED** — anti-énumération SC-007 dans la même suite : 100 requêtes × 2 cas (existe / inexiste) → écart-type chronométrage < 50 ms.
+- [X] T044 [P] [US1] **Test RED** — `apps/api/test/integration/identite/auth/signup.integration.test.ts` : signup nominal, email déjà utilisé (anti-énumération), mot de passe trop court, CGU non cochées, rate-limit 11ᵉ tentative/IP. Suit `contracts/api-signup.md`.
+- [X] T045 [P] [US1] **Test RED** — anti-énumération SC-007 dans la même suite : 100 requêtes × 2 cas (existe / inexiste) → écart-type chronométrage < 50 ms.
 
 ### Infrastructure US1
 
-- [ ] T046 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-credential-account-repository.ts` (port T034). Méthode `findByEmail` utilise le SELECT JOIN unifié (R5/C6) pour lookup symétrique.
-- [ ] T047 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-email-verification-token-repository.ts` (port T035).
-- [ ] T048 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-auth-audit-writer.ts` (port T039). Hash `actorEmailHash` + `targetEmailHash` SHA-256 (R11).
-- [ ] T049 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-auth-outbox-writer.ts` (port T040).
-- [ ] T050 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/jose-token-issuer.ts` (port T041) — HS256, lit `AUTH_TOKEN_SECRET` via env.
-- [ ] T051 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-login-lockout-repository.ts` (port T038) — pattern atomique `INSERT ON CONFLICT DO UPDATE` (R4). Le bucket signup utilise le même repo avec un kind différent.
+- [X] T046 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-credential-account-repository.ts` (port T034). Méthode `findByEmail` utilise le SELECT JOIN unifié (R5/C6) pour lookup symétrique.
+- [X] T047 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-email-verification-token-repository.ts` (port T035).
+- [X] T048 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-auth-audit-writer.ts` (port T039). Hash `actorEmailHash` + `targetEmailHash` SHA-256 (R11).
+- [X] T049 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-auth-outbox-writer.ts` (port T040).
+- [X] T050 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/jose-token-issuer.ts` (port T041) — HS256, lit `AUTH_TOKEN_SECRET` via env.
+- [X] T051 [P] [US1] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-login-lockout-repository.ts` (port T038) — pattern atomique `INSERT ON CONFLICT DO UPDATE` (R4). Le bucket signup utilise le même repo avec un kind différent.
 
 ### Use case + controller US1
 
-- [ ] T052 [US1] Implémenter `apps/api/src/modules/identite/application/use-cases/signup-conseiller.use-case.ts` : valide DTO Zod + `validatePasswordPolicy` + `normalizeEmail` + `findByEmail` (single roundtrip JOIN) → si exists : INSERT audit `signup` avec `duplicate_attempt=true` + dummy bcrypt ; si pas exists : INSERT `auth_users` + `auth_accounts` + `auth_email_verification_tokens` + `auth_outbox_emails` + audit `signup` (tout en `prisma.$transaction`).
-- [ ] T053 [US1] Implémenter `apps/api/src/modules/identite/interface/auth-signup.controller.ts` : `POST /api/auth/signup` avec `ZodValidationPipe` + `@Throttle()` (10/h/IP) + bucket `signup_ip` (login-lockout repo réutilisé). Status 202.
-- [ ] T054 [US1] Brancher le controller dans `apps/api/src/modules/identite/identite.module.ts` : ajouter `SignupConseillerUseCase` + tous les providers ports/infra créés. Aligner sur le pattern 002a.
-- [ ] T055 [US1] Vérifier T044 + T045 **GREEN**. Si timing pas serré → ajuster dummy bcrypt timing.
+- [X] T052 [US1] Implémenter `apps/api/src/modules/identite/application/use-cases/signup-conseiller.use-case.ts` : valide DTO Zod + `validatePasswordPolicy` + `normalizeEmail` + `findByEmail` (single roundtrip JOIN) → si exists : INSERT audit `signup` avec `duplicate_attempt=true` + dummy bcrypt ; si pas exists : INSERT `auth_users` + `auth_accounts` + `auth_email_verification_tokens` + `auth_outbox_emails` + audit `signup` (tout en `prisma.$transaction`).
+- [X] T053 [US1] Implémenter `apps/api/src/modules/identite/interface/auth-signup.controller.ts` : `POST /api/auth/signup` avec `ZodValidationPipe` + `@Throttle()` (10/h/IP) + bucket `signup_ip` (login-lockout repo réutilisé). Status 202.
+- [X] T054 [US1] Brancher le controller dans `apps/api/src/modules/identite/identite.module.ts` : ajouter `SignupConseillerUseCase` + tous les providers ports/infra créés. Aligner sur le pattern 002a.
+- [X] T055 [US1] Vérifier T044 + T045 **GREEN**. Si timing pas serré → ajuster dummy bcrypt timing.
 
 ### Template email + page web US1
 
-- [ ] T056 [P] [US1] Créer template `packages/email-templates/auth/email-verification.tsx` (react-email, FR-CA). Mentionne validité 24 h + bouton CTA + lien fallback.
-- [ ] T057 [P] [US1] Créer page `apps/web/src/app/(auth)/inscription/page.tsx` (Server Component) avec `noindex` metadata, layout shadcn Card, formulaire client `SignupForm`.
-- [ ] T058 [P] [US1] Créer `apps/web/src/app/(auth)/inscription/_components/signup-form.tsx` ('use client', react-hook-form + zod resolver avec `packages/auth-domain` schema, état submitting, messages d'erreur FR-CA, `aria-describedby`).
-- [ ] T059 [P] [US1] Créer Server Action `apps/web/src/app/(auth)/inscription/actions.ts` : POST vers `/api/auth/signup` côté API, retourne `{ success: true } | { error: 'VALIDATION_FAILED' | ... }`.
-- [ ] T060 [P] [US1] Créer page `apps/web/src/app/(auth)/inscription/confirmation/page.tsx` (post-submit) : message statique « vérifiez vos spams » + `<ResendCountdownButton />` (réutilisable par US3 aussi).
+- [X] T056 [P] [US1] Créer template `packages/email-templates/auth/email-verification.tsx` (react-email, FR-CA). Mentionne validité 24 h + bouton CTA + lien fallback.
+- [X] T057 [P] [US1] Créer page `apps/web/src/app/(auth)/inscription/page.tsx` (Server Component) avec `noindex` metadata, layout shadcn Card, formulaire client `SignupForm`.
+- [X] T058 [P] [US1] Créer `apps/web/src/app/(auth)/inscription/_components/signup-form.tsx` ('use client', react-hook-form + zod resolver avec `packages/auth-domain` schema, état submitting, messages d'erreur FR-CA, `aria-describedby`).
+- [X] T059 [P] [US1] Créer Server Action `apps/web/src/app/(auth)/inscription/actions.ts` : POST vers `/api/auth/signup` côté API, retourne `{ success: true } | { error: 'VALIDATION_FAILED' | ... }`.
+- [X] T060 [P] [US1] Créer page `apps/web/src/app/(auth)/inscription/confirmation/page.tsx` (post-submit) : message statique « vérifiez vos spams » + `<ResendCountdownButton />` (réutilisable par US3 aussi).
 
 ### Validation US1
 
