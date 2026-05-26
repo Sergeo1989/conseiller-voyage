@@ -14,10 +14,13 @@ import { MFA_AUDIT_WRITER } from './application/ports/mfa-audit-writer.port';
 import { MFA_NOTIFICATION_MAILER } from './application/ports/mfa-notification-mailer.port';
 import { MFA_RATE_LIMITER } from './application/ports/mfa-rate-limiter.port';
 import { MFA_SECRET_REPOSITORY } from './application/ports/mfa-secret-repository.port';
+import { PASSWORD_VERIFIER } from './application/ports/password-verifier.port';
 import { TOTP_SECRET_ENCRYPTER } from './application/ports/totp-secret-encrypter.port';
 import { TOTP_VALIDATOR } from './application/ports/totp-validator.port';
+import { ChangeDeviceUseCase } from './application/use-cases/change-device.use-case';
 import { CountActiveAdminsUseCase } from './application/use-cases/count-active-admins.use-case';
 import { EnrollTotpUseCase } from './application/use-cases/enroll-totp.use-case';
+import { RegenerateBackupCodesUseCase } from './application/use-cases/regenerate-backup-codes.use-case';
 import { ResetMfaAdminUseCase } from './application/use-cases/reset-mfa-admin.use-case';
 import { StepUpUseCase } from './application/use-cases/step-up.use-case';
 import { VerifyBackupCodeUseCase } from './application/use-cases/verify-backup-code.use-case';
@@ -35,8 +38,10 @@ import { PrismaBackupCodeRepository } from './infrastructure/prisma-backup-code-
 import { PrismaMfaAuditWriter } from './infrastructure/prisma-mfa-audit-writer';
 import { PrismaMfaSecretRepository } from './infrastructure/prisma-mfa-secret-repository';
 import { SesMfaNotificationMailer } from './infrastructure/ses-mfa-notification-mailer';
+import { StubPasswordVerifier } from './infrastructure/stub-password-verifier';
 import { AuthGuard } from './interface/auth.guard';
 import { MfaAdminResetController } from './interface/mfa-admin-reset.controller';
+import { MfaDeviceChangeController } from './interface/mfa-device-change.controller';
 import { MfaEnrollmentController } from './interface/mfa-enrollment.controller';
 import { MfaStepUpController } from './interface/mfa-step-up.controller';
 import { MfaVerificationController } from './interface/mfa-verification.controller';
@@ -49,6 +54,7 @@ import { StepUpGuard } from './interface/step-up.guard';
     MfaStepUpController,
     MfaVerificationController,
     MfaAdminResetController,
+    MfaDeviceChangeController,
   ],
   providers: [
     // Env injecté (cf. NodeCryptoTotpSecretEncrypter qui en a besoin
@@ -62,6 +68,11 @@ import { StepUpGuard } from './interface/step-up.guard';
     VerifyBackupCodeUseCase,
     ResetMfaAdminUseCase,
     CountActiveAdminsUseCase,
+    ChangeDeviceUseCase,
+    RegenerateBackupCodesUseCase,
+
+    // Password verifier (stub MVP — vrai impl Prisma via 002)
+    { provide: PASSWORD_VERIFIER, useClass: StubPasswordVerifier },
 
     // Session Auth.js (livré par 001)
     { provide: AUTH_SESSION_READER, useClass: PrismaAuthSessionReader },
