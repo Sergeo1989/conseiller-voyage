@@ -258,6 +258,51 @@ export interface ProfilPriveDto {
   readonly champsManquants: readonly string[];
 }
 
+// ---------------------------------------------------------------------
+// Page publique (US2) — pas d'auth, anti-énumération côté API
+// ---------------------------------------------------------------------
+
+export interface ProfilPublicPayloadDto {
+  readonly conseillerId: string;
+  readonly slug: string;
+  readonly nomAffiche: string;
+  readonly titre: string | null;
+  readonly biographie: string;
+  readonly photoUrlPublique: string;
+  readonly photoWidth: number;
+  readonly photoHeight: number;
+  readonly specialites: readonly { code: string; label: string }[];
+  readonly langues: readonly { code: string; label: string }[];
+  readonly zonesGeographiques: readonly { code: string; label: string }[];
+  readonly anneesExperience: number;
+  readonly verifieOPCTICO: boolean;
+  readonly publishedAt: string;
+}
+
+/**
+ * Lit la page publique d'un conseiller par slug. Retourne null pour TOUS
+ * les cas non-visibles (anti-énumération SC-003). Consommé en SSG/ISR.
+ */
+export async function lireProfilPublicBySlug(slug: string): Promise<ProfilPublicPayloadDto | null> {
+  const res = await fetch(`${API_BASE_URL}/api/public/profil/${encodeURIComponent(slug)}`, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+  if (res.status !== 200) return null;
+  const data = (await res.json().catch(() => null)) as ProfilPublicPayloadDto | null;
+  return data;
+}
+
+export async function lireSlugsPubliables(): Promise<readonly string[]> {
+  const res = await fetch(`${API_BASE_URL}/api/public/profil`, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+  if (res.status !== 200) return [];
+  const data = (await res.json().catch(() => null)) as { slugs?: readonly string[] } | null;
+  return data?.slugs ?? [];
+}
+
 export async function lireProfilPriveAction(): Promise<ProfilPriveDto | null> {
   const cookieHeader = await getSessionCookieHeader();
   if (!cookieHeader) return null;

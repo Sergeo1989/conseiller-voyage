@@ -54,7 +54,10 @@ const FORBIDDEN_PATTERNS: { pattern: RegExp; label: string }[] = [
 ];
 
 // CTA légitime — sa PRÉSENCE est vérifiée séparément.
-const REQUIRED_CTA_PATTERN = /href=["'][^"']*\/intake/;
+// Match `/intake` n'importe où dans le source (href littéral, variable JSX
+// `/${locale}/intake`, template literal backtick) ; suffit que le source
+// référence /intake quelque part.
+const REQUIRED_CTA_PATTERN = /\/intake(\?|`|"|'|\/|\b)/;
 
 interface Violation {
   file: string;

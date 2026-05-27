@@ -112,10 +112,12 @@ import { RoleGuard } from './interface/role.guard';
 import { StepUpGuard } from './interface/step-up.guard';
 
 import { ConformiteStatusChangedListener } from './application/listeners/conformite-status-changed.listener';
+import { ProfilCacheInvalidator } from './application/listeners/profil-cache-invalidation.listener';
 // Feature 007 (profil conseiller) — ports + adaptateurs
 import { AUTH_USER_LEGAL_NAME_READER } from './application/ports/auth-user-legal-name-reader.port';
 import { CLOUDFRONT_CACHE_INVALIDATOR } from './application/ports/cloudfront-cache-invalidator.port';
 import { EST_PROFIL_PUBLIC_PORT } from './application/ports/est-profil-public.port';
+import { NEXTJS_REVALIDATOR } from './application/ports/nextjs-revalidator.port';
 import { ONBOARDING_RELANCE_SCHEDULER } from './application/ports/onboarding-relance-scheduler.port';
 import { PHOTO_HISTORIQUE_REPOSITORY } from './application/ports/photo-historique-repository.port';
 import { PHOTO_STORAGE } from './application/ports/photo-storage.port';
@@ -124,10 +126,12 @@ import { PROFIL_MODERATION_AUDIT_WRITER } from './application/ports/profil-moder
 import { PROFIL_PUBLIC_READER } from './application/ports/profil-public-reader.port';
 import { SLUG_RESERVATION_REPOSITORY } from './application/ports/slug-reservation-repository.port';
 import { EditerProfilUseCase } from './application/use-cases/editer-profil.use-case';
+import { LirePageProfilPubliqueUseCase } from './application/use-cases/lire-page-profil-publique.use-case';
 import { LireProfilPriveUseCase } from './application/use-cases/lire-profil-prive.use-case';
 import { UploaderPhotoUseCase } from './application/use-cases/uploader-photo.use-case';
 import { BullmqOnboardingRelanceScheduler } from './infrastructure/bullmq-onboarding-relance-scheduler';
 import { AwsCloudFrontCacheInvalidator } from './infrastructure/cloudfront-cache-invalidator';
+import { HttpNextjsRevalidator } from './infrastructure/http-nextjs-revalidator';
 import { PrismaAuthUserLegalNameReader } from './infrastructure/prisma-auth-user-legal-name-reader';
 import { PrismaEstProfilPublic } from './infrastructure/prisma-est-profil-public';
 import { PrismaPhotoHistoriqueRepository } from './infrastructure/prisma-photo-historique-repository';
@@ -137,6 +141,7 @@ import { PrismaProfilPublicReader } from './infrastructure/prisma-profil-public-
 import { PrismaSlugReservationRepository } from './infrastructure/prisma-slug-reservation-repository';
 import { S3PhotoStorage } from './infrastructure/s3-photo-storage';
 import { ProfilConseillerController } from './interface/profil-conseiller.controller';
+import { ProfilPublicController } from './interface/profil-public.controller';
 
 @Module({
   imports: [
@@ -169,6 +174,8 @@ import { ProfilConseillerController } from './interface/profil-conseiller.contro
     LegalPublicController,
     // Profil conseiller (feature 007 US1)
     ProfilConseillerController,
+    // Profil public (feature 007 US2)
+    ProfilPublicController,
   ],
   providers: [
     // Env injecté (cf. NodeCryptoTotpSecretEncrypter qui en a besoin
@@ -258,6 +265,7 @@ import { ProfilConseillerController } from './interface/profil-conseiller.contro
 
     // --- Feature 007 (profil conseiller) — use cases ---
     LireProfilPriveUseCase,
+    LirePageProfilPubliqueUseCase,
     EditerProfilUseCase,
     UploaderPhotoUseCase,
 
@@ -271,6 +279,8 @@ import { ProfilConseillerController } from './interface/profil-conseiller.contro
     { provide: PHOTO_STORAGE, useClass: S3PhotoStorage },
     { provide: CLOUDFRONT_CACHE_INVALIDATOR, useClass: AwsCloudFrontCacheInvalidator },
     { provide: ONBOARDING_RELANCE_SCHEDULER, useClass: BullmqOnboardingRelanceScheduler },
+    { provide: NEXTJS_REVALIDATOR, useClass: HttpNextjsRevalidator },
+    ProfilCacheInvalidator,
     { provide: PROFIL_MODERATION_AUDIT_WRITER, useClass: PrismaProfilModerationAuditWriter },
     { provide: AUTH_USER_LEGAL_NAME_READER, useClass: PrismaAuthUserLegalNameReader },
     { provide: PROFIL_PUBLIC_READER, useClass: PrismaProfilPublicReader },

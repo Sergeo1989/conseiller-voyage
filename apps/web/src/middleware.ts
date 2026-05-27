@@ -27,6 +27,12 @@ import {
   fetchCurrentCguB2bVersion,
   readLegalVersionCookie,
 } from './lib/legal/version-check';
+import {
+  UUID_V4_REGEX,
+  appendEntry,
+  decodeSuggestedCookie,
+  encodeSuggestedCookie,
+} from './lib/profil/cv-suggested-edge';
 
 const intlMiddleware = createMiddleware({
   locales: [...locales],
@@ -34,8 +40,15 @@ const intlMiddleware = createMiddleware({
   localePrefix: { mode: 'always', prefixes: localeUrlPrefixes },
 });
 
-const CONSEILLER_PROTECTED_PATTERN = /\/(?:fr|en)\/(?:conseiller)(?:\/|$)/;
+// `/[locale]/conseiller/profil(/**)` est privé (dashboard, édition profil
+// conseiller). La page publique `/[locale]/conseiller/[slug]` est exclue
+// du check CGU — c'est un slug dynamique qui ne commence jamais par "profil".
+const CONSEILLER_PROTECTED_PATTERN = /\/(?:fr|en)\/conseiller\/(?:profil)(?:\/|$)/;
 const REACCEPTANCE_PATH_PATTERN = /\/(?:fr|en)\/cgu-conseiller\/re-accepter(?:\/|$)?/;
+const INTAKE_PATH_PATTERN = /^\/(?:fr|en)\/intake\/?$/;
+
+const SUGGESTED_COOKIE_NAME = 'cv_suggested';
+const SUGGESTED_COOKIE_MAX_AGE_SEC = 86400;
 
 function shouldCheckLegalVersion(pathname: string): boolean {
   if (pathname.startsWith('/api/')) return false;
@@ -53,9 +66,61 @@ function buildReacceptanceRedirect(req: NextRequest): NextResponse {
   return NextResponse.redirect(url);
 }
 
+/**
+ * T089 — Si requête `/[locale]/intake?suggested=<uuid>`, pose un cookie
+ * HMAC `cv_suggested` (boost soft scoring matching, validité 24h cf.
+ * FR-008a) et redirect vers /intake propre (URL clean pour SEO).
+ *
+ * Compatible Edge runtime via Web Crypto API (helper cv-suggested-edge).
+ */
+async function handleSuggestedCookie(req: NextRequest): Promise<NextResponse | null> {
+  const { pathname, searchParams } = req.nextUrl;
+  if (!INTAKE_PATH_PATTERN.test(pathname)) return null;
+
+  const suggested = searchParams.get('suggested');
+  if (!suggested) return null;
+
+  // Construit toujours une URL propre (sans paramètre suggested) côté redirect.
+  const cleanUrl = req.nextUrl.clone();
+  cleanUrl.searchParams.delete('suggested');
+
+  if (!UUID_V4_REGEX.test(suggested)) {
+    // Paramètre malformé : redirect propre sans set-cookie.
+    return NextResponse.redirect(cleanUrl, 302);
+  }
+
+  const secret = process.env.CV_SUGGESTED_COOKIE_SECRET;
+  if (!secret || secret.length < 32) {
+    // Pas de secret configuré (dev local) : redirect sans set-cookie.
+    return NextResponse.redirect(cleanUrl, 302);
+  }
+
+  const existingCookie = req.cookies.get(SUGGESTED_COOKIE_NAME)?.value;
+  const existing = existingCookie
+    ? ((await decodeSuggestedCookie(existingCookie, secret)) ?? [])
+    : [];
+  const updated = appendEntry(existing, suggested, Date.now());
+  const encoded = await encodeSuggestedCookie(updated, secret);
+
+  const res = NextResponse.redirect(cleanUrl, 302);
+  res.cookies.set(SUGGESTED_COOKIE_NAME, encoded, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: SUGGESTED_COOKIE_MAX_AGE_SEC,
+  });
+  return res;
+}
+
 export default async function middleware(req: NextRequest): Promise<NextResponse> {
   const intlResponse = intlMiddleware(req);
   const { pathname } = req.nextUrl;
+
+  // Feature 007 T089 — branche `/intake?suggested=<id>` AVANT le check CGU
+  // (la route /intake est publique, pas concernée par CGU conseiller).
+  const suggestedResp = await handleSuggestedCookie(req);
+  if (suggestedResp) return suggestedResp;
 
   if (!shouldCheckLegalVersion(pathname)) {
     return intlResponse;
