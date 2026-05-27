@@ -377,6 +377,17 @@ conseiller reçoit un courriel.
   `<title>` de la page utilisent la même valeur que l'affichage UI.
   Le slug URL (`/conseiller/prenom-nom`) reste basé sur le nom légal
   complet, indépendamment du nom affiché.
+- **FR-006b** : Le toggle `afficherNomComplet` DOIT afficher à proximité
+  un **avertissement explicite** au moment de l'activation (passage
+  `false → true`), formulé en FR-CA :
+  > « En affichant votre nom complet, vous acceptez son indexation par
+  > les moteurs de recherche (Google, Bing). Cette indexation persiste
+  > même après une éventuelle demande d'effacement Loi 25 — les moteurs
+  > de recherche conservent leur cache plusieurs semaines. »
+  
+  Cet avertissement DOIT être documenté dans la politique Loi 25 (page
+  publique `/politique-loi25` livrée par feature 004 — coordination
+  rédactionnelle à confirmer).
 - **FR-007** : Le système DOIT renvoyer une réponse `404 Not Found` (et
   rien d'autre — pas de 401, 403, ou 410) pour toute combinaison qui
   ne devrait pas être exposée publiquement, à savoir :
