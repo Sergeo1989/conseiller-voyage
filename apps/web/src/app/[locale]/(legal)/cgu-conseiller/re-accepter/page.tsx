@@ -40,6 +40,8 @@ export default async function Page({
       </section>
 
       <form action={reacceptCguAction} className="space-y-4">
+        {/* Préserve la locale courante pour les redirects du Server Action. */}
+        <input type="hidden" name="locale" value={locale === 'en' ? 'en' : 'fr-CA'} />
         <label className="flex items-start gap-2 text-sm">
           <input
             type="checkbox"
