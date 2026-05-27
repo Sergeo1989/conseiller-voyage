@@ -1,0 +1,61 @@
+{
+  "name": "@cv/profil-domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./result": {
+      "types": "./src/result.ts",
+      "default": "./dist/result.js"
+    },
+    "./slug": {
+      "types": "./src/slug.ts",
+      "default": "./dist/slug.js"
+    },
+    "./magic-number": {
+      "types": "./src/magic-number.ts",
+      "default": "./dist/magic-number.js"
+    },
+    "./statut-profil": {
+      "types": "./src/statut-profil.ts",
+      "default": "./dist/statut-profil.js"
+    },
+    "./nom-affiche": {
+      "types": "./src/nom-affiche.ts",
+      "default": "./dist/nom-affiche.js"
+    },
+    "./suggested-window": {
+      "types": "./src/suggested-window.ts",
+      "default": "./dist/suggested-window.js"
+    },
+    "./suggested-cookie": {
+      "types": "./src/suggested-cookie.ts",
+      "default": "./dist/suggested-cookie.js"
+    },
+    "./dtos": {
+      "types": "./src/dtos/index.ts",
+      "default": "./dist/dtos/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "lint": "biome check --error-on-warnings src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.0"
+  }
+}

@@ -49,6 +49,9 @@ export class BootstrapAdminUseCase {
           role: 'admin',
           emailVerified: now, // bootstrap = email pré-vérifié
           name: `${input.firstName} ${input.lastName}`,
+          // Feature 007 — nom légal explicite (cf. signup-conseiller).
+          firstName: input.firstName,
+          lastName: input.lastName,
         },
         select: { id: true },
       });

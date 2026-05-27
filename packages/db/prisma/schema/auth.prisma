@@ -16,7 +16,16 @@ model AuthUser {
   // manuellement par la migration.
   email         String?   @unique
   emailVerified DateTime?
+  // `name` reste le champ libre Auth.js standard (concaténation
+  // historique `${firstName} ${lastName}`). Conservé pour rétrocompatibilité
+  // avec les controllers existants et l'écosystème Auth.js.
   name          String?
+  // Feature 007 (profil conseiller) : nom légal vérifié explicitement
+  // séparé pour permettre la slugification déterministe (`prenom-nom`)
+  // et le formatage `Marie D.` sans parser le `name` libre.
+  // Backfill par migration 20260527001000_extend_authuser_legal_names.
+  firstName     String?   @db.VarChar(80)
+  lastName      String?   @db.VarChar(80)
   image         String?
   // Rôle métier — RBAC Principe IX. Ajouté par cette feature.
   role          AuthRole  @default(conseiller)
@@ -49,6 +58,13 @@ model AuthUser {
   passwordResetTokens     PasswordResetToken[]
   authOutboxEmails        AuthOutboxEmail[]
   adminInvitationsSent    AdminInvitationToken[]   @relation("AdminInviter")
+
+  // Relation feature 007 (profil conseiller). Modèle dans profil.prisma.
+  // Relation 1-1 optionnelle : un AuthUser de rôle `conseiller` a un
+  // ConseillerProfile créé lors de la 1re transition `pending → verified`
+  // (listener ConformiteStatusChangedEvent). Les admins / voyageurs n'ont
+  // pas de profil.
+  conseillerProfile ConseillerProfile?
 
   @@map("auth_users")
 }

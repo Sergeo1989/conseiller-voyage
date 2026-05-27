@@ -1,0 +1,179 @@
+// T003 — Schéma Prisma du module identité — sous-domaine profil conseiller.
+// Cf. specs/007-profil-conseiller/data-model.md.
+//
+// Conventions :
+//   - Tables préfixées `profile_*` (cohérent avec `conformite_*`, `auth_*`,
+//     `mfa_*`, `legal_*`). check-module-boundaries.ts reconnaît `Profile` +
+//     `profile_` dans MODULE_PREFIXES.identite (T051).
+//   - UUID v4 partout en `@db.Uuid`.
+//   - onDelete: NoAction par défaut — l'effacement Loi 25 passe par
+//     AnonymiserProfilLoi25UseCase (T129) qui anonymise sans supprimer
+//     (préservation slug réservation FR-015 + audit 7 ans).
+//   - Triggers Postgres et check constraints ajoutés par la migration
+//     20260527001100_create_profil_tables (T008).
+
+enum StatutProfil {
+  incomplet
+  pret
+  masque_admin
+  anonymise
+}
+
+enum OnboardingRelanceEtape {
+  j3
+  j7
+  j14
+}
+
+enum OnboardingRelanceEtat {
+  planifie
+  envoye
+  annule
+  echoue
+}
+
+enum ProfilModerationAction {
+  retrait_photo
+  masquage
+  retablissement
+}
+
+enum PhotoUploadStatut {
+  pending_upload
+  commit
+  evicted
+}
+
+model ConseillerProfile {
+  id         String   @id @default(uuid()) @db.Uuid
+  authUserId String   @unique @db.Uuid
+  authUser   AuthUser @relation(fields: [authUserId], references: [id], onDelete: NoAction)
+
+  // Champs éditables (FR-001)
+  titre              String?  @db.VarChar(80)
+  biographie         String?  @db.Text
+  anneesExperience   Int?
+  // Toggle FR-006a — par défaut affiche "Prénom + initiale-nom."
+  afficherNomComplet Boolean  @default(false)
+
+  // Photo (cf. R3 — dimensions persistées pour CWV)
+  photoS3Key       String?  @db.VarChar(255)
+  photoWidth       Int?
+  photoHeight      Int?
+  photoContentType String?  @db.VarChar(50)
+
+  // Slug (Q1 / FR-015) — généré au premier verified, immuable post-publication
+  slug String? @unique @db.VarChar(60)
+
+  // Statut (FR-003)
+  statut              StatutProfil @default(incomplet)
+  raisonMasquageAdmin String?      @db.Text
+
+  // Timestamps
+  publishedAt  DateTime?
+  anonymizedAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations M-N (énumérations versionnées)
+  specialites        ProfileSpeciality[] @relation("ProfileSpecialities")
+  zonesGeographiques ProfileGeoZone[]    @relation("ProfileGeoZones")
+  langues            ProfileLanguage[]   @relation("ProfileLanguages")
+
+  // Relations 1-N
+  photoHistorique    ProfilePhotoHistory[]
+  relancesOnboarding ProfileOnboardingReminderSchedule[]
+  moderationsAudit   ProfilModerationAudit[]
+
+  @@index([statut, publishedAt])
+  @@index([statut, authUserId])
+  @@map("profile_conseiller_profiles")
+}
+
+model ProfilePhotoHistory {
+  id          String            @id @default(uuid()) @db.Uuid
+  profileId   String            @db.Uuid
+  profile     ConseillerProfile @relation(fields: [profileId], references: [id], onDelete: NoAction)
+  s3Key       String            @db.VarChar(255)
+  statut      PhotoUploadStatut @default(pending_upload)
+  width       Int?
+  height      Int?
+  contentType String?           @db.VarChar(50)
+  uploadedAt  DateTime          @default(now())
+  committedAt DateTime?
+  evictedAt   DateTime?
+
+  @@index([profileId, uploadedAt(sort: Desc)])
+  @@index([statut, uploadedAt])
+  @@map("profile_photo_history")
+}
+
+model SlugReservation {
+  slug                String   @id @db.VarChar(60)
+  raison              String   @db.VarChar(50)
+  reservedAt          DateTime @default(now())
+  conseillerIdOrigine String?  @db.Uuid
+
+  @@map("profile_slug_reservations")
+}
+
+model ProfileOnboardingReminderSchedule {
+  id           String                 @id @default(uuid()) @db.Uuid
+  profileId    String                 @db.Uuid
+  profile      ConseillerProfile      @relation(fields: [profileId], references: [id], onDelete: NoAction)
+  etape        OnboardingRelanceEtape
+  etat         OnboardingRelanceEtat  @default(planifie)
+  bullmqJobId  String                 @unique
+  scheduledFor DateTime
+  sentAt       DateTime?
+  cancelledAt  DateTime?
+
+  @@unique([profileId, etape])
+  @@index([etat, scheduledFor])
+  @@map("profile_onboarding_reminder_schedules")
+}
+
+model ProfilModerationAudit {
+  id              String                 @id @default(uuid()) @db.Uuid
+  profileId       String                 @db.Uuid
+  profile         ConseillerProfile      @relation(fields: [profileId], references: [id], onDelete: NoAction)
+  adminAuthUserId String                 @db.Uuid
+  adminEmailHash  String                 @db.VarChar(64)
+  action          ProfilModerationAction
+  raison          String                 @db.Text
+  metadonneesJson Json?
+  occurredAt      DateTime               @default(now())
+
+  @@index([profileId, occurredAt(sort: Desc)])
+  @@map("profile_moderation_audits")
+}
+
+model ProfileSpeciality {
+  code     String              @id @db.VarChar(40)
+  labelFr  String              @db.VarChar(80)
+  ordre    Int                 @default(0)
+  actif    Boolean             @default(true)
+  profiles ConseillerProfile[] @relation("ProfileSpecialities")
+
+  @@map("profile_specialities")
+}
+
+model ProfileGeoZone {
+  code     String              @id @db.VarChar(40)
+  labelFr  String              @db.VarChar(80)
+  ordre    Int                 @default(0)
+  actif    Boolean             @default(true)
+  profiles ConseillerProfile[] @relation("ProfileGeoZones")
+
+  @@map("profile_geo_zones")
+}
+
+model ProfileLanguage {
+  code     String              @id @db.VarChar(8)
+  labelFr  String              @db.VarChar(80)
+  ordre    Int                 @default(0)
+  actif    Boolean             @default(true)
+  profiles ConseillerProfile[] @relation("ProfileLanguages")
+
+  @@map("profile_languages")
+}

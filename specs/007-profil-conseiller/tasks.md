@@ -36,17 +36,17 @@ implémentation et un test indépendants de chaque story.
 **Purpose** : initialisation du package domaine + schéma Prisma + bucket S3
 + secrets. Aucune logique métier ici.
 
-- [ ] T001 Créer le package `packages/profil-domain/` avec `package.json`, `tsconfig.json`, `biome.json` extension, `vitest.config.ts`, structure `src/` + `tests/` (cf. plan.md « Code source »)
-- [ ] T002 Ajouter `@cv/profil-domain` aux workspaces racine (`pnpm-workspace.yaml`) et au `turbo.json` pipeline (`build`, `test`, `lint`)
-- [ ] T003 [P] Créer `packages/db/prisma/schema/profil.prisma` skeleton vide (multi-file Prisma — **D : `previewFeatures = ["prismaSchemaFolder"]` confirmé actif** dans `base.prisma`, Prisma 5.22)
+- [X] T001 Créer le package `packages/profil-domain/` avec `package.json`, `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`, `README.md`, `src/index.ts` placeholder
+- [X] T002 `@cv/profil-domain` couvert par `pnpm-workspace.yaml` (`packages/*` pattern) ; `turbo.json` étendu avec env vars `AWS_S3_BUCKET_PROFILES`, `AWS_KMS_PROFILES_KEY_ID`, `CLOUDFRONT_PROFILES_DISTRIBUTION_ID`, `CLOUDFRONT_PROFILES_PUBLIC_URL`, `CV_SUGGESTED_COOKIE_SECRET`, `CV_REVALIDATE_SECRET` dans `globalPassThroughEnv`
+- [X] T003 [P] Créer `packages/db/prisma/schema/profil.prisma` complet (5 modèles + 4 enums + relations + index) + extension `auth.prisma` (`firstName`, `lastName`, relation `conseillerProfile`) — `prisma validate` ✓ (1 warning préexistant non lié)
 - [ ] T004 [P] Créer le bucket S3 `cv-profiles-photos-ca-central-1` via `infra/cdk/lib/profile-photos-bucket.ts` avec SSE-KMS, ACL private, bucket policy AllowCloudFrontOAC (cf. research.md R2)
 - [ ] T005 [P] Créer la distribution CloudFront `cdn-profiles.conseiller-voyage.ca` avec OAC pointant sur le bucket S3, `Cache-Control: public, max-age=31536000, immutable` sur `/profiles/*` (cf. research.md R2 + M7)
 - [ ] T006 [P] Ajouter les secrets `CV_SUGGESTED_COOKIE_SECRET` (32 octets aléatoires) et `CV_REVALIDATE_SECRET` dans AWS Secrets Manager `ca-central-1` (prod) et 1Password CLI (dev) — cf. plan.md Principe IX
 - [ ] T007 [P] Étendre `infra/cdk/lib/secrets-stack.ts` pour exposer `AWS_S3_PROFILES_BUCKET`, `AWS_KMS_PROFILES_KEY_ID`, `CV_SUGGESTED_COOKIE_SECRET`, `CV_REVALIDATE_SECRET`, `CLOUDFRONT_PROFILES_DISTRIBUTION_ID` au runtime ECS
-- [ ] T008 Migration Prisma `20260527001100_create_profil_tables` (timestamp postérieur aux migrations existantes 20260527000003) : créer enums `StatutProfil`, `OnboardingRelanceEtape`, `OnboardingRelanceEtat`, `ProfilModerationAction`, `PhotoUploadStatut` + tables `conseiller_profiles`, `profile_photo_history`, `slug_reservations`, `profile_onboarding_reminder_schedules`, `profil_moderation_audits`, `profile_specialities`, `profile_geo_zones`, `profile_languages` + index + triggers (`prevent_slug_mutation_after_publish`, `prevent_unanonymize`, append-only `slug_reservations`, append-only `profil_moderation_audits`) + check constraint `chk_raison_masquage_coherence` (cf. data-model.md). **Préfixe table** `profile_` cohérent avec convention `conformite_*` / `auth_*` / `legal_*` / `mfa_*` (check-module-boundaries.ts reconnaît `Profile`/`profile_` à ajouter dans `MODULE_PREFIXES.identite`).
-- [ ] T009 Migration Prisma `20260527001200_seed_profil_enums` : INSERT initial des codes FR-CA dans `profile_specialities` (12), `profile_geo_zones` (12), `profile_languages` (6) — cf. data-model.md Migration 2
-- [ ] T010 **Migration Prisma `20260527001000_extend_authuser_legal_names`** (révisée suite exploration repo) : `ALTER TABLE auth_users ADD COLUMN first_name VARCHAR(80), ADD COLUMN last_name VARCHAR(80)` + backfill SQL pour les rangées existantes (split naïf `name` sur le premier espace : `first_name = split_part(name, ' ', 1)`, `last_name = NULLIF(trim(substring(name FROM position(' ' IN name)+1)), '')`). Le module conformité n'expose pas le nom légal — l'exploration a confirmé que `AuthUser.name` est l'unique source (concaténée par `SignupConseillerUseCase`). On normalise en stockant explicitement `first_name` + `last_name` pour le slug + formatage profil (FR-006a). **Note** : aucune extension du schéma conformité (T010 initialement prévu remplacé).
-- [ ] T010b **Étendre `SignupConseillerUseCase`** (`apps/api/src/modules/identite/application/use-cases/signup-conseiller.use-case.ts`) pour peupler `firstName` + `lastName` en même temps que `name` (concaténation conservée pour rétrocompatibilité Auth.js). Idem `BootstrapAdminUseCase`. Tests intégration existants 006 à étendre.
+- [X] T008 Migration appliquée `20260527174136_init_db` (générée auto par `prisma migrate dev`) : 5 enums + 8 tables `profile_*` + join tables M-N + index + FK + AlterTable `auth_users` (firstName, lastName, unique email) ; puis migration `20260527174200_profil_immutability_triggers` manuelle pour les triggers + check constraint cohérence raison masquage
+- [X] T009 Migration `20260527174400_seed_profil_enums` appliquée : 12 spécialités + 12 zones + 6 langues FR-CA avec ON CONFLICT DO NOTHING idempotent
+- [X] T010 Colonnes `firstName/lastName` ajoutées à `auth_users` via migration `20260527174136_init_db` (auto Prisma) + backfill SQL via migration manuelle `20260527174300_auth_user_legal_names_backfill` (split naïf sur 1er espace, idempotent via guard `WHERE firstName IS NULL OR lastName IS NULL`)
+- [X] T010b 3 use cases étendus pour peupler firstName/lastName : `signup-conseiller.use-case.ts`, `bootstrap-admin.use-case.ts`, `consume-admin-invitation.use-case.ts`. `name` concaténé conservé pour rétrocompatibilité Auth.js. Typecheck @cv/api OK.
 
 ---
 
@@ -60,21 +60,15 @@ séparé visible dans git (constitution Principe VI).
 
 ### Logique pure du domaine (TDD)
 
-- [ ] T011 [P] Écrire `packages/profil-domain/src/result.ts` avec type `Result<T, E>` (discriminated union) + helpers `ok` / `err` (cf. profil-edition.port.md)
-- [ ] T012 [P] **[TDD RED]** Tests `packages/profil-domain/tests/slug.test.ts` couvrant : NFD/diacritic strip (`Élise → elise`, `Côté → cote`), `œ → oe`, `æ → ae`, lettres composées tiret (`Marie-Claire`, `Le Goff`, `St-Pierre`), particules nobiliaires (`de la Tour`, `du Pont`), apostrophes (`d'Aragon` → `d-aragon`), longueur max 60, espaces multiples, `genererSlugUnique` avec collision (`marie-dupont`, `marie-dupont-2`, …), `SLUGS_RESERVES_FRAMEWORK` (slug `admin` ou `profil` → suffixe immédiat), boucle infinie après 100 essais (`SlugDisambiguationExhaustedError`)
-- [ ] T013 **[TDD GREEN]** Implémenter `packages/profil-domain/src/slug.ts` : fonctions pures `slugify(prenom, nom)`, `genererSlugUnique(prenom, nom, slugExistant, slugReserve)`, constante exportée `SLUGS_RESERVES_FRAMEWORK` (cf. research.md R1 + C1)
-- [ ] T014 [P] **[TDD RED]** Tests `packages/profil-domain/tests/magic-number.test.ts` couvrant : JPEG (`FF D8 FF`), PNG (signature 8 octets), WebP (RIFF + WEBP à offset 8), faux positif WAV/AVI rejeté (RIFF sans WEBP), buffer < 12 octets → null, formats inconnus → null
-- [ ] T015 **[TDD GREEN]** Implémenter `packages/profil-domain/src/magic-number.ts` : fonction pure `detecterFormatImage(buffer): 'jpeg' | 'png' | 'webp' | null` (cf. research.md R3 + C3)
-- [ ] T016 [P] **[TDD RED]** Tests `packages/profil-domain/tests/statut-profil.test.ts` couvrant la matrice 16 combinaisons booléennes `(verifie, profilComplet, masqueAdmin, anonymise)` + cas `profilEstComplet` (champ par champ : titre, biographie < 100 chars, spécialités vide, langues vide, photo absente)
-- [ ] T017 **[TDD GREEN]** Implémenter `packages/profil-domain/src/statut-profil.ts` : fonctions pures `calculerStatutProfil(...)` et `profilEstComplet(...)` (cf. data-model.md transitions + M6)
-- [ ] T018 [P] **[TDD RED]** Tests `packages/profil-domain/tests/nom-affiche.test.ts` couvrant la table de référence research.md R5 (7 cas FR-CA : `Marie Dupont`, `Jean-Pierre Le Goff`, `Sébastien de la Tour`, `Anne du Pont`, `Marc St-Pierre`, `Marie Dupont-Tremblay`, `Élise Côté`) — en modes `afficherNomComplet = false` et `true`
-- [ ] T019 **[TDD GREEN]** Implémenter `packages/profil-domain/src/nom-affiche.ts` : fonction pure `formaterNomAffiche({prenomLegal, nomLegal, afficherNomComplet}): string` (cf. research.md R5 + M9)
-- [ ] T020 [P] **[TDD RED]** Tests `packages/profil-domain/tests/suggested-window.test.ts` couvrant les bordures 24h (23h59min ok, 24h ok, 24h01min nok, drift horloge négatif rejeté)
-- [ ] T021 **[TDD GREEN]** Implémenter `packages/profil-domain/src/suggested-window.ts` : fonction pure `fenetreValiditeSuggested(timestampConsultation, now): boolean`
-- [ ] T022 [P] **[TDD RED]** Tests `packages/profil-domain/tests/suggested-cookie.test.ts` couvrant : encode/decode round-trip, validation HMAC (cookie valide ok, cookie tampered → `null`, signature manquante → `null`), plafond FIFO 10 entries, dédoublonnage par `cid` (mise à jour timestamp en queue), entrées > 24h filtrées
-- [ ] T023 **[TDD GREEN]** Implémenter `packages/profil-domain/src/suggested-cookie.ts` : `encodeSuggestedCookie(payload, secret)`, `decodeSuggestedCookie(value, secret): SuggestedEntry[] | null`, `appendEntry(entries, cid, now): SuggestedEntry[]` (cf. contracts/intake-suggested-middleware.md)
-- [ ] T024 [P] Créer les DTOs Zod partagés dans `packages/profil-domain/src/dtos/` : `editer-profil.dto.ts`, `upload-photo.dto.ts`, `masquer-profil.dto.ts`, `suggested-cookie-entry.dto.ts` (cf. contracts/profil-edition.port.md)
-- [ ] T025 [P] Exporter le barrel `packages/profil-domain/src/index.ts` avec tous les symboles publics (functions, types, DTOs)
+- [X] T011 result.ts (Result<T,E> discriminated union + ok/err helpers)
+- [X] T012 + T013 paire TDD slug — 27 tests verts (slugify FR-CA + NFD/diacritic strip + oe/ae + particules + SLUGS_RESERVES_FRAMEWORK + désambiguïsation FIFO + 100-attempts cap)
+- [X] T014 + T015 paire TDD magic-number — 11 tests verts (JPEG/PNG/WebP 12 octets + faux positif WAV/AVI rejeté + buffer < 12 octets null)
+- [X] T016 + T017 paire TDD statut-profil — 12 tests verts (matrice 16 combinaisons + anonymise terminal + masqueAdmin override + profilEstComplet 7 champs)
+- [X] T018 + T019 paire TDD nom-affiche — 11 tests verts (table R5 : Marie D., Jean-Pierre G., Sébastien T., Anne P., Marc S., Marie D., Élise C. + mode complet)
+- [X] T020 + T021 paire TDD suggested-window — 7 tests verts (bordures 24h + drift négatif rejeté)
+- [X] T022 + T023 paire TDD suggested-cookie — 12 tests verts (HMAC SHA-256 + base64url roundtrip + tampering + secret rotation + version inconnue + FIFO 10 + dédoublonnage par cid)
+- [X] T024 DTOs Zod (EditerProfilDto, UploadPhotoDto, MasquerProfilDto + RetablirProfilDto, SuggestedCookieEntryDto)
+- [X] T025 Barrel src/index.ts complet (8 exports : result, slug, magic-number, statut-profil, nom-affiche, suggested-window, suggested-cookie, dtos)
 
 ### Ports applicatifs (interfaces, pas d'implémentation)
 

@@ -71,6 +71,9 @@ export class ConsumeAdminInvitationUseCase {
           role: 'admin',
           emailVerified: now, // lien email = preuve de propriété
           name: `${input.firstName} ${input.lastName}`,
+          // Feature 007 — nom légal explicite.
+          firstName: input.firstName,
+          lastName: input.lastName,
         },
         select: { id: true },
       });
