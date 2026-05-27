@@ -6,7 +6,7 @@ entrée numérotée est destinée à devenir une spec détaillée via
 (ajouts, repriorisations, suppressions) ; chaque modification est
 référencée par commit.
 
-**Dernière mise à jour** : 2026-05-27 (soir — feature 007 phases 1-10 + tests intégration)
+**Dernière mise à jour** : 2026-05-27 (soir — feature 007 phases 1-10 + tests intégration + UI admin web)
 
 > **Note de numérotation** : les IDs de cette roadmap (001, 002, …) sont des
 > identifiants logiques de feature. Les dossiers de spec sous `specs/`
@@ -78,6 +78,7 @@ Couvert par les commits sur `007-profil-conseiller` :
 - Phase 5 US3 (dashboard) : page `/conseiller` + 4 widgets + 3 avertissements FR-012a.
 - Phase 6 US4 (aperçu) : PrevisualiserProfilUseCase + page + BandeauApercu 4 variantes.
 - Phase 7 US6 API (modération admin) : RetirerPhotoAdmin / MasquerProfilAdmin / RetablirProfilAdmin + ProfilAdminController + StepUpGuard.
+- Phase 7 US6 UI (T121-T124 ✅) : console admin Next.js — page liste paginée `/admin/profils` (filtre statut, table 5 colonnes), page détail `/admin/profils/[id]` (identité + historique modérations + 3 actions), dialog Radix `DialogConfirmationAction` (focus trap + textarea raison ≥ 10 chars), Server Actions retirer-photo / masquer / rétablir. Backend étendu : `LireProfilAdminUseCase` (profil + audit trail), `ListerProfilsAdminUseCase` (pagination + filtre statut), 2 endpoints GET dans ProfilAdminController, port `ProfilModerationAuditReader` + adapter Prisma.
 - Phase 8 US5 (Loi 25) : AnonymiserProfilLoi25UseCase idempotent + SlugReservation `conseillerIdOrigine=NULL` (ADR-0015) + ProfilInternalController.
 - Phase 9 (onboarding) : EnvoyerRelanceOnboardingUseCase + BullmqOnboardingRelanceScheduler.
 - Phase 10 (cleanup orphans) : CleanupOrphanPhotosJob.
@@ -86,10 +87,9 @@ Couvert par les commits sur `007-profil-conseiller` :
 
 Reste pour merger 005 vers `main` :
 
-- T121-T125 : UI admin web (console modération côté Next.js, endpoints API en place).
 - Tests Playwright e2e : T070 (US1), T073-T074 (US2 publique + middleware suggested), T115 (US6 admin), T128 (latence retrait < 10 s SC-006).
-- CI bloquant : axe-core (T071, T094-T095), Lighthouse (T076, T095).
-- Polish étendu : README `@cv/profil-domain`, T146a scan adoption cron, T156 PR template Constitution Check.
+- CI bloquant : axe-core (T071, T094-T095, **T125** sur `/admin/profils`), Lighthouse (T076, T095).
+- Polish étendu : README `@cv/profil-domain`, T146a scan adoption cron, T156 PR template Constitution Check, i18n catalogue `admin.profils` complété (libellés inline FR-CA actuellement, EN à venir avec feature 024).
 
 **Contraintes spécifiques à 005 (profil conseiller)** — encadrement [ADR-0002](adr/0002-pas-de-cta-contact-direct.md) :
 
@@ -264,7 +264,7 @@ cas via un `/speckit.specify` quand le moment vient.
 | Sprint | Features visées | Justification |
 |---|---|---|
 | **0** | ✅ 001 (PR #1), ✅ 002a MFA (PR #13), ✅ 002 Auth (PR #14), ✅ 003 Notifications (PR #15), ✅ 004 Mentions légales (PR #12) | **Tier 0 fermé.** Pile identité + notifications + mentions légales prête. 5 PRs mergées, foundations stables pour Tier 1. |
-| **1** | 005 (profil conseiller) | **🔵 en cours** sur `007-profil-conseiller`. Premier Sprint Tier 1. Dépend de 001 + 002 + 002a (toutes mergées). Vue publique anti-marketplace (ADR-0002), dashboard privé conseiller, modération admin (API ✅, UI web à venir), anonymisation Loi 25 + invariant SC-007 ✅. |
+| **1** | 005 (profil conseiller) | **🔵 en cours** sur `007-profil-conseiller`. Premier Sprint Tier 1. Dépend de 001 + 002 + 002a (toutes mergées). Vue publique anti-marketplace (ADR-0002), dashboard privé conseiller, modération admin (API ✅, UI web ✅), anonymisation Loi 25 + invariant SC-007 ✅. Reste tests e2e Playwright + CI a11y/perf avant merge. |
 | **2** | 006, 008 | Facturation onboarding (Stripe) + intake brief. Parallélisable. |
 | **3** | 009, 010, 011, 024 | Enrichissement LLM, magic-link, scoring matching, infra i18n. |
 | **4** | 012, 013, 007 | Notifs + état de lead, conversation, facturation récurrence. |

@@ -197,7 +197,9 @@ export function buildTestConformiteQueryPort(): ConformiteQueryPort {
       conseillerId: string;
       strict?: boolean;
     }): Promise<VerificationStatusDto> {
-      const compliance = await repo.findVerifiedByConseillerId(args.conseillerId);
+      // Cast vers le brand ConseillerId — l'entrée tests utilise des UUID
+      // valides construits par buildUuid, sans qu'on traîne le ConseillerIdSchema.
+      const compliance = await repo.findVerifiedByConseillerId(args.conseillerId as never);
       return {
         conseillerId: args.conseillerId,
         verified: compliance !== null,

@@ -273,10 +273,10 @@ l'événement.
 - [X] T118 RetablirProfilAdminUseCase — recalcul statut via calculerStatutProfil + audit
 - [X] T119 ProfilAdminController NestJS — 3 endpoints + AuthGuard + RoleGuard(admin) + StepUpGuard sur retirer/masquer
 - [ ] T120 [P] [US6] Template email `packages/email-templates/profil/profil-masque-admin.tsx` (react-email, FR-CA)
-- [ ] T121 [P] [US6] Page `apps/web/src/app/[locale]/(admin)/admin/profils/page.tsx` (liste + filtres statut + recherche par nom légal/slug, intégrée à la console conformité existante via tabs)
-- [ ] T122 [P] [US6] Page `apps/web/src/app/[locale]/(admin)/admin/profils/[id]/page.tsx` (détail profil + historique modérations + actions)
-- [ ] T123 [P] [US6] Composant `apps/web/src/app/[locale]/(admin)/admin/profils/_components/dialog-confirmation-action.tsx` (Radix Dialog + textarea raison + focus trap)
-- [ ] T124 [P] [US6] Server Actions admin : `retirer-photo.ts`, `masquer-profil.ts`, `retablir-profil.ts`
+- [X] T121 [P] [US6] Page `apps/web/src/app/[locale]/(admin)/admin/profils/page.tsx` (liste + filtres statut + recherche par nom légal/slug, intégrée à la console conformité existante via tabs)
+- [X] T122 [P] [US6] Page `apps/web/src/app/[locale]/(admin)/admin/profils/[id]/page.tsx` (détail profil + historique modérations + actions)
+- [X] T123 [P] [US6] Composant `apps/web/src/app/[locale]/(admin)/admin/profils/_components/dialog-confirmation-action.tsx` (Radix Dialog + textarea raison + focus trap)
+- [X] T124 [P] [US6] Server Actions admin : `retirer-photo.ts`, `masquer-profil.ts`, `retablir-profil.ts`
 - [ ] T125 [P] [US6] Test axe-core CI sur `/(admin)/admin/profils` et `/[id]`
 
 **Checkpoint US6** : modération fonctionnelle bout en bout, audit immutable, courriels FR-CA.

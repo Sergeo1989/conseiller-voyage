@@ -122,6 +122,7 @@ import { ONBOARDING_RELANCE_SCHEDULER } from './application/ports/onboarding-rel
 import { PHOTO_HISTORIQUE_REPOSITORY } from './application/ports/photo-historique-repository.port';
 import { PHOTO_STORAGE } from './application/ports/photo-storage.port';
 import { PROFIL_CONSEILLER_REPOSITORY } from './application/ports/profil-conseiller-repository.port';
+import { PROFIL_MODERATION_AUDIT_READER } from './application/ports/profil-moderation-audit-reader.port';
 import { PROFIL_MODERATION_AUDIT_WRITER } from './application/ports/profil-moderation-audit-writer.port';
 import { PROFIL_PUBLIC_READER } from './application/ports/profil-public-reader.port';
 import { SLUG_RESERVATION_REPOSITORY } from './application/ports/slug-reservation-repository.port';
@@ -129,7 +130,9 @@ import { AnonymiserProfilLoi25UseCase } from './application/use-cases/anonymiser
 import { EditerProfilUseCase } from './application/use-cases/editer-profil.use-case';
 import { EnvoyerRelanceOnboardingUseCase } from './application/use-cases/envoyer-relance-onboarding.use-case';
 import { LirePageProfilPubliqueUseCase } from './application/use-cases/lire-page-profil-publique.use-case';
+import { LireProfilAdminUseCase } from './application/use-cases/lire-profil-admin.use-case';
 import { LireProfilPriveUseCase } from './application/use-cases/lire-profil-prive.use-case';
+import { ListerProfilsAdminUseCase } from './application/use-cases/lister-profils-admin.use-case';
 import { MasquerProfilAdminUseCase } from './application/use-cases/masquer-profil-admin.use-case';
 import { PrevisualiserProfilUseCase } from './application/use-cases/previsualiser-profil.use-case';
 import { RetablirProfilAdminUseCase } from './application/use-cases/retablir-profil-admin.use-case';
@@ -143,6 +146,7 @@ import { PrismaAuthUserLegalNameReader } from './infrastructure/prisma-auth-user
 import { PrismaEstProfilPublic } from './infrastructure/prisma-est-profil-public';
 import { PrismaPhotoHistoriqueRepository } from './infrastructure/prisma-photo-historique-repository';
 import { PrismaProfilConseillerRepository } from './infrastructure/prisma-profil-conseiller-repository';
+import { PrismaProfilModerationAuditReader } from './infrastructure/prisma-profil-moderation-audit-reader';
 import { PrismaProfilModerationAuditWriter } from './infrastructure/prisma-profil-moderation-audit-writer';
 import { PrismaProfilPublicReader } from './infrastructure/prisma-profil-public-reader';
 import { PrismaSlugReservationRepository } from './infrastructure/prisma-slug-reservation-repository';
@@ -285,6 +289,8 @@ import { ProfilPublicController } from './interface/profil-public.controller';
     RetirerPhotoAdminUseCase,
     MasquerProfilAdminUseCase,
     RetablirProfilAdminUseCase,
+    LireProfilAdminUseCase,
+    ListerProfilsAdminUseCase,
     AnonymiserProfilLoi25UseCase,
     EnvoyerRelanceOnboardingUseCase,
     CleanupOrphanPhotosJob,
@@ -302,6 +308,7 @@ import { ProfilPublicController } from './interface/profil-public.controller';
     { provide: NEXTJS_REVALIDATOR, useClass: HttpNextjsRevalidator },
     ProfilCacheInvalidator,
     { provide: PROFIL_MODERATION_AUDIT_WRITER, useClass: PrismaProfilModerationAuditWriter },
+    { provide: PROFIL_MODERATION_AUDIT_READER, useClass: PrismaProfilModerationAuditReader },
     { provide: AUTH_USER_LEGAL_NAME_READER, useClass: PrismaAuthUserLegalNameReader },
     { provide: PROFIL_PUBLIC_READER, useClass: PrismaProfilPublicReader },
     { provide: EST_PROFIL_PUBLIC_PORT, useClass: PrismaEstProfilPublic },

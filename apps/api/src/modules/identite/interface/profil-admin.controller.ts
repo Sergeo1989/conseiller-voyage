@@ -8,16 +8,22 @@ import {
   Body,
   ConflictException,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   NotFoundException,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AuthenticatedUser } from '../application/ports/auth-session-reader.port';
+// biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
+import { LireProfilAdminUseCase } from '../application/use-cases/lire-profil-admin.use-case';
+// biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
+import { ListerProfilsAdminUseCase } from '../application/use-cases/lister-profils-admin.use-case';
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
 import { MasquerProfilAdminUseCase } from '../application/use-cases/masquer-profil-admin.use-case';
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
@@ -45,7 +51,33 @@ export class ProfilAdminController {
     private readonly retirerPhoto: RetirerPhotoAdminUseCase,
     private readonly masquerProfil: MasquerProfilAdminUseCase,
     private readonly retablirProfil: RetablirProfilAdminUseCase,
+    private readonly lireProfil: LireProfilAdminUseCase,
+    private readonly listerProfils: ListerProfilsAdminUseCase,
   ) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Liste paginée des profils avec filtre statut' })
+  async listerEndpoint(
+    @Query('statut') statut?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    const validStatuts = ['incomplet', 'pret', 'masque_admin', 'anonymise'] as const;
+    const statutParam = validStatuts.includes(statut as never)
+      ? (statut as (typeof validStatuts)[number])
+      : undefined;
+    return this.listerProfils.execute({
+      ...(statutParam && { statut: statutParam }),
+      ...(page && { page: Number.parseInt(page, 10) }),
+      ...(pageSize && { pageSize: Number.parseInt(pageSize, 10) }),
+    });
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Détail profil + historique modérations' })
+  async lireDetailEndpoint(@Param('id') id: string) {
+    return this.lireProfil.execute({ profilId: id });
+  }
 
   @Post(':id/retirer-photo')
   @HttpCode(HttpStatus.OK)
