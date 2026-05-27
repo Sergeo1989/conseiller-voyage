@@ -12,6 +12,10 @@
 //     du plan 004 (T065-T097).
 
 import { Module } from '@nestjs/common';
+import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
+import { SystemClock } from '../../common/infrastructure/system-clock';
+import { CLOCK } from '../../common/ports/clock.port';
+import { UUID_GENERATOR } from '../../common/ports/uuid-generator.port';
 import { env } from '../../env';
 import { ACTIVE_SESSION_REVOKER } from './application/ports/active-session-revoker.port';
 import { ADMIN_INVITATION_TOKEN_REPOSITORY } from './application/ports/admin-invitation-token-repository.port';
@@ -36,9 +40,13 @@ import { PASSWORD_VERIFIER } from './application/ports/password-verifier.port';
 import { TOKEN_ISSUER } from './application/ports/token-issuer.port';
 import { TOTP_SECRET_ENCRYPTER } from './application/ports/totp-secret-encrypter.port';
 import { TOTP_VALIDATOR } from './application/ports/totp-validator.port';
+import { AcceptCguB2bUseCase } from './application/use-cases/accept-cgu-b2b.use-case';
+import { AcceptIntakeConsentUseCase } from './application/use-cases/accept-intake-consent.use-case';
+import { AnonymizeLegalAcceptancesUseCase } from './application/use-cases/anonymize-legal-acceptances.use-case';
 import { BootstrapAdminUseCase } from './application/use-cases/bootstrap-admin.use-case';
 import { ChangeDeviceUseCase } from './application/use-cases/change-device.use-case';
 import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
+import { CheckCguUpToDateUseCase } from './application/use-cases/check-cgu-up-to-date.use-case';
 import { CompletePasswordResetUseCase } from './application/use-cases/complete-password-reset.use-case';
 import { ConsumeAdminInvitationUseCase } from './application/use-cases/consume-admin-invitation.use-case';
 import { CountActiveAdminsUseCase } from './application/use-cases/count-active-admins.use-case';
@@ -90,11 +98,14 @@ import { AuthPasswordChangeController } from './interface/auth-password-change.c
 import { AuthPasswordResetController } from './interface/auth-password-reset.controller';
 import { AuthSignupController } from './interface/auth-signup.controller';
 import { AuthGuard } from './interface/auth.guard';
+import { LegalAcceptanceController } from './interface/legal-acceptance.controller';
+import { LegalPublicController } from './interface/legal-public.controller';
 import { MfaAdminResetController } from './interface/mfa-admin-reset.controller';
 import { MfaDeviceChangeController } from './interface/mfa-device-change.controller';
 import { MfaEnrollmentController } from './interface/mfa-enrollment.controller';
 import { MfaStepUpController } from './interface/mfa-step-up.controller';
 import { MfaVerificationController } from './interface/mfa-verification.controller';
+import { LegalAcceptanceFacade } from './interface/public-api/legal-acceptance.facade';
 import { RoleGuard } from './interface/role.guard';
 import { StepUpGuard } from './interface/step-up.guard';
 
@@ -115,7 +126,9 @@ import { StepUpGuard } from './interface/step-up.guard';
     MfaVerificationController,
     MfaAdminResetController,
     MfaDeviceChangeController,
-    // Legal — controllers ajoutés par les phases 5/6 du plan 004
+    // Legal (feature 004 US3)
+    LegalAcceptanceController,
+    LegalPublicController,
   ],
   providers: [
     // Env injecté (cf. NodeCryptoTotpSecretEncrypter qui en a besoin
@@ -131,6 +144,19 @@ import { StepUpGuard } from './interface/step-up.guard';
     CountActiveAdminsUseCase,
     ChangeDeviceUseCase,
     RegenerateBackupCodesUseCase,
+
+    // Use cases — feature 004 (legal acceptances)
+    AcceptCguB2bUseCase,
+    AcceptIntakeConsentUseCase,
+    AnonymizeLegalAcceptancesUseCase,
+    CheckCguUpToDateUseCase,
+
+    // Public API facade (consommée par 002-voyageur-intake — US4)
+    LegalAcceptanceFacade,
+
+    // Common (Clock + UuidGenerator partagés)
+    { provide: CLOCK, useClass: SystemClock },
+    { provide: UUID_GENERATOR, useClass: CryptoUuidGenerator },
 
     // Use cases — feature 006 (auth conseiller + admin)
     SignupConseillerUseCase,
@@ -210,11 +236,12 @@ import { StepUpGuard } from './interface/step-up.guard';
     RoleGuard,
     StepUpGuard,
     // Legal — consommé par les use cases d'identité côté 004 et par
-    // 002-voyageur-intake via la façade LegalAcceptanceFacade à venir.
+    // 002-voyageur-intake via la façade LegalAcceptanceFacade.
     LEGAL_ACCEPTANCE_READER,
     LEGAL_ACCEPTANCE_WRITER,
     LEGAL_DOCUMENT_REPOSITORY,
     LEGAL_ACCEPTANCE_ANONYMIZATION_WRITER,
+    LegalAcceptanceFacade,
   ],
 })
 export class IdentiteModule {}

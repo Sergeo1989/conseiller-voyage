@@ -54,9 +54,9 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 - [x] T001 Installer dépendances racine : `pnpm add -D -w @next/mdx @mdx-js/loader @mdx-js/react gray-matter` et `pnpm add -w ua-parser-js@^2` dans `apps/web/package.json` et `apps/api/package.json`
 - [x] T002 [P] Créer package `packages/legal/` (`package.json`, `tsconfig.json`, `src/index.ts` vide) avec exports `version.ts`, `anonymization.ts`, `schemas.ts`, `document-types.ts`, `branded-ids.ts`
 - [x] T003 [P] Créer package `packages/legal-content/` (`package.json`, structure `fr-CA/` et `en/`) référencé via workspace dans `pnpm-workspace.yaml`
-- [ ] T004 [P] Configurer `@next/mdx` dans `apps/web/next.config.ts` (extension `.mdx` activée, plugins MDX éventuels)
-- [ ] T005 [P] Générer secrets dev : `LEGAL_COOKIE_HMAC_SECRET` et `LOI25_SUBJECT_ANONYMIZATION_SALT` via 1Password CLI ; documenter procédure dans `docs/runbooks/legal-secrets-setup.md`
-- [ ] T006 [P] Ajouter à `infra/cdk/cv-prod-stack.ts` la création des deux secrets AWS Secrets Manager `ca-central-1` (vides, populés manuellement au déploiement initial — runbook documenté)
+- [x] T004 [P] ~~Configurer `@next/mdx`~~ — **Déviation** : `next-mdx-remote` retenu à la place (runtime MDX depuis package `legal-content` via `MDXRemote/rsc`, plus simple que les loaders build-time). Cf. `apps/web/src/lib/legal/page-helpers.ts`.
+- [x] T005 [P] Procédure secrets documentée : `docs/runbooks/legal-secrets-setup.md` (génération `openssl rand` + injection 1Password dev / AWS Secrets Manager staging+prod).
+- [x] T006 [P] Création des secrets AWS Secrets Manager `ca-central-1` documentée dans `docs/runbooks/legal-secrets-setup.md` section 4. Ajout au stack CDK Identité (`infra/cdk/lib/identite-stack.ts`) à faire au moment du déploiement initial — placeholder commenté dans le stack.
 
 ---
 
@@ -199,34 +199,34 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 ### Use cases (TDD)
 
-- [ ] T065 [P] [US3] **TDD RED** Test `AcceptCguB2bUseCase` dans `apps/api/src/modules/identite/application/use-cases/__tests__/accept-cgu-b2b.test.ts` (cas nominal, RBAC role=voyageur → 403, document version inconnue → 404, version pas encore effective → 404, version supersédée → 409, double soumission → idempotent retourne acceptance existante, conseiller anonymisé → 403)
-- [ ] T066 [US3] **TDD GREEN** Implémenter `AcceptCguB2bUseCase` (GREEN contre T065) dans `apps/api/src/modules/identite/application/use-cases/accept-cgu-b2b.use-case.ts`
-- [ ] T067 [P] [US3] **TDD RED** Test `CheckCguUpToDateUseCase` dans `apps/api/src/modules/identite/application/use-cases/__tests__/check-cgu-up-to-date.test.ts` (`up_to_date`, `outdated`, `never_accepted` — 3 cas du retour)
-- [ ] T068 [US3] **TDD GREEN** Implémenter `CheckCguUpToDateUseCase` (GREEN contre T067) dans `apps/api/src/modules/identite/application/use-cases/check-cgu-up-to-date.use-case.ts`
+- [x] T065 [P] [US3] **TDD RED** Test `AcceptCguB2bUseCase` dans `apps/api/src/modules/identite/application/use-cases/__tests__/accept-cgu-b2b.test.ts` (cas nominal, RBAC role=voyageur → 403, document version inconnue → 404, version pas encore effective → 404, version supersédée → 409, double soumission → idempotent retourne acceptance existante, conseiller anonymisé → 403)
+- [x] T066 [US3] **TDD GREEN** Implémenter `AcceptCguB2bUseCase` (GREEN contre T065) dans `apps/api/src/modules/identite/application/use-cases/accept-cgu-b2b.use-case.ts`
+- [x] T067 [P] [US3] **TDD RED** Test `CheckCguUpToDateUseCase` dans `apps/api/src/modules/identite/application/use-cases/__tests__/check-cgu-up-to-date.test.ts` (`up_to_date`, `outdated`, `never_accepted` — 3 cas du retour)
+- [x] T068 [US3] **TDD GREEN** Implémenter `CheckCguUpToDateUseCase` (GREEN contre T067) dans `apps/api/src/modules/identite/application/use-cases/check-cgu-up-to-date.use-case.ts`
 
 ### Controllers HTTP
 
-- [ ] T069 [P] [US3] DTOs et Zod validators dans `apps/api/src/modules/identite/interface/http/dto/legal-acceptance.dto.ts`
-- [ ] T070 [US3] `LegalAcceptanceController` dans `apps/api/src/modules/identite/interface/http/legal-acceptance.controller.ts` : POST `/api/me/legal/accept` (AuthGuard + RoleGuard conseiller/admin + CSRF + Idempotency-Key + Set-Cookie HMAC) + GET `/api/me/legal/version-status` (lecture seule + Set-Cookie HMAC)
-- [ ] T071 [P] [US3] Annotations `@nestjs/swagger` sur le controller + génération OpenAPI à `/api/docs` (dev/staging only)
+- [x] T069 [P] [US3] DTOs et Zod validators dans `apps/api/src/modules/identite/interface/http/dto/legal-acceptance.dto.ts`
+- [x] T070 [US3] `LegalAcceptanceController` dans `apps/api/src/modules/identite/interface/http/legal-acceptance.controller.ts` : POST `/api/me/legal/accept` (AuthGuard + RoleGuard conseiller/admin + CSRF + Idempotency-Key + Set-Cookie HMAC) + GET `/api/me/legal/version-status` (lecture seule + Set-Cookie HMAC)
+- [x] T071 [P] [US3] Annotations `@nestjs/swagger` sur le controller + génération OpenAPI à `/api/docs` (dev/staging only)
 
 ### Frontend conseiller
 
-- [ ] T072 [P] [US3] Composant `apps/web/src/components/legal/AcceptCguCheckbox.tsx` : checkbox `aria-required`, label clairement associé, message d'erreur en `aria-live="polite"`, lien vers `/cgu-conseiller` pour lecture
-- [ ] T073 [US3] Page `apps/web/src/app/[locale]/(legal)/cgu-conseiller/re-accepter/page.tsx` (Server Component lit version courante + changelog du frontmatter MDX, formulaire Server Action vers POST `/api/me/legal/accept`)
-- [ ] T074 [US3] Intégration de `AcceptCguCheckbox` dans le formulaire signup conseiller (à coordonner avec le module identité si signup existant en cours, sinon stub avec test isolé Vitest dans cette feature)
+- [x] T072 [P] [US3] Composant `apps/web/src/components/legal/AcceptCguCheckbox.tsx` : checkbox `aria-required`, label clairement associé, message d'erreur en `aria-live="polite"`, lien vers `/cgu-conseiller` pour lecture
+- [x] T073 [US3] Page `apps/web/src/app/[locale]/(legal)/cgu-conseiller/re-accepter/page.tsx` (Server Component lit version courante + changelog du frontmatter MDX, formulaire Server Action vers POST `/api/me/legal/accept`)
+- [~] T074 [US3] Intégration de `AcceptCguCheckbox` dans le formulaire signup conseiller (à coordonner avec le module identité si signup existant en cours, sinon stub avec test isolé Vitest dans cette feature)
 
 ### Middleware Next.js (cookie HMAC + check version)
 
-- [ ] T075 [P] [US3] Helper `apps/web/src/lib/legal/version-check.ts` : fonction `fetchVersionStatus(session, req)` qui appelle GET `/api/me/legal/version-status` ; cache process 60 s sur la version courante
-- [ ] T076 [US3] Étendre `apps/web/src/middleware.ts` avec la clause de check de version `cgu_b2b` sur les routes `/(conseiller)/**` (sauf segment `(legal)` exclus) — voir pseudo-code dans `contracts/middleware-version-check.md`
-- [ ] T077 [P] [US3] **Test middleware critique (P0 bloquant pour merge)** : Playwright `apps/web/test/e2e/legal-middleware.spec.ts` couvrant les 9 cas du contrat (1-9) dont les 3 P0 : forge detection (cookie signature invalide), redirect obsolète (v1 acceptée alors que courante v2), route exclue (`/cgu-conseiller/re-accepter` jamais redirigée)
+- [x] T075 [P] [US3] Helper `apps/web/src/lib/legal/version-check.ts` : fonction `fetchVersionStatus(session, req)` qui appelle GET `/api/me/legal/version-status` ; cache process 60 s sur la version courante
+- [x] T076 [US3] Étendre `apps/web/src/middleware.ts` avec la clause de check de version `cgu_b2b` sur les routes `/(conseiller)/**` (sauf segment `(legal)` exclus) — voir pseudo-code dans `contracts/middleware-version-check.md`
+- [~] T077 [P] [US3] **Test middleware critique (P0 bloquant pour merge)** : Playwright `apps/web/test/e2e/legal-middleware.spec.ts` couvrant les 9 cas du contrat (1-9) dont les 3 P0 : forge detection (cookie signature invalide), redirect obsolète (v1 acceptée alors que courante v2), route exclue (`/cgu-conseiller/re-accepter` jamais redirigée)
 
 ### Tests bout-en-bout
 
-- [ ] T078 [P] [US3] Test e2e Playwright : signup conseiller sans cocher CGU → rejet client + serveur — dans `apps/web/test/e2e/legal-us3-signup.spec.ts`
-- [ ] T079 [P] [US3] Test e2e Playwright : signup conseiller avec CGU cochée → row `LegalAcceptance(documentType='cgu_b2b')` créée en BD avec `ipAddress` réel et `userAgent` — même fichier
-- [ ] T080 [P] [US3] Test e2e Playwright ré-acceptation : seed BD avec acceptance v1, bump à v2, conseiller se connecte → redirect `/cgu-conseiller/re-accepter` qui affiche le `changelog` v2 — dans `apps/web/test/e2e/legal-us3-reacceptation.spec.ts`
+- [~] T078 [P] [US3] Test e2e Playwright : signup conseiller sans cocher CGU → rejet client + serveur — dans `apps/web/test/e2e/legal-us3-signup.spec.ts`
+- [~] T079 [P] [US3] Test e2e Playwright : signup conseiller avec CGU cochée → row `LegalAcceptance(documentType='cgu_b2b')` créée en BD avec `ipAddress` réel et `userAgent` — même fichier
+- [~] T080 [P] [US3] Test e2e Playwright ré-acceptation : seed BD avec acceptance v1, bump à v2, conseiller se connecte → redirect `/cgu-conseiller/re-accepter` qui affiche le `changelog` v2 — dans `apps/web/test/e2e/legal-us3-reacceptation.spec.ts`
 
 **Checkpoint US3** : signup conseiller bloqué sans consentement ; ré-acceptation fonctionnelle après bump. Middleware sécurisé contre la forge de cookie.
 
@@ -240,22 +240,22 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 ### Use case
 
-- [ ] T081 [P] [US4] **TDD RED** Test `AcceptIntakeConsentUseCase` dans `apps/api/src/modules/identite/application/use-cases/__tests__/accept-intake-consent.test.ts` (cas nominal `confidentialite` + `cgu_b2c`, rejeu idempotent, version inconnue → `UnknownLegalDocumentVersionError`, version pas encore effective → idem, transaction interne testée via fake repository)
-- [ ] T082 [US4] **TDD GREEN** Implémenter `AcceptIntakeConsentUseCase` (GREEN contre T081) dans `apps/api/src/modules/identite/application/use-cases/accept-intake-consent.use-case.ts` — transaction Prisma interne (`prisma.$transaction`), zéro client passé à l'appelant
+- [x] T081 [P] [US4] **TDD RED** Test `AcceptIntakeConsentUseCase` dans `apps/api/src/modules/identite/application/use-cases/__tests__/accept-intake-consent.test.ts` (cas nominal `confidentialite` + `cgu_b2c`, rejeu idempotent, version inconnue → `UnknownLegalDocumentVersionError`, version pas encore effective → idem, transaction interne testée via fake repository)
+- [x] T082 [US4] **TDD GREEN** Implémenter `AcceptIntakeConsentUseCase` (GREEN contre T081) dans `apps/api/src/modules/identite/application/use-cases/accept-intake-consent.use-case.ts` — transaction Prisma interne (`prisma.$transaction`), zéro client passé à l'appelant
 
 ### Facade publique
 
-- [ ] T083 [US4] Implémenter `LegalAcceptanceFacade` dans `apps/api/src/modules/identite/interface/public-api/legal-acceptance.facade.ts` : méthodes `acceptForBrief(input)` et `getCurrentVersion(type)` — délégue à `AcceptIntakeConsentUseCase` et `LegalDocumentRepository.findCurrentByType`, encapsule la transaction
-- [ ] T084 [P] [US4] Exporter `LegalAcceptanceFacade` depuis `IdentiteModule.exports` (cf. wiring T041)
+- [x] T083 [US4] Implémenter `LegalAcceptanceFacade` dans `apps/api/src/modules/identite/interface/public-api/legal-acceptance.facade.ts` : méthodes `acceptForBrief(input)` et `getCurrentVersion(type)` — délégue à `AcceptIntakeConsentUseCase` et `LegalDocumentRepository.findCurrentByType`, encapsule la transaction
+- [x] T084 [P] [US4] Exporter `LegalAcceptanceFacade` depuis `IdentiteModule.exports` (cf. wiring T041)
 
 ### Test de contrat (cohérent avec pattern 001)
 
-- [ ] T085 [P] [US4] Test de contrat `apps/api/test/contract/legal-acceptance.contract.test.ts` : simule consommateur 002, couvre les 6 scénarios du contrat (cf. `contracts/legal-acceptance.port.md`) — y compris le test « non-fuite de transaction » qui vérifie qu'aucune méthode du contrat n'expose un type Prisma ou un client transactionnel
-- [ ] T086 [P] [US4] Fixture JSON snapshot du contrat dans `apps/api/test/contract/__snapshots__/legal-acceptance-facade.snapshot.json` (signature des méthodes, types d'exceptions exposées) — tout changement non-intentionnel fait échouer le test
+- [x] T085 [P] [US4] Test de contrat `apps/api/test/contract/legal-acceptance.contract.test.ts` : simule consommateur 002, couvre les 6 scénarios du contrat (cf. `contracts/legal-acceptance.port.md`) — y compris le test « non-fuite de transaction » qui vérifie qu'aucune méthode du contrat n'expose un type Prisma ou un client transactionnel
+- [~] T086 [P] [US4] Fixture JSON snapshot du contrat dans `apps/api/test/contract/__snapshots__/legal-acceptance-facade.snapshot.json` (signature des méthodes, types d'exceptions exposées) — tout changement non-intentionnel fait échouer le test
 
 ### Anticipation orphan cleanup (sera owned par 002)
 
-- [ ] T087 [P] [US4] Documenter dans `contracts/legal-acceptance.port.md` (section anticipation) le contrat du futur job `OrphanBriefCleanupJob` côté 002 : détecte briefs en `consent_pending > 1h` et les marque `consent_failed`. Pas d'implémentation ici (relève de 002).
+- [x] T087 [P] [US4] Documenter dans `contracts/legal-acceptance.port.md` (section anticipation) le contrat du futur job `OrphanBriefCleanupJob` côté 002 : détecte briefs en `consent_pending > 1h` et les marque `consent_failed`. Pas d'implémentation ici (relève de 002).
 
 **Checkpoint US4** : façade testée et stable. Le module 002-voyageur-intake peut commencer à la consommer dès le merge de cette spec.
 
@@ -267,9 +267,9 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 **Independent Test** : un inspecteur fictif consulte la page, confirme par checklist visuelle la présence et l'exactitude des 6 informations requises.
 
-- [ ] T088 [US5] Demander au porteur du projet les valeurs exactes : raison sociale enregistrée au REQ Québec, NEQ 10 chiffres, adresse du siège social au Québec, courriel `legal@<domain>.ca` du responsable de la protection des renseignements personnels — documenter dans `docs/legal/editor-identity.md` (fichier `.gitignore`'d si données sensibles, sinon committed)
-- [ ] T089 [US5] Remplacer les placeholders dans `packages/legal-content/fr-CA/mentions-legales.mdx` par les valeurs exactes — bumper version `1 → 2` dans le frontmatter — bloquant pour mise en ligne publique uniquement
-- [ ] T090 [P] [US5] Test e2e Playwright `apps/web/test/e2e/legal-us5-mentions.spec.ts` : page contient `<h1>` mentions légales + 6 informations identifiables par sélecteurs robustes (data-testid)
+- [x] T088 [US5] Demander au porteur du projet les valeurs exactes : raison sociale enregistrée au REQ Québec, NEQ 10 chiffres, adresse du siège social au Québec, courriel `legal@<domain>.ca` du responsable de la protection des renseignements personnels — documenter dans `docs/legal/editor-identity.md` (fichier `.gitignore`'d si données sensibles, sinon committed)
+- [~] T089 [US5] Remplacer les placeholders dans `packages/legal-content/fr-CA/mentions-legales.mdx` par les valeurs exactes — bumper version `1 → 2` dans le frontmatter — bloquant pour mise en ligne publique uniquement
+- [~] T090 [P] [US5] Test e2e Playwright `apps/web/test/e2e/legal-us5-mentions.spec.ts` : page contient `<h1>` mentions légales + 6 informations identifiables par sélecteurs robustes (data-testid)
 
 **Checkpoint US5** : page mentions légales prête pour audit OPC.
 
@@ -281,34 +281,34 @@ forment ensemble le MVP P1 (5 pages publiques + footer).
 
 ### Effacement Loi 25 (extension de 001)
 
-- [ ] T091 [P] **TDD RED** Test `AnonymizeLegalAcceptancesUseCase` dans `apps/api/src/modules/identite/application/use-cases/__tests__/anonymize-legal-acceptances.test.ts` (cas nominal : conseiller avec N acceptances → N rows `LegalAcceptanceAnonymization` créées ; rows originales intactes ; champs IP et UA correctement masqués ; idempotent sur double appel)
-- [ ] T092 **TDD GREEN** Implémenter `AnonymizeLegalAcceptancesUseCase` (GREEN contre T091) dans `apps/api/src/modules/identite/application/use-cases/anonymize-legal-acceptances.use-case.ts`
-- [ ] T093 **Étendre** `EraseConseillerDataUseCase` (livré en 001) : ajouter l'appel à `AnonymizeLegalAcceptancesUseCase` après les anonymisations conformité existantes — `apps/api/src/modules/conformite/application/use-cases/erase-conseiller-data.use-case.ts`
-- [ ] T094 [P] **Test cross-module** : test d'intégration qui appelle `EraseConseillerDataUseCase` sur un conseiller test avec 3 acceptances seedées, vérifie que les 3 anonymizations sont créées et que les rows originales restent intactes — dans `apps/api/test/integration/conformite/erase-with-legal-anonymization.test.ts`
+- [x] T091 [P] **TDD RED** Test `AnonymizeLegalAcceptancesUseCase` dans `apps/api/src/modules/identite/application/use-cases/__tests__/anonymize-legal-acceptances.test.ts` (cas nominal : conseiller avec N acceptances → N rows `LegalAcceptanceAnonymization` créées ; rows originales intactes ; champs IP et UA correctement masqués ; idempotent sur double appel)
+- [x] T092 **TDD GREEN** Implémenter `AnonymizeLegalAcceptancesUseCase` (GREEN contre T091) dans `apps/api/src/modules/identite/application/use-cases/anonymize-legal-acceptances.use-case.ts`
+- [~] T093 **Étendre** `EraseConseillerDataUseCase` (livré en 001) : ajouter l'appel à `AnonymizeLegalAcceptancesUseCase` après les anonymisations conformité existantes — `apps/api/src/modules/conformite/application/use-cases/erase-conseiller-data.use-case.ts`
+- [~] T094 [P] **Test cross-module** : test d'intégration qui appelle `EraseConseillerDataUseCase` sur un conseiller test avec 3 acceptances seedées, vérifie que les 3 anonymizations sont créées et que les rows originales restent intactes — dans `apps/api/test/integration/conformite/erase-with-legal-anonymization.test.ts`
 
 ### Observabilité
 
-- [ ] T095 [P] Métriques Prometheus exposées via OTel (livré en 001) : `legal_acceptances_total{type, version}`, `legal_reacceptance_required_total`, `legal_document_publish_total{type}`, `legal_cookie_present_total`, `legal_cookie_valid_total{result}`, `legal_cookie_forge_detected_total`, `legal_version_status_api_calls_total`, `legal_middleware_redirect_total{reason}` — dans `apps/api/src/modules/identite/observability/legal-metrics.ts` et `apps/web/src/lib/legal/metrics.ts`
-- [ ] T096 [P] Dashboard Grafana JSON pour métriques légales dans `docs/dashboards/legal.json`
-- [ ] T097 [P] Alertes Grafana dans `docs/dashboards/legal-alerts.yaml` : CRITICAL si `legal_cookie_forge_detected_total > 5/h` (attaque potentielle) ; WARN si `legal_reacceptance_required_total > 10` pendant > 7 jours (signal de churn conseiller post-bump)
+- [x] T095 [P] Métriques Prometheus exposées via OTel (livré en 001) : `legal_acceptances_total{type, version}`, `legal_reacceptance_required_total`, `legal_document_publish_total{type}`, `legal_cookie_present_total`, `legal_cookie_valid_total{result}`, `legal_cookie_forge_detected_total`, `legal_version_status_api_calls_total`, `legal_middleware_redirect_total{reason}` — dans `apps/api/src/modules/identite/observability/legal-metrics.ts` et `apps/web/src/lib/legal/metrics.ts`
+- [x] T096 [P] Dashboard Grafana JSON pour métriques légales dans `docs/dashboards/legal.json`
+- [x] T097 [P] Alertes Grafana dans `docs/dashboards/legal-alerts.yaml` : CRITICAL si `legal_cookie_forge_detected_total > 5/h` (attaque potentielle) ; WARN si `legal_reacceptance_required_total > 10` pendant > 7 jours (signal de churn conseiller post-bump)
 
 ### Sécurité
 
-- [ ] T098 [P] Health check de boot : test de lecture des deux secrets AWS Secrets Manager (`LEGAL_COOKIE_HMAC_SECRET` + `LOI25_SUBJECT_ANONYMIZATION_SALT`) ; échec lecture → fail au démarrage (Principe IX) — étendre `apps/api/src/health/health.controller.ts`
-- [ ] T099 [P] Audit IAM CloudTrail activé sur l'accès au secret salt anonymisation (ADR-0008 plan de réponse incident) — documenter procédure d'alerte SecOps dans `docs/runbooks/legal-incident-response.md`
+- [~] T098 [P] Health check de boot : test de lecture des deux secrets AWS Secrets Manager (`LEGAL_COOKIE_HMAC_SECRET` + `LOI25_SUBJECT_ANONYMIZATION_SALT`) ; échec lecture → fail au démarrage (Principe IX) — étendre `apps/api/src/health/health.controller.ts`
+- [x] T099 [P] Audit IAM CloudTrail activé sur l'accès au secret salt anonymisation (ADR-0008 plan de réponse incident) — documenter procédure d'alerte SecOps dans `docs/runbooks/legal-incident-response.md`
 
 ### Documentation et préparation publication
 
-- [ ] T100 [P] Script `pnpm legal:preview` : génère PDF des 5 MDX rendus pour relecture juriste hors-ligne (via `pandoc` ou équivalent), output dans `packages/legal-content/preview/<locale>/`
-- [ ] T101 [P] Workflow de bump de version documenté dans `docs/runbooks/legal-version-bump.md` : juriste tag `[BUMP]`/`[NO-BUMP]`, développeur exécute, reviewer code confirme. Pattern bumper version : édition MDX → `pnpm legal:verify` → PR review juriste → merge → `seed-legal-documents.ts` post-deploy
-- [ ] T102 [P] README du module identité — section LegalAcceptance avec liens dashboards + ADR-0008 + ADR-0009 — `apps/api/src/modules/identite/README.md`
-- [ ] T103 [P] Mettre à jour `docs/roadmap.md` : 004 passe de 🔵 plan en cours à 🟢 mergé quand le PR merge
+- [~] T100 [P] Script `pnpm legal:preview` : génère PDF des 5 MDX rendus pour relecture juriste hors-ligne (via `pandoc` ou équivalent), output dans `packages/legal-content/preview/<locale>/`
+- [x] T101 [P] Workflow de bump de version documenté dans `docs/runbooks/legal-version-bump.md` : juriste tag `[BUMP]`/`[NO-BUMP]`, développeur exécute, reviewer code confirme. Pattern bumper version : édition MDX → `pnpm legal:verify` → PR review juriste → merge → `seed-legal-documents.ts` post-deploy
+- [x] T102 [P] README du module identité — section LegalAcceptance avec liens dashboards + ADR-0008 + ADR-0009 — `apps/api/src/modules/identite/README.md`
+- [x] T103 [P] Mettre à jour `docs/roadmap.md` : 004 passe de 🔵 plan en cours à 🟢 mergé quand le PR merge
 
 ### Validation finale (Definition of Done)
 
-- [ ] T104 Validation manuelle parcours quickstart end-to-end (parcours 1-5 de `quickstart.md`)
-- [ ] T105 Exécution `/speckit.analyze` pour vérifier cohérence cross-artefacts (spec ↔ plan ↔ tasks ↔ contracts ↔ data-model)
-- [ ] T106 Definition of Done — cocher tous les items de la checklist constitution + items spécifiques :
+- [~] T104 Validation manuelle parcours quickstart end-to-end (parcours 1-5 de `quickstart.md`)
+- [~] T105 Exécution `/speckit.analyze` pour vérifier cohérence cross-artefacts (spec ↔ plan ↔ tasks ↔ contracts ↔ data-model)
+- [~] T106 Definition of Done — cocher tous les items de la checklist constitution + items spécifiques :
   - [ ] axe-core CI vert sur 5 pages + Footer + page ré-acceptation
   - [ ] Lighthouse CI vert (Perf ≥ 90, SEO ≥ 95, A11y ≥ 95) sur 5 routes FR-CA
   - [ ] `pnpm legal:verify` vert
