@@ -149,7 +149,7 @@ passe à `prêt`, slug `marie-dupont` généré, `publishedAt` set.
 - [X] T067 Composant PhotoUpload client — input file accept JPEG/PNG/WebP + 5 Mo cap + preview URL.createObjectURL + mapping 7 erreurs Result + aria-live pour pending
 - [X] T068 Composant MultiSelectField inline dans ProfilForm — chip buttons aria-pressed + max enforced + 12 spécialités + 6 langues + 12 zones FR-CA
 - [X] T069 Composant AfficherNomCompletSwitch — aperçu Marie D. ↔ Marie Dupont + alertdialog confirmation à l'activation avec avertissement FR-006b explicite Loi 25 + cache moteurs (logique initialeNom miroir du domaine pur)
-- [ ] T070 [P] [US1] Tests Playwright `apps/web/e2e/profil-edition.spec.ts` couvrant tous les acceptance scenarios US1 (formulaire pré-rempli, sauvegarde valide, biographie effacée → erreur, photo > 5 Mo → erreur)
+- [X] T070 [P] [US1] Tests Playwright `apps/web/e2e/profil-edition.spec.ts` couvrant tous les acceptance scenarios US1 (formulaire pré-rempli, sauvegarde valide, biographie effacée → erreur, photo > 5 Mo → erreur)
 - [ ] T071 [P] [US1] Test axe-core CI sur `/(conseiller)/conseiller/profil` (Principe XI — bloquant `serious`/`critical`)
 
 **Checkpoint US1** : un conseiller peut éditer son profil de bout en bout, sauvegarde persistée, slug généré au premier prêt, photo S3 OK, audit immutable. **Indépendamment testable** : US1 vert sans US2-US6.
@@ -171,8 +171,8 @@ redirection.
 ### Tests pour US2 (TDD intégration + e2e)
 
 - [X] T072 [P] [US2] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/lire-page-profil-publique.spec.ts` couvrant 5 cas → `null` (slug inexistant, slug réservé `slug_reservations`, conformité `pending`, profil `incomplet`, profil `masque_admin`), 1 cas → payload complet, 1 cas → payload avec champ `certificationsVisibles` peuplé
-- [ ] T073 [P] [US2] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-public-page.spec.ts` couvrant les acceptance scenarios US2 (page complète, 404 unifié constant-body, encart pédagogique, CTA unique vers /intake)
-- [ ] T074 [P] [US2] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-suggested-middleware.spec.ts` couvrant : clic CTA → 302 /intake propre + cookie posé, 2 consultations FIFO, 11e éviction, cookie tampered ignoré, `suggested` non-UUID redirect propre sans set-cookie
+- [X] T073 [P] [US2] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-public-page.spec.ts` couvrant les acceptance scenarios US2 (page complète, 404 unifié constant-body, encart pédagogique, CTA unique vers /intake)
+- [X] T074 [P] [US2] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-suggested-middleware.spec.ts` couvrant : clic CTA → 302 /intake propre + cookie posé, 2 consultations FIFO, 11e éviction, cookie tampered ignoré, `suggested` non-UUID redirect propre sans set-cookie
 - [ ] T075 [P] [US2] **[TDD RED]** Test invariant `tools/check-anti-enum-profile.ts` (T050) lancé en mode test e2e — produit 5 cas 404 et vérifie taille corps identique à l'octet près
 - [ ] T076 [P] [US2] **[TDD RED]** Test Lighthouse CI `apps/web/test/lighthouse/profil-public.spec.ts` sur `/conseiller/<seed-slug>` exigeant Performance ≥ 90, SEO ≥ 95, Accessibility ≥ 95
 - [X] T077 [P] [US2] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/est-profil-public.spec.ts` couvrant la table de tests dans contracts/est-profil-public.port.md (nominal + 5 cas négatifs + batch)
@@ -264,7 +264,7 @@ l'événement.
 - [X] T112 [P] [US6] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/masquer-profil-admin.spec.ts` (statut → masque_admin + 404 + courriel + audit)
 - [X] T113 [P] [US6] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/retablir-profil-admin.spec.ts` (statut recalculé via `calculerStatutProfil` + audit, pas de courriel)
 - [X] T114 [P] [US6] **[TDD RED]** Tests intégration : raison manquante refusée pour les 3 actions, StepUpGuard refus si MFA expirée
-- [ ] T115 [P] [US6] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-moderation-admin.spec.ts` couvrant les 4 acceptance scenarios US6
+- [X] T115 [P] [US6] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-moderation-admin.spec.ts` couvrant les 4 acceptance scenarios US6
 
 ### Implémentation US6
 
@@ -295,7 +295,7 @@ slug `marie-dupont-2`.
 
 - [X] T126 [P] [US5] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/anonymiser-profil-loi25.spec.ts` couvrant : (a) PII effacés selon FR-016 (biographie, titre, années, photo S3, history S3, langues/spécialités/zones sets vides), (b) statut → `anonymise`, (c) `anonymizedAt = NOW()`, (d) `SlugReservation` ajouté avec `conseillerIdOrigine = NULL` (cf. ADR-0015), (e) idempotence (re-appel = no-op), (f) trigger Postgres bloque toute tentative `anonymise → autre` (statut terminal)
 - [X] T127 [P] [US5] **[TDD RED]** Test invariant SC-007 `apps/api/test/integration/profil/slug-reuse-invariant.spec.ts` : seed conseiller, l'anonymise, re-seed un conseiller avec exactement le même nom légal → slug généré doit être différent (`marie-dupont-2`)
-- [ ] T128 [P] [US5] **[TDD RED]** Test latence retrait page publique ≤ 10 s `apps/web/e2e/profil-retrait-rapide.spec.ts` : anonymise un profil → mesure le temps avant que `/conseiller/<slug>` retourne 404 (doit être < 10 s, cible SC-006)
+- [X] T128 [P] [US5] **[TDD RED]** Test latence retrait page publique ≤ 10 s `apps/web/e2e/profil-retrait-rapide.spec.ts` : anonymise un profil → mesure le temps avant que `/conseiller/<slug>` retourne 404 (doit être < 10 s, cible SC-006)
 - [X] T129 AnonymiserProfilLoi25UseCase — DELETE S3 parallèle + anonymize + SlugReservation conseillerIdOrigine=NULL (ADR-0015) + annul relances + invalidations
 - [X] T130 Inline dans AnonymiserProfilLoi25UseCase (SlugReservation.reserve raison=loi25)
 - [X] T131 ProfilInternalController — POST /api/internal/profil/:id/anonymiser-loi25 + X-Internal-Service-Token
