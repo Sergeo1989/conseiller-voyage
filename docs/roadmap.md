@@ -6,7 +6,7 @@ entrée numérotée est destinée à devenir une spec détaillée via
 (ajouts, repriorisations, suppressions) ; chaque modification est
 référencée par commit.
 
-**Dernière mise à jour** : 2026-05-27
+**Dernière mise à jour** : 2026-05-27 (soir — feature 007 phases 1-10 + tests intégration)
 
 > **Note de numérotation** : les IDs de cette roadmap (001, 002, …) sont des
 > identifiants logiques de feature. Les dossiers de spec sous `specs/`
@@ -62,11 +62,34 @@ Scope : **S** (1 spec, < 5 user stories) · **M** (~5 US, ~20 FR, équivalent au
 
 ## Tier 1 — Activation conseiller (B2B)
 
-| ID | Feature | Module | Scope | État | Dépend de |
-|---|---|---|---|---|---|
-| 005 | Profil conseiller (public + privé) | identité × SEO | M | ⏳ | 001, 002 |
-| 006 | Facturation — onboarding abonnement (Stripe Checkout) | facturation | M | ⏳ | 002 |
-| 007 | Facturation — récurrence, factures, TPS/TVQ | facturation | M | ⏳ | 006 |
+| ID | Feature | Module | Scope | État | Spec | Dépend de |
+|---|---|---|---|---|---|---|
+| 005 | Profil conseiller (public + privé) | identité × SEO | M | 🔵 implémentation en cours (branche `007-profil-conseiller`) | `specs/007-profil-conseiller/` | 001, 002 |
+| 006 | Facturation — onboarding abonnement (Stripe Checkout) | facturation | M | ⏳ | — | 002 |
+| 007 | Facturation — récurrence, factures, TPS/TVQ | facturation | M | ⏳ | — | 006 |
+
+**État détaillé du chantier 005 (au 2026-05-27 soir)** :
+
+Couvert par les commits sur `007-profil-conseiller` :
+
+- Phases 1-2 : `@cv/profil-domain` (80/80 tests pure-fn), schéma Prisma 5 modèles + 4 migrations (init_db, triggers Postgres, backfill noms légaux, seed enums), ports + symboles DI.
+- Phase 3 US1 (édition profil) : ports + 11 use cases + saga upload photo S3 ↔ DB + listener conformité, page Next.js `/conseiller/profil` + Server Actions + composants ProfilForm/PhotoUpload/AfficherNomCompletSwitch.
+- Phase 4 US2 (page publique) : SSG ISR `/conseiller/[slug]` + JSON-LD Person SANS contactPoint (ADR-0002) + OG image dynamique + sitemap + 404 unifié anti-énumération + cookie `cv_suggested` HMAC SHA-256 Edge runtime + middleware Next.js.
+- Phase 5 US3 (dashboard) : page `/conseiller` + 4 widgets + 3 avertissements FR-012a.
+- Phase 6 US4 (aperçu) : PrevisualiserProfilUseCase + page + BandeauApercu 4 variantes.
+- Phase 7 US6 API (modération admin) : RetirerPhotoAdmin / MasquerProfilAdmin / RetablirProfilAdmin + ProfilAdminController + StepUpGuard.
+- Phase 8 US5 (Loi 25) : AnonymiserProfilLoi25UseCase idempotent + SlugReservation `conseillerIdOrigine=NULL` (ADR-0015) + ProfilInternalController.
+- Phase 9 (onboarding) : EnvoyerRelanceOnboardingUseCase + BullmqOnboardingRelanceScheduler.
+- Phase 10 (cleanup orphans) : CleanupOrphanPhotosJob.
+- Phase 11 polish minimum : ADR-0015 + 2 runbooks (modération + anonymisation Loi 25).
+- Tests intégration (Testcontainers Postgres + Redis live) : **50/50 verts** sur 8 fichiers — T053 LireProfilPrive, T072 LirePageProfilPublique (5 cas null + nominal), T077 EstProfilPublic (contract 9 cas), T111-T114 admin modération + trigger append-only, T126 AnonymiserLoi25 + 2 triggers Postgres, T127 **invariant SC-007 slug-reuse Loi 25** (immuable), T133 Bullmq scheduler, T134 worker EnvoyerRelance, T142 CleanupOrphans. Suite intégration repo complète : 152/152 verts, aucune régression.
+
+Reste pour merger 005 vers `main` :
+
+- T121-T125 : UI admin web (console modération côté Next.js, endpoints API en place).
+- Tests Playwright e2e : T070 (US1), T073-T074 (US2 publique + middleware suggested), T115 (US6 admin), T128 (latence retrait < 10 s SC-006).
+- CI bloquant : axe-core (T071, T094-T095), Lighthouse (T076, T095).
+- Polish étendu : README `@cv/profil-domain`, T146a scan adoption cron, T156 PR template Constitution Check.
 
 **Contraintes spécifiques à 005 (profil conseiller)** — encadrement [ADR-0002](adr/0002-pas-de-cta-contact-direct.md) :
 
@@ -241,7 +264,7 @@ cas via un `/speckit.specify` quand le moment vient.
 | Sprint | Features visées | Justification |
 |---|---|---|
 | **0** | ✅ 001 (PR #1), ✅ 002a MFA (PR #13), ✅ 002 Auth (PR #14), ✅ 003 Notifications (PR #15), ✅ 004 Mentions légales (PR #12) | **Tier 0 fermé.** Pile identité + notifications + mentions légales prête. 5 PRs mergées, foundations stables pour Tier 1. |
-| **1** | 005 (profil conseiller) | Premier Sprint Tier 1. Dépend de 001 + 002 + 002a (toutes mergées). Vue publique anti-marketplace (ADR-0002), dashboard privé conseiller. |
+| **1** | 005 (profil conseiller) | **🔵 en cours** sur `007-profil-conseiller`. Premier Sprint Tier 1. Dépend de 001 + 002 + 002a (toutes mergées). Vue publique anti-marketplace (ADR-0002), dashboard privé conseiller, modération admin (API ✅, UI web à venir), anonymisation Loi 25 + invariant SC-007 ✅. |
 | **2** | 006, 008 | Facturation onboarding (Stripe) + intake brief. Parallélisable. |
 | **3** | 009, 010, 011, 024 | Enrichissement LLM, magic-link, scoring matching, infra i18n. |
 | **4** | 012, 013, 007 | Notifs + état de lead, conversation, facturation récurrence. |
