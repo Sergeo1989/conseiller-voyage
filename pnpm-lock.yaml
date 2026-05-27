@@ -234,6 +234,9 @@ importers:
       '@cv/mfa':
         specifier: workspace:*
         version: link:../../packages/mfa
+      '@cv/profil-domain':
+        specifier: workspace:*
+        version: link:../../packages/profil-domain
       '@cv/shared':
         specifier: workspace:*
         version: link:../../packages/shared
