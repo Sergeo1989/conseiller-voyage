@@ -40,6 +40,21 @@ export interface NotificationPort {
    * l'idempotence garantit qu'aucun double envoi ne sortira.
    */
   send(envelope: NotificationEnvelope): Promise<SendResult>;
+
+  /**
+   * Anonymise tout l'historique courriel d'un destinataire (Loi 25 art. 28.1).
+   *
+   * Nullifie `recipientEmailClear`, `recipientEmailCanonical`, `htmlBody`,
+   * `textBody` dans `notification_email_log`. Le hash HMAC est conservé pour
+   * la traçabilité audit (7 ans, rétention légale). La contrainte CHECK Postgres
+   * garantit qu'une row avec `erasedAt IS NOT NULL` ne peut avoir de champ PII
+   * non-null.
+   *
+   * Idempotent : un second appel pour le même hash retourne `rowsAnonymized=0`.
+   *
+   * Additive — semver MINEUR (T115, US5 feature 023 future).
+   */
+  eraseHistory(emailHashHMAC: string, reason: string): Promise<{ rowsAnonymized: number }>;
 }
 
 export const NOTIFICATION_PORT = Symbol('NOTIFICATION_PORT');

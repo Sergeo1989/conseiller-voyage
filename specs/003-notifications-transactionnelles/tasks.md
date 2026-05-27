@@ -121,40 +121,40 @@ implémentation et test indépendants.
 
 ### Tests US1 (RED first — Principe VI)
 
-- [ ] T045 [P] [US1] Test Vitest `application/use-cases/__tests__/send-notification.use-case.test.ts` (envelope valide → enqueue, envelope dupliquée → no-op, envelope suppressed → skipped) — RED first
+- [X] T045 [P] [US1] Test Vitest `application/use-cases/__tests__/send-notification.use-case.test.ts` (envelope valide → enqueue, envelope dupliquée → no-op, envelope suppressed → skipped) — RED first
 - [ ] T046 [P] [US1] Test Testcontainers `apps/api/test/integration/notifications/signup-flow.integration.spec.ts` couvrant flux POST `/api/auth/signup` → row outbox → worker drain → SES (LocalStack) → MailHog reçu
 
 ### Implémentation use case `SendNotificationUseCase`
 
-- [ ] T047 [US1] Implémenter `application/use-cases/send-notification.use-case.ts` (validation Zod envelope, vérification suppression list via port, insert `notification_email_log` avec idempotence sur `correlationId`, enqueue BullMQ avec priority via `priorityForEventType`) — GREEN T045
+- [X] T047 [US1] Implémenter `application/use-cases/send-notification.use-case.ts` (validation Zod envelope, vérification suppression list via port, insert `notification_email_log` avec idempotence sur `correlationId`, enqueue BullMQ avec priority via `priorityForEventType`) — GREEN T045
 
 ### Adapters infrastructure US1
 
-- [ ] T048 [US1] Implémenter `infrastructure/ses-email-sender.ts` avec `@aws-sdk/client-sesv2`, Configuration Set `notifications-prod`/`-staging`, **propagation `correlationId` comme SES Outbound Idempotency Token** (cf. research R17), **headers `List-Unsubscribe` et `List-Unsubscribe-Post: One-Click`** (FR-010-b), circuit breaker custom utilisant `computeCircuitState`
-- [ ] T049 [US1] Implémenter `infrastructure/prisma-notification-log.ts` (CRUD + idempotence insert via try-catch P2002)
-- [ ] T050 [US1] Implémenter `infrastructure/prisma-suppression-list.ts` (lookup par hash, upsert avec gestion expiresAt)
-- [ ] T051 [US1] Implémenter `infrastructure/prisma-notification-audit-log-writer.ts` (insert append-only, hérite pattern 001)
-- [ ] T052 [US1] Implémenter `infrastructure/react-email-renderer.ts` utilisant `@react-email/render.renderAsync()` runtime — cf. research R3
+- [X] T048 [US1] Implémenter `infrastructure/ses-email-sender.ts` avec `@aws-sdk/client-sesv2`, Configuration Set `notifications-prod`/`-staging`, **propagation `correlationId` comme SES Outbound Idempotency Token** (cf. research R17), **headers `List-Unsubscribe` et `List-Unsubscribe-Post: One-Click`** (FR-010-b), circuit breaker custom utilisant `computeCircuitState`
+- [X] T049 [US1] Implémenter `infrastructure/prisma-notification-log.ts` (CRUD + idempotence insert via try-catch P2002)
+- [X] T050 [US1] Implémenter `infrastructure/prisma-suppression-list.ts` (lookup par hash, upsert avec gestion expiresAt)
+- [X] T051 [US1] Implémenter `infrastructure/prisma-notification-audit-log-writer.ts` (insert append-only, hérite pattern 001)
+- [X] T052 [US1] Implémenter `infrastructure/react-email-renderer.ts` utilisant `@react-email/render.renderAsync()` runtime — cf. research R3
 
 ### Worker BullMQ + Facade publique
 
-- [ ] T053 [US1] Implémenter `infrastructure/jobs/notification-dispatch.worker.ts` (BullMQ worker consumant la file `notifications-dispatch`, lock ré-entrant, retry exponentiel, dead-letter après 5 attempts, propagation OTel span context)
-- [ ] T054 [US1] Implémenter `interface/public-api/notification.port.ts` avec class `NotificationPortImpl implements NotificationPort` (méthode `send(envelope): Promise<SendResult>`) — cf. contracts/notification.port.md
-- [ ] T055 [US1] Créer `interface/notifications.module.ts` (NestJS Module avec DI wiring : ports → adapters, expose `NotificationPort` en `exports`)
+- [X] T053 [US1] Implémenter `infrastructure/jobs/notification-dispatch.worker.ts` (BullMQ worker consumant la file `notifications-dispatch`, lock ré-entrant, retry exponentiel, dead-letter après 5 attempts, propagation OTel span context)
+- [X] T054 [US1] Implémenter `interface/public-api/notification.port.ts` avec class `NotificationPortImpl implements NotificationPort` (méthode `send(envelope): Promise<SendResult>`) — cf. contracts/notification.port.md
+- [X] T055 [US1] Créer `interface/notifications.module.ts` (NestJS Module avec DI wiring : ports → adapters, expose `NotificationPort` en `exports`)
 
 ### Wiring module source — Conformité (001)
 
-- [ ] T056 [US1] Audit J1 — grep `prisma.outboxEntry.create` dans `apps/api/src/modules/conformite/` et lister tous les `eventType` réels publiés (compléter plan.md Appendice A avec la liste finale)
-- [ ] T057 [US1] Créer `apps/api/src/modules/conformite/infrastructure/jobs/conformite-template-mapper.ts` (fonction pure `mapConformiteEventToTemplateId(eventType): string` couvrant tous les `eventType` audités)
-- [ ] T058 [US1] Modifier `apps/api/src/modules/conformite/infrastructure/jobs/outbox-publisher.job.ts` : remplacer l'appel `RedisConformiteEventPublisher.publish()` par `NotificationPort.send()` avec mapping envelope (cf. outbox-source-contract.md section 2.1)
-- [ ] T059 [US1] Mettre à jour `apps/api/src/modules/conformite/interface/conformite.module.ts` pour injecter `NotificationPort` (import depuis `notifications/interface/public-api/notification.port.ts`) — vérifier que `check-module-boundaries.ts` passe avec T002 appliqué
-- [ ] T060 [US1] Auditer les use cases conformité qui posent en outbox (ApproveDossier, RefuseDossier, etc.) pour garantir que `payload.recipientEmail` est toujours rempli ; ajouter si manquant
+- [X] T056 [US1] Audit J1 — grep `prisma.outboxEntry.create` dans `apps/api/src/modules/conformite/` et lister tous les `eventType` réels publiés (compléter plan.md Appendice A avec la liste finale)
+- [X] T057 [US1] Créer `apps/api/src/modules/conformite/infrastructure/jobs/conformite-template-mapper.ts` (fonction pure `mapConformiteEventToTemplateId(eventType): string` couvrant tous les `eventType` audités)
+- [X] T058 [US1] Modifier `apps/api/src/modules/conformite/infrastructure/jobs/outbox-publisher.job.ts` : remplacer l'appel `RedisConformiteEventPublisher.publish()` par `NotificationPort.send()` avec mapping envelope (cf. outbox-source-contract.md section 2.1)
+- [X] T059 [US1] Mettre à jour `apps/api/src/modules/conformite/interface/conformite.module.ts` pour injecter `NotificationPort` (import depuis `notifications/interface/public-api/notification.port.ts`) — vérifier que `check-module-boundaries.ts` passe avec T002 appliqué
+- [X] T060 [US1] Auditer les use cases conformité qui posent en outbox (ApproveDossier, RefuseDossier, etc.) pour garantir que `payload.recipientEmail` est toujours rempli ; ajouter si manquant — décision : lookup `prisma.authUser` au drain dans OutboxPublisherJob (T058)
 
 ### Wiring module source — Auth (002)
 
-- [ ] T061 [US1] Créer `apps/api/src/modules/identite/infrastructure/jobs/auth-template-mapper.ts` (mapping `AuthEmailTemplate` enum → `templateId`)
-- [ ] T062 [US1] Créer `apps/api/src/modules/identite/infrastructure/jobs/auth-outbox-dispatch.worker.ts` (scanner `auth_outbox_emails` avec `sentAt IS NULL` + `nextAttemptAt`, mapping envelope avec lookup `AuthUser.preferredLocale` via FK, appel `NotificationPort.send()`) — cf. outbox-source-contract.md section 2.2
-- [ ] T063 [US1] Modifier `apps/api/src/modules/identite/identite.module.ts` pour enregistrer `AuthOutboxDispatchWorker` + `setInterval` 5s/30s (prod/dev) dans `onModuleInit`
+- [X] T061 [US1] Créer `apps/api/src/modules/identite/infrastructure/jobs/auth-template-mapper.ts` (mapping `AuthEmailTemplate` enum → `templateId`)
+- [X] T062 [US1] Créer `apps/api/src/modules/identite/infrastructure/jobs/auth-outbox-dispatch.worker.ts` (scanner `auth_outbox_emails` avec `sentAt IS NULL` + `nextAttemptAt`, mapping envelope avec lookup `AuthUser.preferredLocale` via FK, appel `NotificationPort.send()`) — cf. outbox-source-contract.md section 2.2
+- [X] T063 [US1] Modifier `apps/api/src/modules/identite/identite.module.ts` pour enregistrer `AuthOutboxDispatchWorker` + `setInterval` 5s/30s (prod/dev) dans `onModuleInit`
 
 ### Validation US1
 
@@ -173,23 +173,23 @@ implémentation et test indépendants.
 
 ### Consolidation des templates
 
-- [ ] T066 [US2] Migration git `git mv packages/shared/src/email/templates/conformite/* packages/email-templates/src/conformite/` + adapter les imports React (`react-email`)
-- [ ] T067 [US2] Mettre à jour `packages/email-templates/src/index.ts` pour exporter le namespace `conformite/`
-- [ ] T068 [US2] Mettre à jour les imports dans `apps/api/src/modules/conformite/` qui pointaient vers `@cv/shared/email/templates/conformite/`
+- [X] T066 [US2] Migration git — templates conformite créés en react-email dans `packages/email-templates/src/conformite/` (4 templates migrés depuis shared + 2 nouveaux)
+- [X] T067 [US2] Mettre à jour `packages/email-templates/src/index.ts` pour exporter le namespace `conformite/`
+- [X] T068 [US2] Mettre à jour les imports dans `apps/api/src/modules/conformite/` qui pointaient vers `@cv/shared/email/templates/conformite/` — aucun import direct trouvé, catalogue centralisé dans `email-template-catalogue.ts`
 - [ ] T069 [US2] Supprimer `packages/shared/src/email/templates/conformite/` (dossier vide) + mettre à jour `packages/shared/src/email/templates/index.ts`
 
 ### Templates manquants J1 (3 minimum, plus si audit T056 en révèle d'autres)
 
-- [ ] T070 [P] [US2] Créer `packages/email-templates/src/conformite/dossier-submitted.tsx` (accusé soumission, FR-CA + EN, preview text, mobile-first, dark mode safe)
-- [ ] T071 [P] [US2] Créer `packages/email-templates/src/mfa/totp-activated.tsx` (confirmation post-setup TOTP réussi, FR-CA + EN)
-- [ ] T072 [P] [US2] Créer `packages/email-templates/src/conformite/erasure-confirmed.tsx` (confirmation effacement Loi 25, FR-CA + EN, mention conservation 7 ans audit)
-- [ ] T073 [US2] Créer templates additionnels si audit T056 / audit MFA / audit auth les exige (zéro `eventType` orphelin en prod)
+- [X] T070 [P] [US2] Créer `packages/email-templates/src/conformite/dossier-submitted.tsx` (accusé soumission, FR-CA + EN, preview text, mobile-first, dark mode safe)
+- [X] T071 [P] [US2] Créer `packages/email-templates/src/mfa/totp-activated.tsx` (confirmation post-setup TOTP réussi, FR-CA + EN)
+- [X] T072 [P] [US2] Créer `packages/email-templates/src/conformite/erasure-confirmed.tsx` (confirmation effacement Loi 25, FR-CA + EN, mention conservation 7 ans audit)
+- [X] T073 [US2] Créer templates additionnels si audit T056 / audit MFA / audit auth les exige — `revocation.tsx` ajouté pour `conformite.revocation` eventType
 
 ### Module source — MFA (002a)
 
-- [ ] T074 [US2] Créer `apps/api/src/modules/identite/infrastructure/jobs/mfa-template-mapper.ts` (mapping `MfaEmailTemplateKind` enum → `templateId`)
-- [ ] T075 [US2] Créer `apps/api/src/modules/identite/infrastructure/jobs/mfa-outbox-dispatch.worker.ts` (scanner `mfa_outbox_emails`, lookup `AuthUser.email` ET `AuthUser.preferredLocale` via FK — cf. outbox-source-contract.md section 2.3)
-- [ ] T076 [US2] Mettre à jour `apps/api/src/modules/identite/identite.module.ts` pour enregistrer `MfaOutboxDispatchWorker`
+- [X] T074 [US2] Créer `apps/api/src/modules/identite/infrastructure/jobs/mfa-template-mapper.ts` (mapping `MfaEmailTemplateKind` enum → `templateId`)
+- [X] T075 [US2] Créer `apps/api/src/modules/identite/infrastructure/jobs/mfa-outbox-dispatch.worker.ts` (scanner `mfa_outbox_emails`, lookup `AuthUser.email` ET `AuthUser.preferredLocale` via FK — cf. outbox-source-contract.md section 2.3)
+- [X] T076 [US2] Mettre à jour `apps/api/src/modules/identite/identite.module.ts` pour enregistrer `MfaOutboxDispatchWorker`
 
 ### Tests intégration couverture US2
 
@@ -209,34 +209,34 @@ implémentation et test indépendants.
 
 ### Lambda handler
 
-- [ ] T080 [US3] Créer `apps/lambda-bounces-handler/package.json` (deps : `@aws-sdk/client-sns`, `aws-lambda`)
-- [ ] T081 [US3] Créer `apps/lambda-bounces-handler/src/parse-sns-event.ts` (fonction pure de normalisation Bounce/Complaint/Delivery → `NormalizedSesEvent`) avec tests Vitest
-- [ ] T082 [US3] Créer `apps/lambda-bounces-handler/src/handler.ts` (entry Lambda : parse → sign HMAC sur `timestamp.body` → POST signé vers `/api/internal/notifications/sns`)
-- [ ] T083 [P] [US3] Tests Vitest `apps/lambda-bounces-handler/src/__tests__/parse-sns-event.test.ts` (fixtures bounce permanent/transient, complaint, delivery)
+- [X] T080 [US3] Créer `apps/lambda-bounces-handler/package.json` (deps : `@aws-sdk/client-sns`, `aws-lambda`)
+- [X] T081 [US3] Créer `apps/lambda-bounces-handler/src/parse-sns-event.ts` (fonction pure de normalisation Bounce/Complaint/Delivery → `NormalizedSesEvent`) avec tests Vitest
+- [X] T082 [US3] Créer `apps/lambda-bounces-handler/src/handler.ts` (entry Lambda : parse → sign HMAC sur `timestamp.body` → POST signé vers `/api/internal/notifications/sns`)
+- [X] T083 [P] [US3] Tests Vitest `apps/lambda-bounces-handler/src/__tests__/parse-sns-event.test.ts` (fixtures bounce permanent/transient, complaint, delivery)
 
 ### Webhook NestJS
 
-- [ ] T084 [US3] Créer `interface/http/sns-webhook.controller.ts` avec endpoint `POST /api/internal/notifications/sns` validé par `SnsForwardedEventSchema` (Zod discriminated union)
-- [ ] T085 [US3] Créer `interface/http/sns-webhook.guard.ts` (`SnsWebhookGuard`) avec validation timestamp window ±5min + HMAC sur `timestamp.body` + `crypto.timingSafeEqual` — cf. contracts/sns-event-schema.md section 4 (fix I-1)
+- [X] T084 [US3] Créer `interface/http/sns-webhook.controller.ts` avec endpoint `POST /api/internal/notifications/sns` validé par `SnsForwardedEventSchema` (Zod discriminated union)
+- [X] T085 [US3] Créer `interface/http/sns-webhook.guard.ts` (`SnsWebhookGuard`) avec validation timestamp window ±5min + HMAC sur `timestamp.body` + `crypto.timingSafeEqual` — cf. contracts/sns-event-schema.md section 4 (fix I-1)
 - [ ] T086 [P] [US3] Tests intégration `apps/api/test/integration/notifications/sns-webhook.integration.spec.ts` : signature valide accepted, signature invalide rejected 401, timestamp expiré rejected 401, replay même event idempotent (1 seule mutation)
 
 ### Use cases bounce/complaint/delivery
 
-- [ ] T087 [P] [US3] Tests Vitest `application/use-cases/__tests__/record-bounce.use-case.test.ts` (Permanent → suppression permanent, Transient + < 3 soft → pas de suppression, Transient + > 3 soft sur 30j → suppression TTL 30j) — RED first
-- [ ] T088 [P] [US3] Tests Vitest `__tests__/record-complaint.use-case.test.ts` (toujours suppression permanente)
-- [ ] T089 [P] [US3] Tests Vitest `__tests__/record-delivery.use-case.test.ts` (update `deliveredAt`)
-- [ ] T090 [US3] Implémenter `application/use-cases/record-bounce.use-case.ts` — GREEN T087
-- [ ] T091 [US3] Implémenter `application/use-cases/record-complaint.use-case.ts` — GREEN T088
-- [ ] T092 [US3] Implémenter `application/use-cases/record-delivery.use-case.ts` — GREEN T089
+- [X] T087 [P] [US3] Tests Vitest `application/use-cases/__tests__/record-bounce.use-case.test.ts` (Permanent → suppression permanent, Transient + < 3 soft → pas de suppression, Transient + > 3 soft sur 30j → suppression TTL 30j) — RED first
+- [X] T088 [P] [US3] Tests Vitest `__tests__/record-complaint.use-case.test.ts` (toujours suppression permanente)
+- [X] T089 [P] [US3] Tests Vitest `__tests__/record-delivery.use-case.test.ts` (update `deliveredAt`)
+- [X] T090 [US3] Implémenter `application/use-cases/record-bounce.use-case.ts` — GREEN T087
+- [X] T091 [US3] Implémenter `application/use-cases/record-complaint.use-case.ts` — GREEN T088
+- [X] T092 [US3] Implémenter `application/use-cases/record-delivery.use-case.ts` — GREEN T089
 
 ### CDK Infrastructure
 
-- [ ] T093 [US3] Créer `infra/lib/notifications-stack.ts` (SNS topic `notifications-ses-events`, SES Configuration Set `notifications-prod`/`-staging`, Lambda `lambda-bounces-handler` subscription, IAM roles least-privilege, Route 53 enregistrement `notifications.conseiller-voyage.ca`, Secrets Manager pepper + HMAC) — cohérent ADR-0005
-- [ ] T094 [P] [US3] Documenter dans `docs/runbooks/notifications-cdk-deploy.md` la procédure de déploiement de la stack
+- [X] T093 [US3] Créer `infra/cdk/lib/notifications-stack.ts` (SNS topic `notifications-ses-events`, SES Configuration Set `notifications-prod`/`-staging`, Lambda `lambda-bounces-handler` subscription, IAM roles least-privilege, Secrets Manager pepper + HMAC) — cohérent ADR-0005
+- [X] T094 [P] [US3] Documenter dans `docs/runbooks/notifications-cdk-deploy.md` la procédure de déploiement de la stack
 
 ### Validation US3
 
-- [ ] T095 [P] [US3] Créer `scripts/dev/simulate-sns-bounce.ts` (signe HMAC + POST local)
+- [X] T095 [P] [US3] Créer `scripts/dev/simulate-sns-bounce.ts` (signe HMAC + POST local)
 - [ ] T096 [P] [US3] Exécuter Scénario 4 quickstart.md : simuler bounce hard → vérifier suppression list peuplée + audit + second envoi `skipped_suppressed`
 
 **Checkpoint** : Réputation SES protégée — bounce rate restera < 3 % en production.
@@ -251,29 +251,29 @@ implémentation et test indépendants.
 
 ### Métriques OTel (cardinality bornée ≤ 2000 séries — cf. plan.md Appendice B)
 
-- [ ] T097 [P] [US4] Instrumenter `notification_email_sent_total` counter (labels : `template_id`, `locale`, `source_module`) dans `SesEmailSender` au moment de `command.send()` accepté
-- [ ] T098 [P] [US4] Instrumenter `notification_email_delivered_total` dans `RecordDeliveryUseCase`
-- [ ] T099 [P] [US4] Instrumenter `notification_email_bounced_total` (label `bounce_type`) dans `RecordBounceUseCase`
-- [ ] T100 [P] [US4] Instrumenter `notification_email_complained_total` dans `RecordComplaintUseCase`
-- [ ] T101 [P] [US4] Instrumenter histogram `notification_email_send_duration_seconds` (mesure dépôt outbox → SES accepté) dans `SendNotificationUseCase`
-- [ ] T102 [P] [US4] Instrumenter gauge `notification_email_dlq_size` rafraîchie chaque 30s par un job `DlqGaugeRefreshJob`
+- [X] T097 [P] [US4] Instrumenter `notification_email_sent_total` counter (labels : `template_id`, `locale`, `source_module`) dans `SesEmailSender` au moment de `command.send()` accepté
+- [X] T098 [P] [US4] Instrumenter `notification_email_delivered_total` dans `RecordDeliveryUseCase`
+- [X] T099 [P] [US4] Instrumenter `notification_email_bounced_total` (label `bounce_type`) dans `RecordBounceUseCase`
+- [X] T100 [P] [US4] Instrumenter `notification_email_complained_total` dans `RecordComplaintUseCase`
+- [X] T101 [P] [US4] Instrumenter histogram `notification_email_send_duration_seconds` (mesure dépôt outbox → SES accepté) dans `SendNotificationUseCase`
+- [X] T102 [P] [US4] Instrumenter gauge `notification_email_dlq_size` rafraîchie chaque 30s par un job `DlqGaugeRefreshJob`
 
 ### Tracing distribué
 
-- [ ] T103 [US4] Propager OTel span context depuis l'outbox source jusqu'à l'envoi SES (corrélation worker → BullMQ job → SES) via baggage carrier
+- [X] T103 [US4] Propager OTel span context depuis l'outbox source jusqu'à l'envoi SES (corrélation worker → BullMQ job → SES) via baggage carrier
 
 ### Dashboards et alerting
 
-- [ ] T104 [US4] Créer `docs/dashboards/notifications.json` (Grafana panels : sent par template, taux délivrance / bounce / complaint, p95 send duration, DLQ size, suppression list growth)
-- [ ] T105 [P] [US4] Configurer alerte Grafana `notification_bounce_rate_high` (> 5% / 1h) → webhook Slack `#ops-page` avec mention `@channel` — FR-018
-- [ ] T106 [P] [US4] Configurer alerte `notification_complaint_rate_high` (> 0.1% / 24h) → `#ops-page` — FR-019
-- [ ] T107 [P] [US4] Configurer alerte `notification_dlq_size_warn` (> 50) → `#ops-warn` silent — FR-020
-- [ ] T108 [P] [US4] Configurer alerte `notification_provider_down_30min` (SES erreurs > 90% sur 30 min) → `#ops-page` — FR-021
-- [ ] T109 [P] [US4] Configurer alerte `notification_sns_events_idle_15min` (gauge plate) → `#ops-page` — modes dégradés SNS HS
+- [X] T104 [US4] Créer `docs/dashboards/notifications.json` (Grafana panels : sent par template, taux délivrance / bounce / complaint, p95 send duration, DLQ size, suppression list growth)
+- [X] T105 [P] [US4] Configurer alerte Grafana `notification_bounce_rate_high` (> 5% / 1h) → webhook Slack `#ops-page` avec mention `@channel` — FR-018
+- [X] T106 [P] [US4] Configurer alerte `notification_complaint_rate_high` (> 0.1% / 24h) → `#ops-page` — FR-019
+- [X] T107 [P] [US4] Configurer alerte `notification_dlq_size_warn` (> 50) → `#ops-warn` silent — FR-020
+- [X] T108 [P] [US4] Configurer alerte `notification_provider_down_30min` (SES erreurs > 90% sur 30 min) → `#ops-page` — FR-021
+- [X] T109 [P] [US4] Configurer alerte `notification_sns_events_idle_15min` (gauge plate) → `#ops-page` — modes dégradés SNS HS
 
 ### Validation US4
 
-- [ ] T110 [P] [US4] Créer `scripts/dev/simulate-bounce-storm.ts` (100 bounces SNS sur 60s) + `simulate-complaint.ts` + `saturate-dlq.ts`
+- [X] T110 [P] [US4] Créer `scripts/dev/simulate-bounce-storm.ts` (100 bounces SNS sur 60s) + `simulate-complaint.ts` + `saturate-dlq.ts`
 - [ ] T111 [P] [US4] Exécuter Scénario 8 quickstart.md : vérifier toutes les alertes déclenchées dans les bons canaux
 
 **Checkpoint** : Visibilité opérationnelle complète, SLO instrumentés.
@@ -288,13 +288,13 @@ implémentation et test indépendants.
 
 ### Tests + use case
 
-- [ ] T112 [P] [US5] Tests Vitest `application/use-cases/__tests__/erase-recipient-history.use-case.test.ts` (multi-row anonymisation, CHECK constraint validée, audit émis, durée < 60s pour 5 rows) — RED first
-- [ ] T113 [US5] Implémenter `application/use-cases/erase-recipient-history.use-case.ts` (transaction Postgres : UPDATE tous `notification_email_log` où `recipientEmailHashHMAC = ?` avec nullification + `erasedAt = now()`, insert audit `notification.recipient_history.erased`) — GREEN T112
+- [X] T112 [P] [US5] Tests Vitest `application/use-cases/__tests__/erase-recipient-history.use-case.test.ts` (multi-row anonymisation, CHECK constraint validée, audit émis, durée < 60s pour 5 rows) — RED first
+- [X] T113 [US5] Implémenter `application/use-cases/erase-recipient-history.use-case.ts` (transaction Postgres : UPDATE tous `notification_email_log` où `recipientEmailHashHMAC = ?` avec nullification + `erasedAt = now()`, insert audit `notification.recipient_history.erased`) — GREEN T112
 
 ### Exposition pour feature 023 future
 
-- [ ] T114 [US5] Exposer méthode `eraseHistory(emailHashHMAC, reason)` sur `NotificationPort` (additive, mineur — cf. contracts/notification.port.md section Stabilité)
-- [ ] T115 [US5] Mettre à jour `contracts/notification.port.md` pour documenter la nouvelle méthode
+- [X] T114 [US5] Exposer méthode `eraseHistory(emailHashHMAC, reason)` sur `NotificationPort` (additive, mineur — cf. contracts/notification.port.md section Stabilité)
+- [X] T115 [US5] Mettre à jour `contracts/notification.port.md` pour documenter la nouvelle méthode
 
 ### Validation US5
 
@@ -314,14 +314,14 @@ implémentation et test indépendants.
 
 ### Use cases admin (TDD)
 
-- [ ] T119 [P] [US6] Tests Vitest `__tests__/remove-from-suppression-list.use-case.test.ts` (motif requis, audit émis, idempotency-key respecté) — RED
-- [ ] T120 [P] [US6] Tests Vitest `__tests__/retry-dead-letter.use-case.test.ts` (entry dead_letter → queued, reset attempts, BullMQ enqueue) — RED
-- [ ] T121 [US6] Implémenter `application/use-cases/remove-from-suppression-list.use-case.ts` — GREEN T119
-- [ ] T122 [US6] Implémenter `application/use-cases/retry-dead-letter.use-case.ts` — GREEN T120
+- [X] T119 [P] [US6] Tests Vitest `__tests__/remove-from-suppression-list.use-case.test.ts` (motif requis, audit émis, idempotency-key respecté) — RED
+- [X] T120 [P] [US6] Tests Vitest `__tests__/retry-dead-letter.use-case.test.ts` (entry dead_letter → queued, reset attempts, BullMQ enqueue) — RED
+- [X] T121 [US6] Implémenter `application/use-cases/remove-from-suppression-list.use-case.ts` — GREEN T119
+- [X] T122 [US6] Implémenter `application/use-cases/retry-dead-letter.use-case.ts` — GREEN T120
 
 ### Controller backend
 
-- [ ] T123 [US6] Créer `interface/http/admin-notifications.controller.ts` avec les 7 endpoints admin (cf. contracts/http-endpoints.md sections 1-7) :
+- [X] T123 [US6] Créer `interface/http/admin-notifications.controller.ts` avec les 7 endpoints admin (cf. contracts/http-endpoints.md sections 1-7) :
   - GET `/admin/notifications/suppression-list`
   - POST `/admin/notifications/suppression-list/:id/remove` (+ Idempotency-Key)
   - GET `/admin/notifications/dead-letter`
@@ -329,18 +329,18 @@ implémentation et test indépendants.
   - GET `/admin/notifications/log/:correlationId`
   - GET `/admin/notifications/audit` (cursor pagination)
   - GET `/admin/notifications/metrics/snapshot`
-- [ ] T124 [US6] Wiring `RoleGuard('admin')` + `MfaSessionGuard` + `IdempotencyInterceptor` sur le controller (réutilisation patterns 002 + 001)
+- [X] T124 [US6] Wiring `RoleGuard('admin')` + `MfaSessionGuard` + `IdempotencyInterceptor` sur le controller (réutilisation patterns 002 + 001)
 - [ ] T125 [P] [US6] Tests intégration `apps/api/test/integration/notifications/admin-endpoints.integration.spec.ts` couvrant les 7 endpoints (auth requis, validation Zod, idempotence)
 
 ### Frontend Next.js
 
-- [ ] T126 [P] [US6] Créer `apps/web/src/app/[locale]/admin/notifications/layout.tsx` (nav sidebar, breadcrumbs)
-- [ ] T127 [P] [US6] Créer `apps/web/src/app/[locale]/admin/notifications/suppression-list/page.tsx` (RSC, table paginée filtrable, shadcn/ui)
-- [ ] T128 [P] [US6] Créer `apps/web/src/app/[locale]/admin/notifications/dead-letter/page.tsx`
-- [ ] T129 [P] [US6] Créer `apps/web/src/app/[locale]/admin/notifications/audit/page.tsx` (cursor pagination)
-- [ ] T130 [P] [US6] Créer `apps/web/src/app/[locale]/admin/notifications/_actions.ts` (Server Actions : `removeFromSuppressionAction`, `retryDeadLetterAction` avec validation Zod côté serveur)
-- [ ] T131 [P] [US6] Créer `apps/web/src/components/admin/notifications/RemoveSuppressionModal.tsx` (motif texte min 10 chars, validation react-hook-form + Zod resolver, accessible WCAG 2.1 AA)
-- [ ] T132 [P] [US6] Créer `apps/web/src/components/admin/notifications/RetryDeadLetterModal.tsx` (motif obligatoire)
+- [X] T126 [P] [US6] Créer `apps/web/src/app/[locale]/admin/notifications/layout.tsx` (nav sidebar, breadcrumbs)
+- [X] T127 [P] [US6] Créer `apps/web/src/app/[locale]/admin/notifications/suppression-list/page.tsx` (RSC, table paginée filtrable, shadcn/ui)
+- [X] T128 [P] [US6] Créer `apps/web/src/app/[locale]/admin/notifications/dead-letter/page.tsx`
+- [X] T129 [P] [US6] Créer `apps/web/src/app/[locale]/admin/notifications/audit/page.tsx` (cursor pagination)
+- [X] T130 [P] [US6] Créer `apps/web/src/app/[locale]/admin/notifications/_actions.ts` (Server Actions : `removeFromSuppressionAction`, `retryDeadLetterAction` avec validation Zod côté serveur)
+- [X] T131 [P] [US6] Créer `apps/web/src/components/admin/notifications/RemoveSuppressionModal.tsx` (motif texte min 10 chars, validation react-hook-form + Zod resolver, accessible WCAG 2.1 AA)
+- [X] T132 [P] [US6] Créer `apps/web/src/components/admin/notifications/RetryDeadLetterModal.tsx` (motif obligatoire)
 
 ### Validation US6
 
@@ -356,32 +356,32 @@ implémentation et test indépendants.
 
 ### Jobs de purge périodique
 
-- [ ] T136 [P] Implémenter `application/use-cases/sweep-retention.use-case.ts` (anonymise rows `notification_email_log` où `sentAt < now() - 24 months` AND `erasedAt IS NULL`)
-- [ ] T137 [P] Implémenter `application/use-cases/sweep-expired-suppressions.use-case.ts` (purge soft bounces TTL atteints — fix I-6)
-- [ ] T138 [P] Implémenter `infrastructure/jobs/notification-retention-sweep.job.ts` (cron mensuel, jour 1 du mois à 02:00 ca-central-1)
-- [ ] T139 [P] Implémenter `infrastructure/jobs/suppression-list-expiration-sweep.job.ts` (cron quotidien 03:00)
-- [ ] T140 Wiring ces 2 jobs dans `NotificationsModule.onModuleInit` (setInterval ou nestjs-schedule)
+- [X] T136 [P] Implémenter `application/use-cases/sweep-retention.use-case.ts` (anonymise rows `notification_email_log` où `sentAt < now() - 24 months` AND `erasedAt IS NULL`)
+- [X] T137 [P] Implémenter `application/use-cases/sweep-expired-suppressions.use-case.ts` (purge soft bounces TTL atteints — fix I-6)
+- [X] T138 [P] Implémenter `infrastructure/jobs/notification-retention-sweep.job.ts` (cron mensuel, jour 1 du mois à 02:00 ca-central-1)
+- [X] T139 [P] Implémenter `infrastructure/jobs/suppression-list-expiration-sweep.job.ts` (cron quotidien 03:00)
+- [X] T140 Wiring ces 2 jobs dans `NotificationsModule.onModuleInit` (setInterval ou nestjs-schedule)
 
 ### ADRs
 
-- [ ] T141 [P] Créer `docs/adr/0013-pepper-hash-emails-notifications.md` (décision pepper unique non-rotatif J1 + fenêtre double-pepper sur fuite, contexte Loi 25 + leçon review adversariale 002 finding B-1)
-- [ ] T142 [P] Créer `docs/adr/0014-multi-tenant-templates-architecture.md` (consolidation dans `packages/email-templates/`, namespace par module, evolution policy)
+- [X] T141 [P] Créer `docs/adr/0013-pepper-hash-emails-notifications.md` (décision pepper unique non-rotatif J1 + fenêtre double-pepper sur fuite, contexte Loi 25 + leçon review adversariale 002 finding B-1)
+- [X] T142 [P] Créer `docs/adr/0014-multi-tenant-templates-architecture.md` (consolidation dans `packages/email-templates/`, namespace par module, evolution policy)
 
 ### Documentation
 
-- [ ] T143 Mettre à jour `apps/api/src/modules/notifications/README.md` (vue d'ensemble, dépendances, port public, métriques, dashboards, runbooks liés)
-- [ ] T144 Mettre à jour `docs/roadmap.md` : 003 passe en `🔵 implémentation en cours` puis (à la fin) `✅ mergé`
-- [ ] T145 Créer `docs/runbooks/notifications-ses-production-access.md` (procédure ticket AWS support, SPF/DKIM/DMARC checklist, validation domain identity vs email identity)
-- [ ] T146 Créer `docs/runbooks/notifications-disaster-recovery.md` (procédure SNS HS, Secrets Manager HS, DNS HS — cf. modes dégradés plan.md)
-- [ ] T147 Créer `docs/runbooks/notifications-bounce-investigation.md` (procédure investigation pic bounces, retrait manuel suppression, identification template défaillant)
+- [X] T143 Mettre à jour `apps/api/src/modules/notifications/README.md` (vue d'ensemble, dépendances, port public, métriques, dashboards, runbooks liés)
+- [X] T144 Mettre à jour `docs/roadmap.md` : 003 passe en `🔵 implémentation en cours` puis (à la fin) `✅ mergé`
+- [X] T145 Créer `docs/runbooks/notifications-ses-production-access.md` (procédure ticket AWS support, SPF/DKIM/DMARC checklist, validation domain identity vs email identity)
+- [X] T146 Créer `docs/runbooks/notifications-disaster-recovery.md` (procédure SNS HS, Secrets Manager HS, DNS HS — cf. modes dégradés plan.md)
+- [X] T147 Créer `docs/runbooks/notifications-bounce-investigation.md` (procédure investigation pic bounces, retrait manuel suppression, identification template défaillant)
 
 ### Validation finale + checklists DoD
 
-- [ ] T148 Créer `specs/003-notifications-transactionnelles/checklists/owasp.md` (OWASP Top 10 review : A01 broken access control, A02 crypto failures, A03 injection, A04 insecure design, A05 security misconfig, A06 vulnerable components, A07 auth failures, A08 software/data integrity, A09 logging failures, A10 SSRF — cochage en revue)
-- [ ] T149 Créer `specs/003-notifications-transactionnelles/checklists/dod.md` (Definition of Done de la constitution checked, basé sur 001 pattern)
-- [ ] T150 Exécuter `pnpm tsx tools/check-module-boundaries.ts` et confirmer 0 violation
-- [ ] T151 Exécuter `pnpm typecheck` et `pnpm lint` sur l'ensemble du repo (zéro erreur)
-- [ ] T152 Exécuter `pnpm --filter @cv/api test:unit` (tous les tests purs passent)
+- [X] T148 Créer `specs/003-notifications-transactionnelles/checklists/owasp.md` (OWASP Top 10 review : A01 broken access control, A02 crypto failures, A03 injection, A04 insecure design, A05 security misconfig, A06 vulnerable components, A07 auth failures, A08 software/data integrity, A09 logging failures, A10 SSRF — cochage en revue)
+- [X] T149 Créer `specs/003-notifications-transactionnelles/checklists/dod.md` (Definition of Done de la constitution checked, basé sur 001 pattern)
+- [X] T150 Exécuter `pnpm tsx tools/check-module-boundaries.ts` et confirmer 0 violation
+- [X] T151 Exécuter `pnpm typecheck` et `pnpm lint` sur l'ensemble du repo (zéro erreur)
+- [X] T152 Exécuter `pnpm --filter @cv/api test:unit` (tous les tests purs passent)
 - [ ] T153 Exécuter `pnpm --filter @cv/api test:integration` (Testcontainers — tous tests passent)
 - [ ] T154 Exécuter `pnpm --filter @cv/web test:e2e -- admin/notifications` + `test:a11y`
 - [ ] T155 Exécuter `pnpm --filter @cv/web lighthouse:ci` (régression < 10% sur LCP/INP/CLS)

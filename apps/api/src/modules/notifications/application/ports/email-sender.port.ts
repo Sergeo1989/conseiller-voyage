@@ -2,6 +2,12 @@
 // Abstrait l'envoi via SES (ou stub mémoire en tests).
 // Implémentation concrète : SesEmailSender (T048).
 
+export interface SendEmailLabels {
+  readonly templateId: string;
+  readonly locale: string;
+  readonly sourceModule: string;
+}
+
 export interface SendEmailInput {
   /** Identifiant outbox source — passé comme SES Outbound Idempotency Token (research R17). */
   readonly correlationId: string;
@@ -13,6 +19,8 @@ export interface SendEmailInput {
   readonly textBody: string;
   /** Headers additionnels — au minimum List-Unsubscribe (FR-010-b). */
   readonly headers: ReadonlyArray<{ readonly name: string; readonly value: string }>;
+  /** Labels OTel pour notification_email_sent_total (T097). */
+  readonly labels?: SendEmailLabels;
 }
 
 export interface SendEmailResult {

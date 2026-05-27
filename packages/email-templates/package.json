@@ -4,19 +4,23 @@
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./mfa": {
-      "types": "./src/mfa/index.ts",
-      "default": "./dist/mfa/index.js"
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "default": "./dist/auth/index.js"
     },
-    "./mfa/*": {
-      "types": "./src/mfa/*.tsx",
-      "default": "./dist/mfa/*.js"
+    "./conformite": {
+      "types": "./dist/conformite/index.d.ts",
+      "default": "./dist/conformite/index.js"
+    },
+    "./mfa": {
+      "types": "./dist/mfa/index.d.ts",
+      "default": "./dist/mfa/index.js"
     }
   },
   "scripts": {

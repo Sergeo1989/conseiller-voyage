@@ -11,3 +11,4 @@ export {
   StepUpSessionKilledEmail,
   type StepUpSessionKilledEmailProps,
 } from './stepup-session-killed';
+export { TotpActivatedEmail, type TotpActivatedEmailProps } from './totp-activated';

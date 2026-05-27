@@ -157,7 +157,8 @@ pnpm tsx tools/check-module-boundaries.ts
 ## ADRs liés
 
 - **ADR-0006** : Pivot Resend → AWS SES `ca-central-1` (résidence Loi 25).
-- **ADR-0013** : Pepper hash emails notifications (à créer en
-  T141 — politique non-rotative + double-pepper sur fuite).
-- **ADR-0014** : Multi-tenant templates architecture (à créer en
-  T142 — consolidation `packages/email-templates/`).
+- **ADR-0013** : Pepper hash emails notifications — politique non-rotative +
+  double-pepper sur fuite.
+- **ADR-0014** : Multi-tenant templates architecture — consolidation
+  `packages/email-templates/`, namespace par module.
+

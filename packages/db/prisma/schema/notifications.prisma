@@ -53,6 +53,9 @@ model NotificationLogEntry {
   failedAt      DateTime? @db.Timestamptz(6)
   erasedAt      DateTime? @db.Timestamptz(6)
 
+  // Données de rendu originales — conservées pour retry dead-letter (T122).
+  templateData Json?
+
   // SES tracking — corrèle les events SNS Bounce/Complaint/Delivery.
   sesMessageId String? @unique @db.VarChar(100)
 

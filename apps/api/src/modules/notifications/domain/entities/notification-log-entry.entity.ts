@@ -27,6 +27,7 @@ export interface NotificationLogEntry {
   readonly failedAt: Date | null;
   readonly erasedAt: Date | null;
   readonly sesMessageId: string | null;
+  readonly templateData: Record<string, unknown> | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }

@@ -10,8 +10,14 @@ export type NotificationAuditEventType =
   | 'notification.suppression.added_manual'
   | 'notification.suppression.removed_manual'
   | 'notification.suppression.expired'
+  | 'notification.suppression.expired_swept'
   | 'notification.dead_letter.retried_manual'
-  | 'notification.recipient_history.erased';
+  | 'notification.recipient_history.erased'
+  | 'notification.hard_bounce_suppressed'
+  | 'notification.soft_bounce_suppressed'
+  | 'notification.complaint_suppressed'
+  | 'notification.retention.swept'
+  | 'notification.skipped_suppressed';
 
 export interface AppendAuditInput {
   readonly eventType: NotificationAuditEventType;

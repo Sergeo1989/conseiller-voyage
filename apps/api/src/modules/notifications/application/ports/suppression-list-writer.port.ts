@@ -23,6 +23,12 @@ export interface SuppressionListWriter {
   softRemove(input: RemoveSuppressionInput): Promise<void>;
   /** Marque comme expirée (cron quotidien SuppressionListExpirationSweepJob). */
   markExpired(ids: ReadonlyArray<string>): Promise<number>;
+  /**
+   * Expire toutes les entrées dont `expiresAt < now` et `removedAt IS NULL`
+   * en une seule passe (cron quotidien T139).
+   * Retourne le nombre de rows expirées.
+   */
+  sweepExpired(now: Date): Promise<number>;
 }
 
 export const SUPPRESSION_LIST_WRITER = Symbol.for('NotificationsSuppressionListWriter');

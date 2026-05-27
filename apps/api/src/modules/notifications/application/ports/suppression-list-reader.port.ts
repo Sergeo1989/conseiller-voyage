@@ -4,6 +4,7 @@ import type { SuppressionListEntry } from '../../domain/entities/suppression-lis
 import type { SuppressionReason } from '../../domain/enums/suppression-reason.enum';
 
 export interface SuppressionListReader {
+  findById(id: string): Promise<SuppressionListEntry | null>;
   findByEmailHash(hash: string): Promise<SuppressionListEntry | null>;
   list(filters: {
     reason?: SuppressionReason;

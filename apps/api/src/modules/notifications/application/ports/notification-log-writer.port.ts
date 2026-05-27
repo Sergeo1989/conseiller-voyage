@@ -14,6 +14,8 @@ export interface InsertLogInput {
   readonly recipientLocale: string;
   readonly enqueuedAt: Date;
   readonly status: NotificationStatus;
+  /** Conservé pour retry dead-letter (T122). */
+  readonly templateData?: Record<string, unknown>;
 }
 
 export interface UpdateStatusInput {
@@ -21,7 +23,7 @@ export interface UpdateStatusInput {
   readonly status: NotificationStatus;
   readonly timestamp: Date;
   readonly sesMessageId?: string;
-  readonly lastError?: string;
+  readonly lastError?: string | null;
   readonly nextAttemptAt?: Date | null;
   readonly attempts?: number;
 }
@@ -43,6 +45,12 @@ export interface NotificationLogWriter {
    * Retourne le nombre de rows anonymisées.
    */
   anonymizeByEmailHash(input: AnonymizeInput): Promise<number>;
+  /**
+   * Anonymise les rows dont `sentAt < beforeDate AND erasedAt IS NULL`
+   * (rétention 24 mois — Loi 25 tableau de rétention).
+   * Appelé par SweepRetentionUseCase (cron mensuel, T138).
+   */
+  sweepOldEntries(beforeDate: Date): Promise<number>;
 }
 
 export const NOTIFICATION_LOG_WRITER = Symbol.for('NotificationsLogWriter');

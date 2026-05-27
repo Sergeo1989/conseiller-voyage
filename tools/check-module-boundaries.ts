@@ -67,6 +67,14 @@ const ALLOWED_CROSS_MODULE_SYMBOLS: ReadonlySet<string> = new Set([
   'NotificationEnvelopeValidationError',
   'SendResult',
   'SuppressionReason',
+  // `NotificationsModule` est importé par les modules NestJS consommateurs
+  // (pattern standard NestJS federation — pas une violation de frontière).
+  'NotificationsModule',
+  // Faux positifs — mots "Authentication"/"Authentification" apparaissent dans
+  // les libellés d'emails (sujets FR-CA/EN) sans référencer le module identite.
+  'Authentication',
+  'Authentification',
+  'AuthenticatedUser',
   // EXCEPTION TEMPORAIRE — feature 003 en cours d'implémentation.
   // Le module conformité (001) possède des types internes nommés
   // `NotificationKind`, `NotificationToSend` qui matchent le préfixe

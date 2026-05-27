@@ -1,0 +1,137 @@
+# T105-T109 — Alertes Grafana pour le module notifications (délivrabilité SES).
+# Format compatible Grafana Alerting (provisioning fichier).
+# Contact points : #ops-page (critique) et #ops-warn (avertissement).
+
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: notifications-deliverability
+    folder: notifications
+    interval: 1m
+    rules:
+
+      # T105 — FR-018 : Taux de bounce > 5% sur 1h → #ops-page @channel
+      - uid: cv-notif-bounce-rate-high
+        title: PAGE — Taux de bounce SES > 5% / 1h
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: >-
+                sum(rate(notification_email_bounced_total[1h]))
+                / (sum(rate(notification_email_sent_total[1h])) > 0)
+                * 100 > 5
+              refId: A
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: 'Bounce rate = {{ $values.A.Value | printf "%.2f" }}% (seuil FR-018 : 5%). Risque suspension AWS SES.'
+          runbook_url: docs/runbooks/notifications-bounce-rate-high.md
+        labels:
+          severity: critical
+          module: notifications
+          channel: ops-page
+
+      # T106 — FR-019 : Taux de plainte > 0.1% sur 24h → #ops-page
+      - uid: cv-notif-complaint-rate-high
+        title: PAGE — Taux de plainte SES > 0.1% / 24h
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 86400, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: >-
+                sum(rate(notification_email_complained_total[24h]))
+                / (sum(rate(notification_email_sent_total[24h])) > 0)
+                * 100 > 0.1
+              refId: A
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'Complaint rate = {{ $values.A.Value | printf "%.3f" }}% (seuil FR-019 : 0.1%). Feedback loop ISP actif.'
+          runbook_url: docs/runbooks/notifications-complaint-rate-high.md
+        labels:
+          severity: critical
+          module: notifications
+          channel: ops-page
+
+      # T107 — FR-020 : DLQ size > 50 → #ops-warn
+      - uid: cv-notif-dlq-size-warn
+        title: WARN — Dead letter queue > 50 emails
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: notification_email_dlq_size > 50
+              refId: A
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: '{{ $values.A.Value }} emails en dead letter queue (seuil FR-020 : 50). Vérifier logs worker BullMQ.'
+          runbook_url: docs/runbooks/notifications-dlq-overflow.md
+        labels:
+          severity: warning
+          module: notifications
+          channel: ops-warn
+
+      # T108 — FR-021 : SES erreurs > 90% sur 30 min → #ops-page (provider down)
+      - uid: cv-notif-provider-down
+        title: PAGE — SES provider down (erreurs > 90% / 30min)
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1800, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: >-
+                1 - (
+                  sum(rate(notification_email_sent_total[30m]))
+                  / (sum(rate(notification_email_sent_total[30m])) + sum(rate(notification_email_bounced_total{bounce_type="permanent"}[30m])) > 0)
+                ) > 0.9
+              refId: A
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: 'SES en échec sur > 90% des envois depuis 30 min (FR-021). Circuit breaker probablement OPEN.'
+          runbook_url: docs/runbooks/notifications-ses-provider-down.md
+        labels:
+          severity: critical
+          module: notifications
+          channel: ops-page
+
+      # T109 — SNS events idle 15 min (gauge plate) → #ops-page (mode dégradé SNS HS)
+      - uid: cv-notif-sns-events-idle
+        title: PAGE — SNS events idle depuis 15 min (SNS HS ?)
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: >-
+                (
+                  sum(increase(notification_email_delivered_total[15m]))
+                  + sum(increase(notification_email_bounced_total[15m]))
+                  + sum(increase(notification_email_complained_total[15m]))
+                ) == 0
+                and sum(increase(notification_email_sent_total[15m])) > 10
+              refId: A
+        noDataState: OK
+        execErrState: Alerting
+        for: 15m
+        annotations:
+          summary: 'Aucun event SNS (delivery/bounce/complaint) reçu depuis 15 min malgré des envois. Vérifier SNS topic, Lambda bounces-handler et HMAC secret.'
+          runbook_url: docs/runbooks/notifications-sns-idle.md
+        labels:
+          severity: critical
+          module: notifications
+          channel: ops-page

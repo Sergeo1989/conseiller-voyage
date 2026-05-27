@@ -4,6 +4,7 @@ import type { NotificationLogEntry } from '../../domain/entities/notification-lo
 import type { NotificationStatus } from '../../domain/enums/notification-status.enum';
 
 export interface NotificationLogReader {
+  findById(id: string): Promise<NotificationLogEntry | null>;
   findByCorrelationId(correlationId: string): Promise<NotificationLogEntry | null>;
   findBySesMessageId(sesMessageId: string): Promise<NotificationLogEntry | null>;
   /** DLQ list pour la console admin. */
@@ -31,6 +32,8 @@ export interface NotificationLogReader {
     }>;
   }>;
   countByStatus(status: NotificationStatus): Promise<number>;
+  /** Count 'bounced' entries for a given email hash within a time window (for soft bounce threshold). */
+  countRecentBounces(recipientEmailHashHMAC: string, since: Date): Promise<number>;
 }
 
 export const NOTIFICATION_LOG_READER = Symbol.for('NotificationsLogReader');

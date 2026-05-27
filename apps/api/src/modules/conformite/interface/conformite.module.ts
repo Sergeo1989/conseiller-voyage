@@ -24,6 +24,7 @@ import { CLOCK } from '../../../common/ports/clock.port';
 import { UUID_GENERATOR } from '../../../common/ports/uuid-generator.port';
 import { BullMqModule } from '../../../queue/bullmq.module';
 import { IdentiteModule } from '../../identite/identite.module';
+import { NotificationsModule } from '../../notifications/interface/notifications.module';
 import { AUDIT_LOG_WRITER } from '../application/ports/audit-log-writer.port';
 import { CONFORMITE_EVENT_PUBLISHER } from '../application/ports/conformite-event-publisher.port';
 import { CONFORMITE_READER } from '../application/ports/conformite-reader.port';
@@ -74,6 +75,7 @@ const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
     IdentiteModule, // AuthGuard + AUTH_SESSION_READER
     BullMqModule, // REDIS_CLIENT + @nestjs/bullmq forRoot
     BullModule.registerQueue({ name: CONFORMITE_NOTIFICATIONS_QUEUE }),
+    NotificationsModule, // NOTIFICATION_PORT pour l'envoi de courriels transactionnels
   ],
   controllers: [ConseillerConformiteController, AdminConformiteController],
   providers: [
