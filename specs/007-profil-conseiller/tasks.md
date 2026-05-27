@@ -127,7 +127,7 @@ passe à `prêt`, slug `marie-dupont` généré, `publishedAt` set.
 
 ### Tests pour US1 (TDD intégration)
 
-- [ ] T053 [P] [US1] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/lire-profil-prive.spec.ts` (Testcontainers Postgres) — couvre `LireProfilPriveUseCase` (retour payload complet, profil inexistant, profil anonymisé refus)
+- [X] T053 [P] [US1] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/lire-profil-prive.spec.ts` (Testcontainers Postgres) — couvre `LireProfilPriveUseCase` (retour payload complet, profil inexistant, profil anonymisé refus)
 - [ ] T054 [P] [US1] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/editer-profil.spec.ts` couvrant les acceptance scenarios US1 + Result error cases (`PROFIL_ANONYMISE`, `CGU_OBSOLETES`, `VALIDATION_FAILED`, `OWNERSHIP_MISMATCH`, `CONFORMITE_INDISPONIBLE`)
 - [ ] T055 [P] [US1] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/uploader-photo.spec.ts` couvrant : upload JPEG OK, WAV renommé .webp rejeté `CONTENU_NON_IMAGE`, > 5 Mo rejeté `TAILLE_DEPASSE`, 4097×4097 rejeté `DIMENSIONS_DEPASSE`, FIFO eviction à la 6e, **scénario d'échec compensation** (mock S3 PUT OK puis UPDATE DB échoue → photo orpheline gérée par cleanup-orphan worker), rate-limit 11e upload dans la même heure → `RATE_LIMIT_DEPASSE`
 - [ ] T056 [P] [US1] **[TDD RED]** Tests intégration de transition `incomplet → prêt` au save : `apps/api/test/integration/profil/publication-initiale.spec.ts` couvrant génération slug unique + `publishedAt = NOW()` + annulation relances onboarding + émission event `ProfilConseillerPublishedEvent` + invalidation Next.js + CloudFront
@@ -170,12 +170,12 @@ redirection.
 
 ### Tests pour US2 (TDD intégration + e2e)
 
-- [ ] T072 [P] [US2] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/lire-page-profil-publique.spec.ts` couvrant 5 cas → `null` (slug inexistant, slug réservé `slug_reservations`, conformité `pending`, profil `incomplet`, profil `masque_admin`), 1 cas → payload complet, 1 cas → payload avec champ `certificationsVisibles` peuplé
+- [X] T072 [P] [US2] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/lire-page-profil-publique.spec.ts` couvrant 5 cas → `null` (slug inexistant, slug réservé `slug_reservations`, conformité `pending`, profil `incomplet`, profil `masque_admin`), 1 cas → payload complet, 1 cas → payload avec champ `certificationsVisibles` peuplé
 - [ ] T073 [P] [US2] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-public-page.spec.ts` couvrant les acceptance scenarios US2 (page complète, 404 unifié constant-body, encart pédagogique, CTA unique vers /intake)
 - [ ] T074 [P] [US2] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-suggested-middleware.spec.ts` couvrant : clic CTA → 302 /intake propre + cookie posé, 2 consultations FIFO, 11e éviction, cookie tampered ignoré, `suggested` non-UUID redirect propre sans set-cookie
 - [ ] T075 [P] [US2] **[TDD RED]** Test invariant `tools/check-anti-enum-profile.ts` (T050) lancé en mode test e2e — produit 5 cas 404 et vérifie taille corps identique à l'octet près
 - [ ] T076 [P] [US2] **[TDD RED]** Test Lighthouse CI `apps/web/test/lighthouse/profil-public.spec.ts` sur `/conseiller/<seed-slug>` exigeant Performance ≥ 90, SEO ≥ 95, Accessibility ≥ 95
-- [ ] T077 [P] [US2] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/est-profil-public.spec.ts` couvrant la table de tests dans contracts/est-profil-public.port.md (nominal + 5 cas négatifs + batch)
+- [X] T077 [P] [US2] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/est-profil-public.spec.ts` couvrant la table de tests dans contracts/est-profil-public.port.md (nominal + 5 cas négatifs + batch)
 
 ### Implémentation US2
 
@@ -260,10 +260,10 @@ l'événement.
 
 ### Tests US6 (TDD intégration + e2e)
 
-- [ ] T111 [P] [US6] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/retirer-photo-admin.spec.ts` (S3 vidé + statut profil → incomplet + audit + courriel + invalidations Next.js + CloudFront)
-- [ ] T112 [P] [US6] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/masquer-profil-admin.spec.ts` (statut → masque_admin + 404 + courriel + audit)
-- [ ] T113 [P] [US6] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/retablir-profil-admin.spec.ts` (statut recalculé via `calculerStatutProfil` + audit, pas de courriel)
-- [ ] T114 [P] [US6] **[TDD RED]** Tests intégration : raison manquante refusée pour les 3 actions, StepUpGuard refus si MFA expirée
+- [X] T111 [P] [US6] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/retirer-photo-admin.spec.ts` (S3 vidé + statut profil → incomplet + audit + courriel + invalidations Next.js + CloudFront)
+- [X] T112 [P] [US6] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/masquer-profil-admin.spec.ts` (statut → masque_admin + 404 + courriel + audit)
+- [X] T113 [P] [US6] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/retablir-profil-admin.spec.ts` (statut recalculé via `calculerStatutProfil` + audit, pas de courriel)
+- [X] T114 [P] [US6] **[TDD RED]** Tests intégration : raison manquante refusée pour les 3 actions, StepUpGuard refus si MFA expirée
 - [ ] T115 [P] [US6] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-moderation-admin.spec.ts` couvrant les 4 acceptance scenarios US6
 
 ### Implémentation US6
@@ -293,8 +293,8 @@ statut → `anonymisé`, biographie/photo/etc. → null, slug en
 `slug_reservations`, page publique 404, re-création conseiller homonyme →
 slug `marie-dupont-2`.
 
-- [ ] T126 [P] [US5] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/anonymiser-profil-loi25.spec.ts` couvrant : (a) PII effacés selon FR-016 (biographie, titre, années, photo S3, history S3, langues/spécialités/zones sets vides), (b) statut → `anonymise`, (c) `anonymizedAt = NOW()`, (d) `SlugReservation` ajouté avec `conseillerIdOrigine = NULL` (cf. ADR-0015), (e) idempotence (re-appel = no-op), (f) trigger Postgres bloque toute tentative `anonymise → autre` (statut terminal)
-- [ ] T127 [P] [US5] **[TDD RED]** Test invariant SC-007 `apps/api/test/integration/profil/slug-reuse-invariant.spec.ts` : seed conseiller, l'anonymise, re-seed un conseiller avec exactement le même nom légal → slug généré doit être différent (`marie-dupont-2`)
+- [X] T126 [P] [US5] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/anonymiser-profil-loi25.spec.ts` couvrant : (a) PII effacés selon FR-016 (biographie, titre, années, photo S3, history S3, langues/spécialités/zones sets vides), (b) statut → `anonymise`, (c) `anonymizedAt = NOW()`, (d) `SlugReservation` ajouté avec `conseillerIdOrigine = NULL` (cf. ADR-0015), (e) idempotence (re-appel = no-op), (f) trigger Postgres bloque toute tentative `anonymise → autre` (statut terminal)
+- [X] T127 [P] [US5] **[TDD RED]** Test invariant SC-007 `apps/api/test/integration/profil/slug-reuse-invariant.spec.ts` : seed conseiller, l'anonymise, re-seed un conseiller avec exactement le même nom légal → slug généré doit être différent (`marie-dupont-2`)
 - [ ] T128 [P] [US5] **[TDD RED]** Test latence retrait page publique ≤ 10 s `apps/web/e2e/profil-retrait-rapide.spec.ts` : anonymise un profil → mesure le temps avant que `/conseiller/<slug>` retourne 404 (doit être < 10 s, cible SC-006)
 - [X] T129 AnonymiserProfilLoi25UseCase — DELETE S3 parallèle + anonymize + SlugReservation conseillerIdOrigine=NULL (ADR-0015) + annul relances + invalidations
 - [X] T130 Inline dans AnonymiserProfilLoi25UseCase (SlugReservation.reserve raison=loi25)
@@ -309,8 +309,8 @@ slug `marie-dupont-2`.
 
 **Goal** : relances email J+3/J+7/J+14 pour les conseillers vérifiés au profil incomplet.
 
-- [ ] T133 [P] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/planifier-relances-onboarding.spec.ts` couvrant : 3 jobs BullMQ planifiés avec delays corrects (3d, 7d, 14d), jobId déterministe, dédoublonnage si re-planification
-- [ ] T134 [P] **[TDD RED]** Tests worker `apps/api/test/integration/profil/envoyer-relance-onboarding.spec.ts` couvrant : statut `incomplet` → INSERT outbox courriel + UPDATE schedule `etat = envoye`, statut `pret`/`masque_admin`/`anonymise` → no-op + UPDATE `etat = annule` ; idempotence relance (re-trigger même `jobId` → no-op)
+- [X] T133 [P] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/planifier-relances-onboarding.spec.ts` couvrant : 3 jobs BullMQ planifiés avec delays corrects (3d, 7d, 14d), jobId déterministe, dédoublonnage si re-planification
+- [X] T134 [P] **[TDD RED]** Tests worker `apps/api/test/integration/profil/envoyer-relance-onboarding.spec.ts` couvrant : statut `incomplet` → INSERT outbox courriel + UPDATE schedule `etat = envoye`, statut `pret`/`masque_admin`/`anonymise` → no-op + UPDATE `etat = annule` ; idempotence relance (re-trigger même `jobId` → no-op)
 - [ ] T135 **[TDD GREEN]** Implémenter `apps/api/src/modules/identite/application/use-cases/planifier-relances-onboarding.use-case.ts` (enqueue 3 jobs via `OnboardingRelanceScheduler` port + INSERT 3 rows `profile_onboarding_reminder_schedules`)
 - [X] T136 EnvoyerRelanceOnboardingUseCase — guard statut=incomplet + audit (drainage SES déféré à 003 wiring)
 - [ ] T137 Worker `apps/api/src/workers/onboarding-reminders.worker.ts` (BullMQ consumer pour la queue `onboarding_reminders`)
@@ -327,7 +327,7 @@ slug `marie-dupont-2`.
 
 **Goal** : worker quotidien qui supprime les photos S3 orphelines (post-échec compensation upload).
 
-- [ ] T142 [P] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/cleanup-orphan-photos.spec.ts` couvrant : photo S3 sans row DB → supprimée, photo S3 avec row `commit` → préservée, photo `pending_upload < 1h` → préservée (upload en cours), photo `pending_upload > 1h` → row supprimée + S3 supprimée
+- [X] T142 [P] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/cleanup-orphan-photos.spec.ts` couvrant : photo S3 sans row DB → supprimée, photo S3 avec row `commit` → préservée, photo `pending_upload < 1h` → préservée (upload en cours), photo `pending_upload > 1h` → row supprimée + S3 supprimée
 - [ ] T143 **[TDD GREEN]** Implémenter `apps/api/src/modules/identite/application/use-cases/cleanup-orphan-photos.use-case.ts` (liste S3 prefix `profiles/` + jointure DB + DELETE orphelins)
 - [X] T144 CleanupOrphanPhotosJob — quotidien, scan pending_upload > 1h, DELETE S3 best-effort + DELETE row
 - [ ] T145 [P] Métriques `cv_orphan_photos_cleaned_total` exposées en logs (déférées à 021 pour Prometheus)

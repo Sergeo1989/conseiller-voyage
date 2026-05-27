@@ -10,6 +10,9 @@ export default defineConfig({
     include: ['**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     reporters: ['default'],
+    // Charge .env avant tout import (env.ts valide process.env au
+    // chargement du module et appelle process.exit(1) si invalide).
+    setupFiles: ['./test/setup.ts'],
     // Les tests d'intégration partagent une DB Postgres unique. Les
     // teardown font deleteMany({}) sur certaines tables ; deux files
     // exécutés en parallèle se polluent mutuellement. Forcer séquentiel.
