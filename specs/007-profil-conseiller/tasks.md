@@ -85,16 +85,16 @@ séparé visible dans git (constitution Principe VI).
 
 ### Adaptateurs Prisma (infrastructure)
 
-- [ ] T036 [P] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-profil-conseiller-repository.ts` (impl du port T026)
-- [ ] T037 [P] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-photo-historique-repository.ts` (impl du port T027)
-- [ ] T038 [P] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-slug-reservation-repository.ts` (impl du port T028)
-- [ ] T039 [P] Implémenter `apps/api/src/modules/identite/infrastructure/s3-photo-storage.ts` (impl du port T029, réutilise client S3 du module 001 si disponible — sinon nouveau client `@aws-sdk/client-s3`)
-- [ ] T040 [P] Implémenter `apps/api/src/modules/identite/infrastructure/cloudfront-cache-invalidator.ts` (impl du port T030 via `@aws-sdk/client-cloudfront@^3`)
-- [ ] T041 [P] Implémenter `apps/api/src/modules/identite/infrastructure/bullmq-onboarding-relance-scheduler.ts` (impl du port T031, `jobId` déterministe `onboarding-reminder-<profileId>-<etape>`, options `delay` + `removeOnComplete`)
-- [ ] T042 [P] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-profil-moderation-audit-writer.ts` (impl du port T032, écrit dans `profil_moderation_audits` + `auth_audit_events`)
-- [ ] T043 [P] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-auth-user-legal-name-reader.ts` (impl du port T033, lit `AuthUser.firstName` + `AuthUser.lastName` via Prisma `@cv/db`). **Reste dans le module identité** (pas conformité — A1 exploration). Tests : 3 cas (user existe avec firstName/lastName, user existe sans firstName, user inexistant).
-- [ ] T044 [P] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-profil-public-reader.ts` (impl du port T034, jointures + construction URL CloudFront publique stable)
-- [ ] T045 [P] Implémenter `apps/api/src/modules/identite/infrastructure/prisma-est-profil-public.ts` (impl du port T035, AND conformité + statut profil)
+- [X] T036 PrismaProfilConseillerRepository (CRUD + select complet avec sets M-N + saga tx + publish + anonymize)
+- [X] T037 PrismaPhotoHistoriqueRepository (insertPending + markCommit + deletePending compensation + markEvicted + findOlderPendingThan cleanup)
+- [X] T038 PrismaSlugReservationRepository (upsert idempotent append-only + isReserved + listAll)
+- [X] T039 S3PhotoStorage (PutObjectCommand SSE-KMS conditionnel prod + DeleteObject + ListObjectsV2 pagination)
+- [X] T040 AwsCloudFrontCacheInvalidator (CreateInvalidationCommand + no-op dev local + best-effort prod avec s-maxage 300 filet)
+- [X] T041 BullmqOnboardingRelanceScheduler (3 jobs delayed J+3/7/14 + jobId déterministe idempotence + annulerRelances via getJob+remove)
+- [X] T042 PrismaProfilModerationAuditWriter (SHA-256 email admin + append-only Postgres trigger enforce)
+- [X] T043 PrismaAuthUserLegalNameReader (lit AuthUser.firstName/lastName via @cv/db — A1)
+- [X] T044 PrismaProfilPublicReader (anti-énumération + filtre statut+conformité + formaterNomAffiche + URL CloudFront stable + defense-in-depth champs obligatoires)
+- [X] T045 PrismaEstProfilPublic (AND statut=pret + conformité.verified + filtrerPublics batch ; aucune fuite raison)
 
 ### Wiring NestJS
 
