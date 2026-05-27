@@ -130,6 +130,10 @@ const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
     ConformiteQueryFacade,
     // Token DI pour injection symbolique côté autres modules.
     CONFORMITE_QUERY_PORT,
+    // Event publisher (Redis pub/sub) — consommé par le listener
+    // cross-module ConformiteStatusChangedListener du module identité
+    // (feature 007 T061).
+    CONFORMITE_EVENT_PUBLISHER,
   ],
 })
 export class ConformiteModule implements OnModuleInit, OnModuleDestroy {

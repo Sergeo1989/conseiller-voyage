@@ -79,6 +79,16 @@ const ALLOWED_CROSS_MODULE_SYMBOLS: ReadonlySet<string> = new Set([
   // profil (listener cross-module T061).
   'ConformiteStatusChanged',
   'ConformiteStatusChangedEvent',
+  // Listener côté identité (feature 007 T061) — son nom contient
+  // `Conformite` parce qu'il SOUSCRIT à un event conformité, mais il
+  // appartient au module identité.
+  'ConformiteStatusChangedListener',
+  // Port et token de l'event publisher (souscription Redis pub/sub) —
+  // exposé publiquement par conformité, consommé légitimement par
+  // l'identité (T061).
+  'ConformiteEventPublisher',
+  'CONFORMITE_EVENT_PUBLISHER',
+  'ConformiteDomainEvent',
 ]);
 
 interface Violation {

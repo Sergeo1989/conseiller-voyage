@@ -111,6 +111,7 @@ import { LegalAcceptanceFacade } from './interface/public-api/legal-acceptance.f
 import { RoleGuard } from './interface/role.guard';
 import { StepUpGuard } from './interface/step-up.guard';
 
+import { ConformiteStatusChangedListener } from './application/listeners/conformite-status-changed.listener';
 // Feature 007 (profil conseiller) — ports + adaptateurs
 import { AUTH_USER_LEGAL_NAME_READER } from './application/ports/auth-user-legal-name-reader.port';
 import { CLOUDFRONT_CACHE_INVALIDATOR } from './application/ports/cloudfront-cache-invalidator.port';
@@ -122,6 +123,9 @@ import { PROFIL_CONSEILLER_REPOSITORY } from './application/ports/profil-conseil
 import { PROFIL_MODERATION_AUDIT_WRITER } from './application/ports/profil-moderation-audit-writer.port';
 import { PROFIL_PUBLIC_READER } from './application/ports/profil-public-reader.port';
 import { SLUG_RESERVATION_REPOSITORY } from './application/ports/slug-reservation-repository.port';
+import { EditerProfilUseCase } from './application/use-cases/editer-profil.use-case';
+import { LireProfilPriveUseCase } from './application/use-cases/lire-profil-prive.use-case';
+import { UploaderPhotoUseCase } from './application/use-cases/uploader-photo.use-case';
 import { BullmqOnboardingRelanceScheduler } from './infrastructure/bullmq-onboarding-relance-scheduler';
 import { AwsCloudFrontCacheInvalidator } from './infrastructure/cloudfront-cache-invalidator';
 import { PrismaAuthUserLegalNameReader } from './infrastructure/prisma-auth-user-legal-name-reader';
@@ -132,6 +136,7 @@ import { PrismaProfilModerationAuditWriter } from './infrastructure/prisma-profi
 import { PrismaProfilPublicReader } from './infrastructure/prisma-profil-public-reader';
 import { PrismaSlugReservationRepository } from './infrastructure/prisma-slug-reservation-repository';
 import { S3PhotoStorage } from './infrastructure/s3-photo-storage';
+import { ProfilConseillerController } from './interface/profil-conseiller.controller';
 
 @Module({
   imports: [
@@ -162,6 +167,8 @@ import { S3PhotoStorage } from './infrastructure/s3-photo-storage';
     // Legal (feature 004 US3)
     LegalAcceptanceController,
     LegalPublicController,
+    // Profil conseiller (feature 007 US1)
+    ProfilConseillerController,
   ],
   providers: [
     // Env injecté (cf. NodeCryptoTotpSecretEncrypter qui en a besoin
@@ -249,7 +256,15 @@ import { S3PhotoStorage } from './infrastructure/s3-photo-storage';
       useClass: PrismaLegalAcceptanceAnonymizationRepository,
     },
 
-    // --- Feature 007 (profil conseiller) — ports → adapters ---
+    // --- Feature 007 (profil conseiller) — use cases ---
+    LireProfilPriveUseCase,
+    EditerProfilUseCase,
+    UploaderPhotoUseCase,
+
+    // --- Feature 007 — listener cross-module (ConformiteStatusChanged) ---
+    ConformiteStatusChangedListener,
+
+    // --- Feature 007 — ports → adapters ---
     { provide: PROFIL_CONSEILLER_REPOSITORY, useClass: PrismaProfilConseillerRepository },
     { provide: PHOTO_HISTORIQUE_REPOSITORY, useClass: PrismaPhotoHistoriqueRepository },
     { provide: SLUG_RESERVATION_REPOSITORY, useClass: PrismaSlugReservationRepository },
