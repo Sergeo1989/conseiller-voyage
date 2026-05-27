@@ -6,7 +6,7 @@ entrée numérotée est destinée à devenir une spec détaillée via
 (ajouts, repriorisations, suppressions) ; chaque modification est
 référencée par commit.
 
-**Dernière mise à jour** : 2026-05-26
+**Dernière mise à jour** : 2026-05-27
 
 > **Note de numérotation** : les IDs de cette roadmap (001, 002, …) sont des
 > identifiants logiques de feature. Les dossiers de spec sous `specs/`
@@ -53,10 +53,10 @@ Scope : **S** (1 spec, < 5 user stories) · **M** (~5 US, ~20 FR, équivalent au
 | ID | Feature | Module | Scope | État | Spec | Pourquoi en premier |
 |---|---|---|---|---|---|---|
 | **001** | Module conformité (statut vérifié, source de vérité) | conformité | M | ✅ mergé (PR #1) | `specs/001-conformite-module/` | Gardien Principe I. Bloque toute visibilité publique de conseiller et toute éligibilité matching. 73 commits, 200/200 tests verts. |
-| **002** | Identité — auth conseiller + admin, RBAC (base AuthGuard) | identité | M | 🔵 implémentation en cours | `specs/006-auth-conseiller-admin/` | Bloque tout consommateur authentifié. AuthGuard NestJS partagé Auth.js v5 (ADR-0004). 7 user stories livrées (signup, login, verify email, logout, reset password, change password, admin bootstrap+invitation), `PrismaPasswordVerifier` remplace définitivement le stub 002a (résout bug_007). |
+| **002** | Identité — auth conseiller + admin, RBAC (base AuthGuard) | identité | M | ✅ mergé (PR #14) | `specs/006-auth-conseiller-admin/` | Bloque tout consommateur authentifié. AuthGuard NestJS partagé Auth.js v5 (ADR-0004). 7 user stories livrées (signup, login, verify email, logout, reset password, change password, admin bootstrap+invitation). `PrismaPasswordVerifier` remplace définitivement le stub 002a (résout bug_007 ultrareview). 10 commits, 84/84 tests intégration verts, 59/59 tests pure-fn `@cv/auth-domain`. ADR-0012 (audit no-FK Loi 25) + 3 runbooks ops livrés. |
 | **002a** | Identité — MFA conseiller TOTP + step-up + reset admin + auto-service device + admin J1 | identité | M | ✅ mergé (PR #13) | `specs/005-mfa-conseiller/` | Extraction du scope MFA de l'ancien 002. Exigence Principe IX NON-NÉGOCIABLE. 6 user stories livrées (US1-US6), 13 commits (12 features + 1 fix ultrareview), 60 tests pure + 55 tests intégration verts. ~~Stub `PasswordVerifier` à remplacer quand 002 livre~~ **(résolu par 002 — `PrismaPasswordVerifier` wiré).** |
-| 003 | Identité — notifications + courriel transactionnel | identité | M | ⏳ | — | Bloque FR-005 conformité, rappels d'expiration, accusés de soumission. Provider canadien (ADR à venir). Drainera aussi `mfa_outbox_emails` posé par 002a. |
-| 004 | Mentions légales, CGU, page « Comment ça marche », politique Loi 25 | transverse | M | 🔵 PR #12 en review — implémentation complète sauf valeurs juridiques (T088-T089) | `specs/004-mentions-legales/` | Obligation contractuelle dès première mise en ligne publique. Texte FR-CA. Page « Comment ça marche » = pédagogie modèle anti-marketplace (ADR-0002). Foundation + 5 pages SSG + Footer + 4 use cases legal (AcceptCguB2bUseCase, CheckCguUpToDateUseCase, AcceptIntakeConsentUseCase, AnonymizeLegalAcceptancesUseCase) + facade publique `LegalAcceptanceFacade` consommée par 002-intake + middleware HMAC version-check + anonymisation Loi 25 immutable. Reste : valeurs juridiques exactes (REQ/NEQ — runbook documenté, bloquant uniquement déploiement public). |
+| 003 | Identité — notifications + courriel transactionnel | identité | M | ✅ mergé (PR #15) | `specs/003-notifications-transactionnelles/` | Bloque FR-005 conformité, rappels d'expiration, accusés de soumission. AWS SES ca-central-1 (ADR-0006). Draine `mfa_outbox_emails` (002a) + `auth_outbox_emails` (002) + outbox conformité (001). ADR-0013 (pepper hash) + ADR-0014 (templates). |
+| 004 | Mentions légales, CGU, page « Comment ça marche », politique Loi 25 | transverse | M | ✅ mergé (PR #12) | `specs/004-mentions-legales/` | Obligation contractuelle dès première mise en ligne publique. Texte FR-CA. Page « Comment ça marche » = pédagogie modèle anti-marketplace (ADR-0002). 5 pages SSG + Footer + 4 use cases legal (AcceptCguB2bUseCase, CheckCguUpToDateUseCase, AcceptIntakeConsentUseCase, AnonymizeLegalAcceptancesUseCase) + facade publique `LegalAcceptanceFacade` consommée par 002-intake + middleware HMAC version-check + anonymisation Loi 25 immutable. ADR-0008 (hash salé) + ADR-0009 (middleware cookie HMAC). Bloquant **uniquement** déploiement public : T088-T089 (valeurs juridiques exactes REQ/NEQ — runbook livré). |
 
 ---
 
@@ -240,16 +240,15 @@ cas via un `/speckit.specify` quand le moment vient.
 
 | Sprint | Features visées | Justification |
 |---|---|---|
-| **0** | ✅ 001 (mergé PR #1), ✅ 002a MFA (mergé PR #13), 🟡 004 (PR #12 en review) | 001 finalisé 73 commits / 200 tests. 002a livré avant 002 sur stub `PasswordVerifier`. 004 = mentions légales + CGU + Loi 25 + Comment ça marche, livrable web public minimal. |
-| **1** | 002, 003 | Auth conseiller + admin (mot de passe Prisma → branche le `PrismaPasswordVerifier` qui remplace le stub 005). Notifications transactionnelles + drainage `mfa_outbox_emails` (worker SES). |
-| **2** | 005 (profil conseiller) | Dépend de 001 + 002 + 002a (MFA actif avant accès aux leads). |
-| **3** | 006, 008 | Facturation onboarding + intake brief. Parallélisable. |
-| **4** | 009, 010, 011, 024 | Enrichissement LLM, magic-link, scoring matching, infra i18n. |
-| **5** | 012, 013, 007 | Notifs + état de lead, conversation, facturation récurrence. |
-| **6** | 014, 015, 020 | Dashboards conseiller, voyageur, admin. |
-| **7** | 016, 017, 021 | Premières pages publiques SEO + observabilité centrale (drainera aussi métriques `cv_active_admins_total` posées par 002a). |
-| **8** | 018, 019, 022, 023 | Pages thématiques, GEO/AI, retention sweep, effacement Loi 25. |
-| **9** | 025 | Design system formalisé (peut démarrer plus tôt si capacité). |
+| **0** | ✅ 001 (PR #1), ✅ 002a MFA (PR #13), ✅ 002 Auth (PR #14), ✅ 003 Notifications (PR #15), ✅ 004 Mentions légales (PR #12) | **Tier 0 fermé.** Pile identité + notifications + mentions légales prête. 5 PRs mergées, foundations stables pour Tier 1. |
+| **1** | 005 (profil conseiller) | Premier Sprint Tier 1. Dépend de 001 + 002 + 002a (toutes mergées). Vue publique anti-marketplace (ADR-0002), dashboard privé conseiller. |
+| **2** | 006, 008 | Facturation onboarding (Stripe) + intake brief. Parallélisable. |
+| **3** | 009, 010, 011, 024 | Enrichissement LLM, magic-link, scoring matching, infra i18n. |
+| **4** | 012, 013, 007 | Notifs + état de lead, conversation, facturation récurrence. |
+| **5** | 014, 015, 020 | Dashboards conseiller, voyageur, admin. |
+| **6** | 016, 017, 021 | Premières pages publiques SEO + observabilité centrale (drainera aussi métriques `cv_active_admins_total` posées par 002a). |
+| **7** | 018, 019, 022, 023 | Pages thématiques, GEO/AI, retention sweep, effacement Loi 25. |
+| **8** | 025 | Design system formalisé (peut démarrer plus tôt si capacité). |
 | **post** | Tier 5 selon traction | Au cas par cas. |
 
 Cadence indicative ; le réel dépendra de la taille d'équipe et des
