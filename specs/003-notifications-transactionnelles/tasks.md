@@ -58,56 +58,56 @@ implémentation et test indépendants.
 
 ### Migrations Prisma
 
-- [ ] T007 Créer `packages/db/prisma/schema/notifications.prisma` avec les 3 modèles (`NotificationLogEntry`, `SuppressionListEntry`, `NotificationAuditEntry`) + enums (`NotificationStatus`, `NotificationModule`, `SuppressionReason`, `SuppressionSource`, `NotificationAuditActorRole`) — cf. data-model.md sections 1-3
-- [ ] T008 Générer la migration Prisma `pnpm --filter @cv/db prisma migrate dev --name notification_tables_initial` et vérifier le SQL généré
-- [ ] T009 Créer la migration manuelle `notification_audit_block_modifications/migration.sql` avec triggers `BEFORE UPDATE/DELETE` (row-level) et `BEFORE TRUNCATE` (statement-level) — cf. data-model.md section 3 + pattern hérité 001
-- [ ] T010 Créer la migration manuelle `notification_email_log_erasure_check/migration.sql` avec CHECK constraint `chk_erased_implies_null_pii_and_hash_kept` (élargie pour `recipientEmailHashHMAC IS NOT NULL` post-effacement — fix B-5)
-- [ ] T011 Créer la migration expand `outbox_add_next_attempt_at/migration.sql` qui ajoute `next_attempt_at TIMESTAMPTZ NULL` à `auth_outbox_emails` ET `mfa_outbox_emails` + 2 index partiels — cf. outbox-source-contract.md section 4
-- [ ] T012 Mettre à jour `packages/db/prisma/schema/auth-credentials.prisma` (ajout `nextAttemptAt` au modèle `AuthOutboxEmail`) et `mfa.prisma` (idem `MfaOutboxEmail`) — cohérent avec la migration T011
+- [X] T007 Créer `packages/db/prisma/schema/notifications.prisma` avec les 3 modèles (`NotificationLogEntry`, `SuppressionListEntry`, `NotificationAuditEntry`) + enums (`NotificationStatus`, `NotificationModule`, `SuppressionReason`, `SuppressionSource`, `NotificationAuditActorRole`) — cf. data-model.md sections 1-3
+- [X] T008 Générer la migration Prisma `pnpm --filter @cv/db prisma migrate dev --name notification_tables_initial` et vérifier le SQL généré
+- [X] T009 Créer la migration manuelle `notification_audit_block_modifications/migration.sql` avec triggers `BEFORE UPDATE/DELETE` (row-level) et `BEFORE TRUNCATE` (statement-level) — cf. data-model.md section 3 + pattern hérité 001
+- [X] T010 Créer la migration manuelle `notification_email_log_erasure_check/migration.sql` avec CHECK constraint `chk_erased_implies_null_pii_and_hash_kept` (élargie pour `recipientEmailHashHMAC IS NOT NULL` post-effacement — fix B-5)
+- [X] T011 Créer la migration expand `outbox_add_next_attempt_at/migration.sql` qui ajoute `next_attempt_at TIMESTAMPTZ NULL` à `auth_outbox_emails` ET `mfa_outbox_emails` + 2 index partiels — cf. outbox-source-contract.md section 4
+- [X] T012 Mettre à jour `packages/db/prisma/schema/auth-credentials.prisma` (ajout `nextAttemptAt` au modèle `AuthOutboxEmail`) et `mfa.prisma` (idem `MfaOutboxEmail`) — cohérent avec la migration T011
 
 ### Secrets et configuration
 
-- [ ] T013 [P] Générer `NOTIFICATIONS_EMAIL_HASH_PEPPER` (`openssl rand -base64 32`) et le poser en dev via 1Password CLI (`op://Conseiller Voyage Dev/notifications-pepper`) — cf. research R6
-- [ ] T014 [P] Générer `NOTIFICATIONS_SNS_HMAC_SECRET` (`openssl rand -base64 32`) et le poser en dev via 1Password CLI — cf. research R5
-- [ ] T015 [P] Documenter dans `docs/runbooks/secrets-management.md` (ou existant) la procédure de provisioning prod via AWS Secrets Manager `ca-central-1`
-- [ ] T016 Étendre `apps/api/src/common/logger.module.ts` (Pino) avec `redact.paths` listant les 12 chemins d'emails (cf. research R15)
-- [ ] T017 [P] Créer `packages/shared/src/notifications/__tests__/pino-redaction.test.ts` qui sérialise objets avec emails et vérifie absence de PII en clair (RED → impl T016 GREEN)
+- [X] T013 [P] Générer `NOTIFICATIONS_EMAIL_HASH_PEPPER` (`openssl rand -base64 32`) et le poser en dev via 1Password CLI (`op://Conseiller Voyage Dev/notifications-pepper`) — cf. research R6
+- [X] T014 [P] Générer `NOTIFICATIONS_SNS_HMAC_SECRET` (`openssl rand -base64 32`) et le poser en dev via 1Password CLI — cf. research R5
+- [X] T015 [P] Documenter dans `docs/runbooks/secrets-management.md` (ou existant) la procédure de provisioning prod via AWS Secrets Manager `ca-central-1`
+- [X] T016 Étendre `apps/api/src/common/logger.module.ts` (Pino) avec `redact.paths` listant les 12 chemins d'emails (cf. research R15)
+- [X] T017 [P] Créer `packages/shared/src/notifications/__tests__/pino-redaction.test.ts` qui sérialise objets avec emails et vérifie absence de PII en clair (RED → impl T016 GREEN)
 
 ### Domaine pur (TDD obligatoire — Principe VI)
 
-- [ ] T018 [P] Tests Vitest `apps/api/src/modules/notifications/domain/pure-functions/__tests__/canonicalize-email.test.ts` (cas Gmail `+` et `.` stripping, autres domaines lowercase only, edge cases) — RED first
-- [ ] T019 [P] Tests Vitest `__tests__/hash-recipient-email.test.ts` (HMAC peppered, déterministe, multi-pepper fallback) — RED first
-- [ ] T020 [P] Tests Vitest `__tests__/compute-backoff.test.ts` (delays `[1m, 5m, 30m, 4h, 24h]`, throw au-delà 5 attempts) — RED first
-- [ ] T021 [P] Tests Vitest `__tests__/should-suppress.test.ts` (entry permanente bloque, soft bounce expiré ne bloque pas, `removedAt` ne bloque pas) — RED first
-- [ ] T022 [P] Tests Vitest `__tests__/compute-circuit-state.test.ts` (5 échecs/60s → open, 30s → half-open, succès → closed) — RED first
-- [ ] T023 [P] Tests Vitest `__tests__/priority-for-event-type.test.ts` (auth.email_verification → 1, conformite.expiration_reminder → 10) — RED first
-- [ ] T024 [P] Implémenter `apps/api/src/modules/notifications/domain/pure-functions/canonicalize-email.ts` — GREEN T018
-- [ ] T025 [P] Implémenter `hash-recipient-email.ts` (avec multi-pepper fallback cf. R6) — GREEN T019
-- [ ] T026 [P] Implémenter `compute-backoff.ts` — GREEN T020
-- [ ] T027 [P] Implémenter `should-suppress.ts` — GREEN T021
-- [ ] T028 [P] Implémenter `compute-circuit-state.ts` — GREEN T022
-- [ ] T029 [P] Implémenter `priority-for-event-type.ts` — GREEN T023
+- [X] T018 [P] Tests Vitest `apps/api/src/modules/notifications/domain/pure-functions/__tests__/canonicalize-email.test.ts` (cas Gmail `+` et `.` stripping, autres domaines lowercase only, edge cases) — RED first
+- [X] T019 [P] Tests Vitest `__tests__/hash-recipient-email.test.ts` (HMAC peppered, déterministe, multi-pepper fallback) — RED first
+- [X] T020 [P] Tests Vitest `__tests__/compute-backoff.test.ts` (delays `[1m, 5m, 30m, 4h, 24h]`, throw au-delà 5 attempts) — RED first
+- [X] T021 [P] Tests Vitest `__tests__/should-suppress.test.ts` (entry permanente bloque, soft bounce expiré ne bloque pas, `removedAt` ne bloque pas) — RED first
+- [X] T022 [P] Tests Vitest `__tests__/compute-circuit-state.test.ts` (5 échecs/60s → open, 30s → half-open, succès → closed) — RED first
+- [X] T023 [P] Tests Vitest `__tests__/priority-for-event-type.test.ts` (auth.email_verification → 1, conformite.expiration_reminder → 10) — RED first
+- [X] T024 [P] Implémenter `apps/api/src/modules/notifications/domain/pure-functions/canonicalize-email.ts` — GREEN T018
+- [X] T025 [P] Implémenter `hash-recipient-email.ts` (avec multi-pepper fallback cf. R6) — GREEN T019
+- [X] T026 [P] Implémenter `compute-backoff.ts` — GREEN T020
+- [X] T027 [P] Implémenter `should-suppress.ts` — GREEN T021
+- [X] T028 [P] Implémenter `compute-circuit-state.ts` — GREEN T022
+- [X] T029 [P] Implémenter `priority-for-event-type.ts` — GREEN T023
 
 ### Value Objects, Entities, Enums
 
-- [ ] T030 [P] Créer `domain/value-objects/email-address.vo.ts` (validation Zod, immutable)
-- [ ] T031 [P] Créer `domain/value-objects/email-locale.vo.ts` (`'fr-CA' | 'en'`)
-- [ ] T032 [P] Créer `domain/value-objects/email-template-id.vo.ts` (format `<module>.<template-name>`)
-- [ ] T033 [P] Créer `domain/entities/notification-envelope.entity.ts` (from `NotificationEnvelopeSchema`)
-- [ ] T034 [P] Créer `domain/entities/notification-log-entry.entity.ts`
-- [ ] T035 [P] Créer `domain/entities/suppression-list-entry.entity.ts`
-- [ ] T036 [P] Créer `domain/enums/notification-status.enum.ts` (mappé à l'enum Prisma)
-- [ ] T037 [P] Créer `domain/enums/suppression-reason.enum.ts`
+- [X] T030 [P] Créer `domain/value-objects/email-address.vo.ts` (validation Zod, immutable)
+- [X] T031 [P] Créer `domain/value-objects/email-locale.vo.ts` (`'fr-CA' | 'en'`)
+- [X] T032 [P] Créer `domain/value-objects/email-template-id.vo.ts` (format `<module>.<template-name>`)
+- [X] T033 [P] Créer `domain/entities/notification-envelope.entity.ts` (from `NotificationEnvelopeSchema`)
+- [X] T034 [P] Créer `domain/entities/notification-log-entry.entity.ts`
+- [X] T035 [P] Créer `domain/entities/suppression-list-entry.entity.ts`
+- [X] T036 [P] Créer `domain/enums/notification-status.enum.ts` (mappé à l'enum Prisma)
+- [X] T037 [P] Créer `domain/enums/suppression-reason.enum.ts`
 
 ### Ports application (interfaces uniquement)
 
-- [ ] T038 [P] Créer `application/ports/email-sender.port.ts` avec `EmailSender` interface + symbole DI `EMAIL_SENDER`
-- [ ] T039 [P] Créer `application/ports/suppression-list-reader.port.ts` (Principe ISP — séparé du writer)
-- [ ] T040 [P] Créer `application/ports/suppression-list-writer.port.ts`
-- [ ] T041 [P] Créer `application/ports/notification-log-reader.port.ts`
-- [ ] T042 [P] Créer `application/ports/notification-log-writer.port.ts`
-- [ ] T043 [P] Créer `application/ports/notification-audit-log-writer.port.ts`
-- [ ] T044 [P] Créer `application/ports/email-template-renderer.port.ts`
+- [X] T038 [P] Créer `application/ports/email-sender.port.ts` avec `EmailSender` interface + symbole DI `EMAIL_SENDER`
+- [X] T039 [P] Créer `application/ports/suppression-list-reader.port.ts` (Principe ISP — séparé du writer)
+- [X] T040 [P] Créer `application/ports/suppression-list-writer.port.ts`
+- [X] T041 [P] Créer `application/ports/notification-log-reader.port.ts`
+- [X] T042 [P] Créer `application/ports/notification-log-writer.port.ts`
+- [X] T043 [P] Créer `application/ports/notification-audit-log-writer.port.ts`
+- [X] T044 [P] Créer `application/ports/email-template-renderer.port.ts`
 
 **Checkpoint** : Foundation prête — les US peuvent démarrer en parallèle
 

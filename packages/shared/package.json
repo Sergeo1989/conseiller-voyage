@@ -25,6 +25,14 @@
     "./email/conformite": {
       "types": "./src/email/templates/conformite/index.ts",
       "default": "./dist/email/templates/conformite/index.js"
+    },
+    "./notifications": {
+      "types": "./src/notifications/index.ts",
+      "default": "./dist/notifications/index.js"
+    },
+    "./brand": {
+      "types": "./src/brand/index.ts",
+      "default": "./dist/brand/index.js"
     }
   },
   "scripts": {
