@@ -168,7 +168,7 @@ export class OutboxPublisherJob {
 
     const user = await prisma.authUser.findUnique({
       where: { id: conseillerId },
-      select: { email: true, preferredLocale: true },
+      select: { email: true },
     });
 
     if (!user?.email) {
@@ -178,9 +178,10 @@ export class OutboxPublisherJob {
       return;
     }
 
-    const recipientLocale = (user.preferredLocale === 'en' ? 'en' : DEFAULT_LOCALE) as
-      | 'fr-CA'
-      | 'en';
+    // FR-CA par défaut (constitution). Une préférence utilisateur sera ajoutée
+    // sur AuthUser dans une feature ultérieure ; tant qu'elle n'existe pas,
+    // tous les envois sortent en français canadien.
+    const recipientLocale: 'fr-CA' | 'en' = DEFAULT_LOCALE;
 
     const result = await this.notifications.send({
       schemaVersion: 1,

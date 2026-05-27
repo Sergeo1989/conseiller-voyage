@@ -88,14 +88,9 @@ export class AuthOutboxDispatchWorker {
     payload: unknown;
     createdAt: Date;
   }): Promise<void> {
-    let recipientLocale: 'fr-CA' | 'en' = DEFAULT_LOCALE;
-    if (row.recipientUserId) {
-      const user = await prisma.authUser.findUnique({
-        where: { id: row.recipientUserId },
-        select: { preferredLocale: true },
-      });
-      if (user?.preferredLocale === 'en') recipientLocale = 'en';
-    }
+    // FR-CA par défaut (constitution). Préférence utilisateur viendra dans
+    // une feature ultérieure — pour l'instant l'auth ne porte pas ce champ.
+    const recipientLocale: 'fr-CA' | 'en' = DEFAULT_LOCALE;
 
     const templateKind = row.templateKind as Parameters<typeof mapAuthTemplateKindToTemplateId>[0];
     const templateId = mapAuthTemplateKindToTemplateId(templateKind);

@@ -1,12 +1,17 @@
 // T048 — SesEmailSender.
 //
 // Envoie via @aws-sdk/client-sesv2 :
-//   - correlationId propagé comme ClientToken (SES Outbound Idempotency Token, R17).
+//   - correlationId propagé via EmailTags (capturé par le ConfigurationSet
+//     event destination — queryable dans CloudTrail/CloudWatch).
 //   - Headers List-Unsubscribe + List-Unsubscribe-Post: One-Click (FR-010-b).
 //   - ConfigurationSetName = notifications-prod ou notifications-staging selon env.
 //   - Circuit breaker custom via computeCircuitState (état en mémoire process).
 //
-// Cf. research R17 (SES ClientToken idempotence), ADR-0006.
+// L'idempotence des envois est garantie en amont par l'unicité de
+// `notification_email_log.correlationId` (insert idempotent — cf.
+// PrismaNotificationLog) ; SES SendEmail v2 n'expose pas de ClientToken.
+//
+// Cf. ADR-0006.
 
 import { type SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -62,7 +67,7 @@ export class SesEmailSender implements EmailSender {
         },
       },
       ConfigurationSetName: this.configSetName,
-      ClientToken: input.correlationId,
+      EmailTags: [{ Name: 'correlation-id', Value: input.correlationId }],
     });
 
     try {

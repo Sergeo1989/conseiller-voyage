@@ -88,7 +88,7 @@ export class MfaOutboxDispatchWorker {
   }): Promise<void> {
     const user = await prisma.authUser.findUnique({
       where: { id: row.recipientUserId },
-      select: { email: true, preferredLocale: true },
+      select: { email: true },
     });
 
     if (!user?.email) {
@@ -102,7 +102,8 @@ export class MfaOutboxDispatchWorker {
       return;
     }
 
-    const recipientLocale: 'fr-CA' | 'en' = user.preferredLocale === 'en' ? 'en' : DEFAULT_LOCALE;
+    // FR-CA par défaut (constitution).
+    const recipientLocale: 'fr-CA' | 'en' = DEFAULT_LOCALE;
     const templateKind = row.templateKind as MfaEmailTemplateKind;
     const templateId = mapMfaTemplateKindToTemplateId(templateKind);
 
