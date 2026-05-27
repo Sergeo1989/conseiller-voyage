@@ -32,11 +32,11 @@ import {
   type LegalDocumentRepository,
 } from '../ports/legal-document-repository.port';
 
-export type IntakeConsentDocumentType = 'confidentialite' | 'cgu_b2c';
+export type BriefConsentDocumentType = 'confidentialite' | 'cgu_b2c';
 
 export interface AcceptIntakeConsentInput {
   readonly briefId: string;
-  readonly documentType: IntakeConsentDocumentType;
+  readonly documentType: BriefConsentDocumentType;
   readonly documentVersion: number;
   readonly acceptedAt: Date;
   readonly ipAddress: string;

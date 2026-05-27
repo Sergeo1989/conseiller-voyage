@@ -9,6 +9,14 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./mdx-validation": {
+      "types": "./src/mdx-validation.ts",
+      "default": "./dist/mdx-validation.js"
+    },
+    "./anonymization": {
+      "types": "./src/anonymization.ts",
+      "default": "./dist/anonymization.js"
     }
   },
   "scripts": {

@@ -23,14 +23,14 @@ import type { LegalAcceptanceWriter } from '../../ports/legal-acceptance-writer.
 import type { LegalDocumentRepository } from '../../ports/legal-document-repository.port';
 import {
   AcceptIntakeConsentUseCase,
-  type IntakeConsentDocumentType,
+  type BriefConsentDocumentType,
 } from '../accept-intake-consent.use-case';
 
 const NOW = new Date('2026-05-27T10:00:00Z');
 const BRIEF_ID = '00000000-0000-4000-8000-000000000b01';
 const ACCEPTANCE_ID = '00000000-0000-4000-8000-000000000aaa';
 
-function doc(type: IntakeConsentDocumentType, version: number, effective: Date): LegalDocument {
+function doc(type: BriefConsentDocumentType, version: number, effective: Date): LegalDocument {
   return {
     id: LegalDocumentIdSchema.parse(
       `00000000-0000-4000-8000-00000000d0${version.toString().padStart(2, '0')}`,
@@ -44,7 +44,7 @@ function doc(type: IntakeConsentDocumentType, version: number, effective: Date):
   };
 }
 
-function accept(type: IntakeConsentDocumentType, version: number): LegalAcceptance {
+function accept(type: BriefConsentDocumentType, version: number): LegalAcceptance {
   return {
     id: LegalAcceptanceIdSchema.parse(ACCEPTANCE_ID),
     subjectType: 'brief',
@@ -66,7 +66,7 @@ interface Mocks {
 }
 
 function mocks(
-  type: IntakeConsentDocumentType,
+  type: BriefConsentDocumentType,
   effective: Date = new Date('2026-04-15T00:00:00Z'),
   existing: LegalAcceptance | null = null,
 ): Mocks {

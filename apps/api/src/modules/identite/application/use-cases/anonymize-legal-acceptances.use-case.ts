@@ -13,12 +13,11 @@
 // si une row d'anonymisation existe déjà pour une acceptance donnée, le
 // repository skip silencieusement (try/catch P2002 logged en warning).
 
-import {
-  LegalAcceptanceAnonymizationIdSchema,
-  extractBrowserFamily,
-  hashSubjectId,
-  maskIpAddress,
-} from '@cv/legal';
+import { LegalAcceptanceAnonymizationIdSchema } from '@cv/legal';
+// Import via subpath — `anonymization` utilise `node:crypto` (createHash)
+// donc n'est pas réexporté depuis `@cv/legal/index.ts` pour préserver la
+// compatibilité Edge runtime du middleware Next.js.
+import { extractBrowserFamily, hashSubjectId, maskIpAddress } from '@cv/legal/anonymization';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CLOCK, type Clock } from '../../../../common/ports/clock.port';
 import { UUID_GENERATOR, type UuidGenerator } from '../../../../common/ports/uuid-generator.port';

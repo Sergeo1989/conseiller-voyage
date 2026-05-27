@@ -76,7 +76,7 @@ export default async function middleware(req: NextRequest): Promise<NextResponse
 
   const cookieRaw = req.cookies.get(LEGAL_VERSION_COOKIE_NAME)?.value;
   const nowMs = Date.now();
-  const payload = readLegalVersionCookie(cookieRaw, hmacSecret, nowMs);
+  const payload = await readLegalVersionCookie(cookieRaw, hmacSecret, nowMs);
 
   const currentVersion = await fetchCurrentCguB2bVersion(apiBaseUrl);
   if (currentVersion === null) {

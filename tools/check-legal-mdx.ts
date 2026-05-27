@@ -10,7 +10,10 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type MdxFile, validateLegalMdxFiles } from '@cv/legal';
+// Import via subpath — `mdx-validation` n'est pas réexporté depuis
+// `@cv/legal/index.ts` parce qu'il utilise `gray-matter` (node:crypto)
+// incompatible avec le bundler edge runtime de Next.js.
+import { type MdxFile, validateLegalMdxFiles } from '@cv/legal/mdx-validation';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');

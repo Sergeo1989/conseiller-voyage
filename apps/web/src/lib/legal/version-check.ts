@@ -66,14 +66,14 @@ export async function fetchCurrentCguB2bVersion(apiBaseUrl: string): Promise<num
  * pour tout autre cas (cookie absent, signature invalide → forge,
  * cookie expiré, payload malformé).
  *
- * Les cas où `null` est retourné délenchent une revérification via
- * l'API `/api/me/legal/version-status` côté middleware.
+ * Async parce que la vérification HMAC utilise la Web Crypto API
+ * (compatible Edge runtime de Next.js).
  */
-export function readLegalVersionCookie(
+export async function readLegalVersionCookie(
   rawCookie: string | undefined,
   secret: string,
   nowMs: number,
-): LegalVersionCookiePayload | null {
+): Promise<LegalVersionCookiePayload | null> {
   return verifyLegalVersionCookie(rawCookie, secret, nowMs);
 }
 
@@ -83,11 +83,11 @@ export function readLegalVersionCookie(
  *   - Name=__Host-cv.legal-version
  *   - HttpOnly, Secure, SameSite=Lax, Path=/, Max-Age=300
  */
-export function buildLegalVersionCookie(
+export async function buildLegalVersionCookie(
   userId: string,
   cguB2bVersion: number,
   secret: string,
-): string {
+): Promise<string> {
   return signLegalVersionCookie(userId, cguB2bVersion, secret, LEGAL_VERSION_COOKIE_TTL_SECONDS);
 }
 
