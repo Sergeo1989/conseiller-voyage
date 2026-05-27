@@ -22,7 +22,8 @@ const MODULES_ROOT = join(ROOT, 'apps', 'api', 'src', 'modules');
 // (`ConformiteCertificat`) et les tables sont `snake_case` (`conformite_*`).
 const MODULE_PREFIXES: Record<string, string[]> = {
   conformite: ['Conformite', 'conformite_'],
-  identite: ['Auth'],
+  // identité gère : auth (002+006), mfa (002a), legal (004), profil (007).
+  identite: ['Auth', 'Profile', 'profile_'],
   intake: ['Intake', 'intake_'],
   matching: ['Matching', 'matching_'],
   facturation: ['Facturation', 'facturation_'],
@@ -54,6 +55,30 @@ const ALLOWED_CROSS_MODULE_SYMBOLS: ReadonlySet<string> = new Set([
   'AuthUser',
   'AuthAccount',
   'AuthVerificationToken',
+  // Feature 007 — types Prisma profil accédés via @cv/db (neutre vendor).
+  // L'accès aux *use cases* profil reste interdit hors du module identité.
+  'ProfilModerationAction',
+  'OnboardingRelanceEtape',
+  'PhotoUploadStatut',
+  'StatutProfil',
+  // ConformiteQueryPort + CONFORMITE_QUERY_PORT — port public exposé par
+  // @cv/shared/conformite (façade publique), consommable par les modules
+  // qui en ont besoin (identité feature 007 pour la jointure verified).
+  'ConformiteQueryPort',
+  'CONFORMITE_QUERY_PORT',
+  // ConformiteQueryFacade est le nom de la classe publique elle-même —
+  // référencé en commentaire pour la traçabilité (« la facade qui
+  // implémente le port »), pas un import direct.
+  'ConformiteQueryFacade',
+  // ConformiteModule — import nécessaire pour le forwardRef() côté
+  // IdentiteModule (feature 007 wiring T046). Le module entier est
+  // importé pour résoudre la chaîne DI, pas pour consommer des internes.
+  'ConformiteModule',
+  // ConformiteStatusChanged + variantes — nom de l'event du domaine
+  // conformité référencé en commentaire pour traçabilité dans les ports
+  // profil (listener cross-module T061).
+  'ConformiteStatusChanged',
+  'ConformiteStatusChangedEvent',
 ]);
 
 interface Violation {

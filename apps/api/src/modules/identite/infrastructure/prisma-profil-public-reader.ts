@@ -13,7 +13,7 @@
 
 import { prisma } from '@cv/db';
 import { formaterNomAffiche } from '@cv/profil-domain';
-import type { ConformiteQueryPort } from '@cv/shared/conformite';
+import { CONFORMITE_QUERY_PORT, type ConformiteQueryPort } from '@cv/shared/conformite';
 import { Inject, Injectable } from '@nestjs/common';
 import { env } from '../../../env';
 import type { AuthUserLegalNameReader } from '../application/ports/auth-user-legal-name-reader.port';
@@ -22,11 +22,6 @@ import type {
   ProfilPublicPayload,
   ProfilPublicReader,
 } from '../application/ports/profil-public-reader.port';
-
-// Token DI pour le port ConformiteQueryPort (exposé par ConformiteModule via
-// la facade ConformiteQueryFacade — symbole importé dynamiquement par
-// IdentiteModule T046).
-export const CONFORMITE_QUERY_PORT = Symbol.for('ConformiteQueryPort');
 
 @Injectable()
 export class PrismaProfilPublicReader implements ProfilPublicReader {

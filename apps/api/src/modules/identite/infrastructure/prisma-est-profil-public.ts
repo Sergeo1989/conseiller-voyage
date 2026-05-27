@@ -9,10 +9,9 @@
 // uniquement `boolean`, jamais la raison d'exclusion.
 
 import { prisma } from '@cv/db';
-import type { ConformiteQueryPort } from '@cv/shared/conformite';
+import { CONFORMITE_QUERY_PORT, type ConformiteQueryPort } from '@cv/shared/conformite';
 import type { EstProfilPublicPort } from '@cv/shared/profil-public';
 import { Inject, Injectable } from '@nestjs/common';
-import { CONFORMITE_QUERY_PORT } from './prisma-profil-public-reader';
 
 @Injectable()
 export class PrismaEstProfilPublic implements EstProfilPublicPort {

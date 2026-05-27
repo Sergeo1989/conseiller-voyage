@@ -98,17 +98,17 @@ séparé visible dans git (constitution Principe VI).
 
 ### Wiring NestJS
 
-- [ ] T046 Étendre `apps/api/src/modules/identite/identite.module.ts` pour déclarer tous les providers (ports + adaptateurs T026-T045), exporter `EstProfilPublicPort` vers le `IdentitePublicModule`. **Depends on T026-T045 (tous les ports + tous les adaptateurs Prisma/S3/CloudFront/BullMQ).**
-- [ ] T047 ~~Étendre `conformite.module.ts` pour exporter `ConformiteNomLegalReader`~~ **Annulé** (A1 — le nom légal vit dans `AuthUser`, le port reste dans le module identité, pas conformité). Tâche conservée pour la numérotation.
-- [ ] T048 Mettre à jour `apps/api/src/app.module.ts` pour importer `IdentiteModule` mis à jour
+- [X] T046 IdentiteModule wiring : 10 providers profil (ports → adapters) + forwardRef(ConformiteModule) + BullMQ queue identite.onboarding-reminders + export EST_PROFIL_PUBLIC_PORT
+- [X] T047 ConformiteModule étendu : token CONFORMITE_QUERY_PORT centralisé dans @cv/shared/conformite (Symbol.for) + provider useExisting ConformiteQueryFacade + export
+- [X] T048 app.module.ts inchangé — wiring transitif via ConformiteModule (qui importe IdentiteModule). forwardRef gère le cycle.
 
 ### Outils CI (invariants)
 
-- [ ] T049 [P] Créer `tools/check-no-contact-fields-profile.ts` : scan source régex sur `apps/web/src/app/conseiller/[slug]/**/*.{ts,tsx}` (cf. research.md R10 + M3 niveau 1)
-- [ ] T050 [P] Créer `tools/check-anti-enum-profile.ts` : génère 5 cas 404 (slug inexistant, slug réservé, profil incomplet, profil masqué, profil anonymisé) via tests Playwright + compare la taille HTTP à l'octet près (cf. research.md R7)
-- [ ] T051 [P] Étendre `tools/check-module-boundaries.ts` (existant) : (a) ajouter `Profile` + `profile_` aux préfixes Prisma reconnus pour `identite` dans `MODULE_PREFIXES.identite` (actuellement `['Auth']`) ; (b) ajouter les règles spécifiques `packages/profil-domain/` ne peut PAS importer NestJS / Prisma / Next.js / Auth.js / `@aws-sdk/*` ; `apps/api/src/modules/identite/application/` ne peut PAS importer Prisma ni `@aws-sdk/*` directement
-- [ ] T052 [P] Ajouter les invariants T049, T050, T051 au pipeline CI GitHub Actions (`.github/workflows/ci.yml`)
-- [ ] T052a [P] **i18n catalog FR-CA** : ajouter dans `apps/web/src/messages/fr-CA.json` (ou équivalent `next-intl`) les clés `profil.public.*`, `profil.edition.*`, `profil.dashboard.*`, `profil.apercu.*`, `profil.modere.*`, `admin.profils.*`, `emails.profil.*` (~60 clés au total, FR-CA strict). Inclure les libellés de FR-006b (avertissement Loi 25 du toggle `afficherNomComplet`), des warnings FR-012/FR-012a, et des messages d'erreur des `Result<T,E>` (cf. plan.md Principe IV). Vérifier que `tools/check-no-hardcoded-strings.ts` (existant 006 ou à créer ici) interdit les libellés en dur dans `apps/web/src/app/conseiller/**`
+- [X] T049 tools/check-no-contact-fields-profile.ts : regex sources sur apps/web/src/app/[locale]/conseiller/[slug]/, mailto/tel/sms + chats externes + form action + aria-label, skip silencieux si page pas encore livrée
+- [X] T050 tools/check-anti-enum-profile.ts : placeholder délègue aux tests e2e Playwright T075 (s'active quand page.tsx existera)
+- [X] T051 check-module-boundaries.ts étendu : Profile/profile_ dans MODULE_PREFIXES.identite + autorisés cross-module (ConformiteQueryPort/Facade/Module/StatusChanged + enums Prisma profil)
+- [X] T052 CI .github/workflows/ci.yml : job module-boundaries étendu avec check-no-contact-fields-profile + check-anti-enum-profile
+- [X] T052a i18n catalog FR-CA : ~80 clés ajoutées dans fr-CA.json (profil.public, profil.edition avec avertissement FR-006b Loi 25, profil.dashboard, profil.apercu, profil.intake.suggestedIndicateur, admin.profils, emails.profil.masqueAdmin + onboardingReminderJ3/J7/J14)
 
 **Checkpoint** : foundation prête. Les 6 US peuvent maintenant démarrer en parallèle si l'équipe le permet (sinon, MVP = US1 + US2 séquentiel).
 

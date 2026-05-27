@@ -160,5 +160,148 @@
       "ctaUrl": "{baseUrl}/{locale}/conseiller/conformite/soumettre",
       "footer": "Conseiller Voyage — toutes vos données sont hébergées au Canada (Loi 25)."
     }
+  },
+  "profil": {
+    "public": {
+      "metaTitleSuffix": "— Conseiller en voyage vérifié",
+      "metaDescription": "{nomAffiche}, conseiller en voyage vérifié OPC/TICO. Spécialités : {specialites}.",
+      "badgeVerifie": "Vérifié OPC/TICO",
+      "bioHeading": "À propos",
+      "specialitesHeading": "Spécialités",
+      "languesHeading": "Langues parlées",
+      "zonesHeading": "Zones d'expertise",
+      "experienceHeading": "Expérience",
+      "experienceText": "{annees} an d'expérience|{annees} ans d'expérience",
+      "ctaPrincipal": "Décrivez votre projet",
+      "ctaSubtitle": "Peut-être ce conseiller, peut-être un autre mieux aligné — jusqu'à 3 maximum.",
+      "pourquoiPasContactTitre": "Pourquoi je ne peux pas contacter ce conseiller directement ?",
+      "pourquoiPasContactBody": "Conseiller Voyage est un service de mise en relation qualifiée, pas un annuaire de coordonnées. Nous ne fournissons aucun moyen de contact direct (courriel, téléphone, chat) pour garantir un appariement par algorithme et préserver la qualité du lead.",
+      "pourquoiPasContactLien": "Comment ça marche →"
+    },
+    "edition": {
+      "pageTitre": "Mon profil",
+      "champTitre": "Titre / accroche",
+      "champTitrePlaceholder": "Conseillère spécialisée croisières et famille",
+      "champBiographie": "Biographie",
+      "champBiographieHelp": "Entre 100 et 2 000 caractères. Décrivez votre approche, votre expérience, vos passions.",
+      "champBiographieCompteur": "{count} / 2000",
+      "champSpecialites": "Spécialités",
+      "champSpecialitesHelp": "1 à 8 spécialités.",
+      "champLangues": "Langues parlées",
+      "champLanguesHelp": "1 à 6 langues.",
+      "champZones": "Zones géographiques d'expertise",
+      "champZonesHelp": "1 à 12 zones.",
+      "champAnneesExperience": "Années d'expérience",
+      "champAnneesExperienceHelp": "Entre 0 et 60 ans.",
+      "champPhoto": "Photo de profil",
+      "champPhotoHelp": "JPEG, PNG ou WebP — 5 Mo maximum.",
+      "toggleAfficherNomCompletLabel": "Afficher mon nom de famille complet sur ma page publique",
+      "toggleAfficherNomCompletAvertissement": "En activant cette option, vous acceptez que votre nom complet soit indexé par les moteurs de recherche (Google, Bing). Cette indexation persiste plusieurs semaines même après une demande d'effacement Loi 25 (cache moteur). L'URL de votre page publique reste basée sur votre nom légal indépendamment de ce choix.",
+      "boutonSauvegarder": "Sauvegarder",
+      "messageSucces": "Profil enregistré.",
+      "erreurValidationBiographieMin": "La biographie doit faire au moins 100 caractères.",
+      "erreurValidationBiographieMax": "La biographie ne doit pas dépasser 2 000 caractères.",
+      "erreurValidationTitreMax": "Le titre ne doit pas dépasser 80 caractères.",
+      "erreurValidationSpecialitesMin": "Sélectionnez au moins une spécialité.",
+      "erreurValidationLanguesMin": "Sélectionnez au moins une langue.",
+      "erreurValidationZonesMin": "Sélectionnez au moins une zone géographique.",
+      "erreurValidationAnneesRange": "L'expérience doit être entre 0 et 60 ans.",
+      "erreurPhotoFormat": "Format non supporté. Utilisez JPEG, PNG ou WebP.",
+      "erreurPhotoTaille": "Fichier trop volumineux. Maximum 5 Mo.",
+      "erreurPhotoContenu": "Le fichier n'est pas une image valide.",
+      "erreurRateLimitUpload": "Trop d'envois récents. Réessayez dans {retrySec} secondes.",
+      "erreurProfilAnonymise": "Ce profil a été anonymisé et ne peut plus être modifié.",
+      "erreurCguObsoletes": "Une nouvelle version des CGU est disponible. Veuillez la valider avant de continuer."
+    },
+    "dashboard": {
+      "pageTitre": "Mon espace conseiller",
+      "widgetConformiteTitre": "Conformité",
+      "widgetConformiteVerifie": "Vérifié",
+      "widgetConformiteExpirationProche": "Certification à renouveler avant le {date}.",
+      "widgetProfilTitre": "Mon profil",
+      "widgetProfilStatutPret": "Profil prêt — visible publiquement",
+      "widgetProfilStatutIncomplet": "Profil incomplet",
+      "widgetProfilChampsManquants": "À compléter : {champs}",
+      "widgetProfilCtaEditer": "Compléter mon profil",
+      "widgetProfilApercu": "Aperçu de ma page publique",
+      "widgetLeadsTitre": "Mes leads",
+      "widgetLeadsPlaceholder": "Bientôt disponible — feature 012.",
+      "widgetFacturationTitre": "Mon abonnement",
+      "widgetFacturationPlaceholder": "Bientôt disponible — feature 006-007.",
+      "avertissementNonVerifie": "Votre profil n'est pas visible publiquement tant que votre conformité OPC/TICO n'est pas vérifiée.",
+      "avertissementProfilIncomplet": "Profil incomplet — votre page publique n'est pas en ligne ET vous n'apparaissez dans aucun matching. Compléter pour activer.",
+      "avertissementMasqueAdmin": "Votre profil a été temporairement masqué par un administrateur. Raison : {raison}"
+    },
+    "apercu": {
+      "bandeauTitre": "Aperçu — non visible publiquement",
+      "bandeauChampsManquantsLabel": "Éléments à compléter :",
+      "bandeauNonVerifie": "Votre conformité OPC/TICO doit être vérifiée.",
+      "bandeauMasqueAdmin": "Votre profil est temporairement masqué (raison : {raison})."
+    },
+    "intake": {
+      "suggestedIndicateur": "Ce conseiller sera pris en compte en priorité dans votre matching, mais le système peut suggérer un autre profil mieux aligné."
+    }
+  },
+  "admin": {
+    "profils": {
+      "pageTitre": "Modération des profils conseillers",
+      "rechercher": "Rechercher par nom légal ou slug",
+      "filtreStatut": "Filtrer par statut",
+      "filtreTous": "Tous",
+      "filtreIncomplet": "Incomplets",
+      "filtrePret": "Prêts (visibles)",
+      "filtreMasque": "Masqués administrativement",
+      "colonneNom": "Nom légal",
+      "colonneSlug": "Slug",
+      "colonneStatut": "Statut",
+      "colonneVerifie": "Conformité",
+      "colonneActions": "Actions",
+      "detailHistoriqueModerations": "Historique des modérations",
+      "actionRetirerPhoto": "Retirer la photo",
+      "actionMasquer": "Masquer temporairement",
+      "actionRetablir": "Rétablir",
+      "modaleConfirmationTitre": "Confirmation",
+      "modaleRaisonLabel": "Raison (obligatoire — minimum 10 caractères)",
+      "modaleRaisonPlaceholder": "Photo non conforme aux conditions d'utilisation : …",
+      "modaleConfirmer": "Confirmer",
+      "modaleAnnuler": "Annuler",
+      "succesRetirerPhoto": "Photo retirée. Le conseiller a été notifié par courriel.",
+      "succesMasquer": "Profil masqué. Le conseiller a été notifié par courriel.",
+      "succesRetablir": "Profil rétabli — visible publiquement à nouveau."
+    }
+  },
+  "emails": {
+    "profil": {
+      "masqueAdmin": {
+        "subject": "Votre profil a été temporairement masqué",
+        "greeting": "Bonjour {prenom},",
+        "body": "Un administrateur de Conseiller Voyage a temporairement masqué votre profil de la vue publique.",
+        "raisonLabel": "Raison communiquée :",
+        "consequences": "Tant que votre profil est masqué, votre page publique n'est pas accessible et vous n'apparaissez dans aucun matching. Vous pouvez continuer à corriger votre profil dans votre dashboard.",
+        "ctaText": "Accéder à mon dashboard",
+        "ctaUrl": "{baseUrl}/{locale}/conseiller"
+      },
+      "onboardingReminderJ3": {
+        "subject": "Bienvenue ! Complétez votre profil en 3 minutes",
+        "greeting": "Bonjour {prenom},",
+        "body": "Votre conformité a été vérifiée il y a 3 jours. Pour apparaître dans les résultats de matching et avoir une page publique visible, complétez votre profil dès maintenant.",
+        "ctaText": "Compléter mon profil",
+        "ctaUrl": "{baseUrl}/{locale}/conseiller/profil"
+      },
+      "onboardingReminderJ7": {
+        "subject": "Rappel : votre profil est encore incomplet",
+        "greeting": "Bonjour {prenom},",
+        "body": "Une semaine s'est écoulée depuis votre vérification. Sans profil complet, aucune demande de voyageur ne vous est encore envoyée.",
+        "ctaText": "Compléter mon profil",
+        "ctaUrl": "{baseUrl}/{locale}/conseiller/profil"
+      },
+      "onboardingReminderJ14": {
+        "subject": "Dernier rappel : 2 minutes pour activer votre visibilité",
+        "greeting": "Bonjour {prenom},",
+        "body": "Cela fait 14 jours que votre conformité est vérifiée. Complétez votre profil maintenant pour ne plus rater d'opportunités.",
+        "ctaText": "Compléter mon profil",
+        "ctaUrl": "{baseUrl}/{locale}/conseiller/profil"
+      }
+    }
   }
 }
