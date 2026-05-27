@@ -41,12 +41,12 @@ implémentation et test indépendants.
 
 **Purpose** : Initialisation de la structure + outillage CI
 
-- [ ] T001 Créer l'arborescence du module `apps/api/src/modules/notifications/` avec sous-dossiers `domain/{value-objects,entities,enums,pure-functions}/`, `application/{ports,use-cases}/`, `infrastructure/{jobs/}`, `interface/{public-api,http}/`
-- [ ] T002 Mettre à jour `tools/check-module-boundaries.ts` : ajouter `notifications: ['Notification', 'notification_', 'Suppression']` à `MODULE_PREFIXES` et ajouter les 7 symboles à `ALLOWED_CROSS_MODULE_SYMBOLS` (cf. plan.md Appendice D + research R14)
-- [ ] T003 [P] Créer `packages/shared/src/notifications/envelope.schema.ts` avec `NotificationEnvelopeSchema` Zod versionné (`schemaVersion: 1`) — cf. research R2
-- [ ] T004 [P] Créer `packages/shared/src/notifications/admin-actions.schema.ts` avec `RemoveFromSuppressionListSchema`, `RetryDeadLetterSchema`, `SuppressionListQuerySchema` — cf. data-model.md section 6
-- [ ] T005 [P] Créer `packages/shared/src/brand/brand-info.ts` avec constantes CASL (`BRAND_LEGAL_NAME`, `BRAND_POSTAL_ADDRESS`, `BRAND_CONTACT_URL`) — cf. plan.md Appendice C
-- [ ] T006 [P] Créer `apps/api/src/modules/notifications/README.md` (squelette FR-CA, sera complété en T100)
+- [X] T001 Créer l'arborescence du module `apps/api/src/modules/notifications/` avec sous-dossiers `domain/{value-objects,entities,enums,pure-functions}/`, `application/{ports,use-cases}/`, `infrastructure/{jobs/}`, `interface/{public-api,http}/`
+- [X] T002 Mettre à jour `tools/check-module-boundaries.ts` : ajouter `notifications: ['Notification', 'notification_', 'Suppression']` à `MODULE_PREFIXES` et ajouter les 7 symboles à `ALLOWED_CROSS_MODULE_SYMBOLS` (cf. plan.md Appendice D + research R14)
+- [X] T003 [P] Créer `packages/shared/src/notifications/envelope.schema.ts` avec `NotificationEnvelopeSchema` Zod versionné (`schemaVersion: 1`) — cf. research R2
+- [X] T004 [P] Créer `packages/shared/src/notifications/admin-actions.schema.ts` avec `RemoveFromSuppressionListSchema`, `RetryDeadLetterSchema`, `SuppressionListQuerySchema` — cf. data-model.md section 6
+- [X] T005 [P] Créer `packages/shared/src/brand/brand-info.ts` avec constantes CASL (`BRAND_LEGAL_NAME`, `BRAND_POSTAL_ADDRESS`, `BRAND_CONTACT_URL`) — cf. plan.md Appendice C
+- [X] T006 [P] Créer `apps/api/src/modules/notifications/README.md` (squelette FR-CA, sera complété en T100)
 
 ---
 

@@ -27,6 +27,7 @@ const MODULE_PREFIXES: Record<string, string[]> = {
   matching: ['Matching', 'matching_'],
   facturation: ['Facturation', 'facturation_'],
   seo: ['Seo', 'seo_'],
+  notifications: ['Notification', 'notification_', 'Suppression'],
 };
 
 // Symboles autorisés à traverser les frontières modulaires.
@@ -54,6 +55,31 @@ const ALLOWED_CROSS_MODULE_SYMBOLS: ReadonlySet<string> = new Set([
   'AuthUser',
   'AuthAccount',
   'AuthVerificationToken',
+  // module notifications — contrat public unique (feature 003).
+  // Le port `NotificationPort` est consommé par 001/002/002a et tous les
+  // modules à venir (008/012). Les types associés au contrat (envelope,
+  // résultats, raisons) traversent aussi la frontière pour permettre le
+  // typage TypeScript dans les consommateurs sans import des internes.
+  'NotificationPort',
+  'NOTIFICATION_PORT',
+  'NotificationEnvelope',
+  'NotificationEnvelopeSchema',
+  'NotificationEnvelopeValidationError',
+  'SendResult',
+  'SuppressionReason',
+  // EXCEPTION TEMPORAIRE — feature 003 en cours d'implémentation.
+  // Le module conformité (001) possède des types internes nommés
+  // `NotificationKind`, `NotificationToSend` qui matchent le préfixe
+  // `Notification` du module notifications. Ces types sont strictement
+  // in-module conformité (jamais importés ailleurs) mais le scan
+  // heuristique du tool les flagge.
+  //
+  // À RETIRER lors de la tâche T058 (Phase 3 US1) quand
+  // `OutboxPublisherJob` de conformité sera modifié pour appeler
+  // `NotificationPort.send()` du module notifications — les types
+  // internes conformité disparaîtront alors.
+  'NotificationKind',
+  'NotificationToSend',
 ]);
 
 interface Violation {
