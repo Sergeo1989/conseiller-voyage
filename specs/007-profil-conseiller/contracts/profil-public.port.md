@@ -56,14 +56,8 @@ export type ProfilPublicPayload = {
   langues: { code: string; label: string }[];
   zonesGeographiques: { code: string; label: string }[];
   anneesExperience: number;
-  certificationsVisibles: CertificationPublique[]; // lues via ConformiteQueryPort
+  verifieOPCTICO: boolean;     // A3 exploration : ConformiteQueryPort actuel n'expose que `verified: boolean`, pas le détail des certificats. La liste détaillée (type CCV/TICO + référence + date d'expiration) sera ajoutée par feature 016 SEO qui étendra le port conformité. Au MVP, le badge boolean suffit pour la confiance.
   publishedAt: string;         // ISO 8601
-};
-
-export type CertificationPublique = {
-  type: 'CCV' | 'TICO';        // sources reconnues, cf. spec 001
-  reference: string;           // ex: "CCV-12345"
-  validJusquA: string;         // ISO 8601 date
 };
 ```
 
