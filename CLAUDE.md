@@ -106,12 +106,27 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/006-auth-conseiller-admin/plan.md`](specs/006-auth-conseiller-admin/plan.md)
-(Auth conseiller + admin + RBAC — feature 002 de la roadmap, branche
-`006-auth-conseiller-admin`).
+**Plan courant** : [`specs/004-mentions-legales/plan.md`](specs/004-mentions-legales/plan.md)
+(Mentions légales, CGU B2B/B2C, politique Loi 25, page « Comment ça marche »
+— branche `004-mentions-legales`).
 
 Pour le contexte technologique détaillé et la structure de répertoires de la
-feature courante, lire ce plan ainsi que `data-model.md`, `contracts/`,
-`research.md` et `quickstart.md` du même répertoire
-`specs/006-auth-conseiller-admin/`.
+feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
+`contracts/{legal-acceptance.port,http-endpoints,mdx-frontmatter}.md`, et
+`quickstart.md` du même répertoire `specs/004-mentions-legales/`.
+
+**Features précédentes mergées** :
+- `001-conformite-module` (PR #1, squash `8592922`). Source de vérité pour
+  le statut `verified` des conseillers ; consommée via `ConformiteQueryPort`
+  par les modules matching et SEO.
+- `005-mfa-conseiller` (PR #13, MFA conseiller TOTP). Module `identite`
+  étendu — `MfaSecret`, `BackupCode`, ports MFA.
+- `006-auth-conseiller-admin` (PR #14). Auth conseiller + admin + RBAC
+  AuthGuard NestJS partagé Auth.js v5 (ADR-0004) ; 7 user stories
+  (signup, login, verify, logout, reset/change password, admin bootstrap).
+  Module `identite` enrichi de ~20 ports applicatifs.
+- `002-voyageur-intake` (en cours sur sa propre branche) : module intake /
+  préqualification voyageur. Consommera `LegalAcceptanceFacade.acceptForBrief`
+  défini par cette feature 004 pour le double consentement Loi 25 au moment
+  du brief (US4 de 004 + dépendance documentée).
 <!-- SPECKIT END -->

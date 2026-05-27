@@ -22,6 +22,7 @@
     "@cv/auth-domain": "workspace:*",
     "@cv/db": "workspace:*",
     "@cv/email-templates": "workspace:*",
+    "@cv/legal": "workspace:*",
     "@cv/mfa": "workspace:*",
     "@cv/shared": "workspace:*",
     "@fastify/helmet": "^11.1.1",

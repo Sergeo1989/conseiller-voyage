@@ -1,10 +1,21 @@
 // Module NestJS identité.
 //
-// Phase 2 de feature 005 (MFA) — wiring de tous les ports MFA + guards.
-// Les use cases et contrôleurs HTTP MFA arrivent en Phase 3 (US1)
-// et au-delà.
+// État après merge main → 004 :
+//   - Auth conseiller + admin (feature 006/PR #14) : signup, login, verify,
+//     logout, reset/change password, admin bootstrap+invitation.
+//   - MFA conseiller (feature 005/PR #13) : TOTP enrollment, step-up,
+//     verification, admin reset, device change.
+//   - Legal (feature 004 en cours) : LegalDocument + LegalAcceptance +
+//     LegalAcceptanceAnonymization repositories. Les use cases
+//     (AcceptCguB2bUseCase, AcceptIntakeConsentUseCase, etc.) et la façade
+//     publique LegalAcceptanceFacade sont ajoutés dans les phases 5-7 + N
+//     du plan 004 (T065-T097).
 
 import { Module } from '@nestjs/common';
+import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
+import { SystemClock } from '../../common/infrastructure/system-clock';
+import { CLOCK } from '../../common/ports/clock.port';
+import { UUID_GENERATOR } from '../../common/ports/uuid-generator.port';
 import { env } from '../../env';
 import { ACTIVE_SESSION_REVOKER } from './application/ports/active-session-revoker.port';
 import { ADMIN_INVITATION_TOKEN_REPOSITORY } from './application/ports/admin-invitation-token-repository.port';
@@ -15,6 +26,10 @@ import { BACKUP_CODE_HASHER } from './application/ports/backup-code-hasher.port'
 import { BACKUP_CODE_REPOSITORY } from './application/ports/backup-code-repository.port';
 import { CREDENTIAL_ACCOUNT_REPOSITORY } from './application/ports/credential-account-repository.port';
 import { EMAIL_VERIFICATION_TOKEN_REPOSITORY } from './application/ports/email-verification-token-repository.port';
+import { LEGAL_ACCEPTANCE_ANONYMIZATION_WRITER } from './application/ports/legal-acceptance-anonymization-writer.port';
+import { LEGAL_ACCEPTANCE_READER } from './application/ports/legal-acceptance-reader.port';
+import { LEGAL_ACCEPTANCE_WRITER } from './application/ports/legal-acceptance-writer.port';
+import { LEGAL_DOCUMENT_REPOSITORY } from './application/ports/legal-document-repository.port';
 import { LOGIN_LOCKOUT_REPOSITORY } from './application/ports/login-lockout-repository.port';
 import { MFA_AUDIT_WRITER } from './application/ports/mfa-audit-writer.port';
 import { MFA_NOTIFICATION_MAILER } from './application/ports/mfa-notification-mailer.port';
@@ -25,9 +40,13 @@ import { PASSWORD_VERIFIER } from './application/ports/password-verifier.port';
 import { TOKEN_ISSUER } from './application/ports/token-issuer.port';
 import { TOTP_SECRET_ENCRYPTER } from './application/ports/totp-secret-encrypter.port';
 import { TOTP_VALIDATOR } from './application/ports/totp-validator.port';
+import { AcceptCguB2bUseCase } from './application/use-cases/accept-cgu-b2b.use-case';
+import { AcceptIntakeConsentUseCase } from './application/use-cases/accept-intake-consent.use-case';
+import { AnonymizeLegalAcceptancesUseCase } from './application/use-cases/anonymize-legal-acceptances.use-case';
 import { BootstrapAdminUseCase } from './application/use-cases/bootstrap-admin.use-case';
 import { ChangeDeviceUseCase } from './application/use-cases/change-device.use-case';
 import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
+import { CheckCguUpToDateUseCase } from './application/use-cases/check-cgu-up-to-date.use-case';
 import { CompletePasswordResetUseCase } from './application/use-cases/complete-password-reset.use-case';
 import { ConsumeAdminInvitationUseCase } from './application/use-cases/consume-admin-invitation.use-case';
 import { CountActiveAdminsUseCase } from './application/use-cases/count-active-admins.use-case';
@@ -61,6 +80,9 @@ import { PrismaAuthSessionReader } from './infrastructure/prisma-auth-session-re
 import { PrismaBackupCodeRepository } from './infrastructure/prisma-backup-code-repository';
 import { PrismaCredentialAccountRepository } from './infrastructure/prisma-credential-account-repository';
 import { PrismaEmailVerificationTokenRepository } from './infrastructure/prisma-email-verification-token-repository';
+import { PrismaLegalAcceptanceAnonymizationRepository } from './infrastructure/prisma-legal-acceptance-anonymization-repository';
+import { PrismaLegalAcceptanceRepository } from './infrastructure/prisma-legal-acceptance-repository';
+import { PrismaLegalDocumentRepository } from './infrastructure/prisma-legal-document-repository';
 import { PrismaLoginLockoutRepository } from './infrastructure/prisma-login-lockout-repository';
 import { PrismaMfaAuditWriter } from './infrastructure/prisma-mfa-audit-writer';
 import { PrismaMfaSecretRepository } from './infrastructure/prisma-mfa-secret-repository';
@@ -69,9 +91,6 @@ import { PrismaPasswordVerifier } from './infrastructure/prisma-password-verifie
 import { SesMfaNotificationMailer } from './infrastructure/ses-mfa-notification-mailer';
 import { AdminUserInvitationController } from './interface/admin-user-invitation.controller';
 import { AuthAdminInvitationController } from './interface/auth-admin-invitation.controller';
-// StubPasswordVerifier reste disponible pour les tests d'intégration
-// MFA US6 (overrideProvider). Import retiré du module — il est wiré
-// uniquement par les test files qui en ont besoin.
 import { AuthEmailVerificationController } from './interface/auth-email-verification.controller';
 import { AuthLoginController } from './interface/auth-login.controller';
 import { AuthLogoutController } from './interface/auth-logout.controller';
@@ -79,17 +98,20 @@ import { AuthPasswordChangeController } from './interface/auth-password-change.c
 import { AuthPasswordResetController } from './interface/auth-password-reset.controller';
 import { AuthSignupController } from './interface/auth-signup.controller';
 import { AuthGuard } from './interface/auth.guard';
+import { LegalAcceptanceController } from './interface/legal-acceptance.controller';
+import { LegalPublicController } from './interface/legal-public.controller';
 import { MfaAdminResetController } from './interface/mfa-admin-reset.controller';
 import { MfaDeviceChangeController } from './interface/mfa-device-change.controller';
 import { MfaEnrollmentController } from './interface/mfa-enrollment.controller';
 import { MfaStepUpController } from './interface/mfa-step-up.controller';
 import { MfaVerificationController } from './interface/mfa-verification.controller';
+import { LegalAcceptanceFacade } from './interface/public-api/legal-acceptance.facade';
 import { RoleGuard } from './interface/role.guard';
 import { StepUpGuard } from './interface/step-up.guard';
 
 @Module({
   controllers: [
-    // Auth (feature 002)
+    // Auth (feature 006)
     AuthSignupController,
     AuthLoginController,
     AuthEmailVerificationController,
@@ -98,19 +120,22 @@ import { StepUpGuard } from './interface/step-up.guard';
     AuthPasswordChangeController,
     AdminUserInvitationController,
     AuthAdminInvitationController,
-    // MFA (feature 002a)
+    // MFA (feature 005)
     MfaEnrollmentController,
     MfaStepUpController,
     MfaVerificationController,
     MfaAdminResetController,
     MfaDeviceChangeController,
+    // Legal (feature 004 US3)
+    LegalAcceptanceController,
+    LegalPublicController,
   ],
   providers: [
     // Env injecté (cf. NodeCryptoTotpSecretEncrypter qui en a besoin
     // pour MFA_KEK_BASE64 ; JoseTokenIssuer pour AUTH_TOKEN_SECRET).
     { provide: ENV_TOKEN, useValue: env },
 
-    // Use cases (Phase 3+ — feature 005)
+    // Use cases MFA (Phase 3+ — feature 005)
     EnrollTotpUseCase,
     StepUpUseCase,
     VerifyTotpUseCase,
@@ -120,7 +145,20 @@ import { StepUpGuard } from './interface/step-up.guard';
     ChangeDeviceUseCase,
     RegenerateBackupCodesUseCase,
 
-    // Use cases — feature 002 (auth conseiller + admin)
+    // Use cases — feature 004 (legal acceptances)
+    AcceptCguB2bUseCase,
+    AcceptIntakeConsentUseCase,
+    AnonymizeLegalAcceptancesUseCase,
+    CheckCguUpToDateUseCase,
+
+    // Public API facade (consommée par 002-voyageur-intake — US4)
+    LegalAcceptanceFacade,
+
+    // Common (Clock + UuidGenerator partagés)
+    { provide: CLOCK, useClass: SystemClock },
+    { provide: UUID_GENERATOR, useClass: CryptoUuidGenerator },
+
+    // Use cases — feature 006 (auth conseiller + admin)
     SignupConseillerUseCase,
     LoginUseCase,
     LogoutUseCase,
@@ -134,11 +172,8 @@ import { StepUpGuard } from './interface/step-up.guard';
     ValidateAdminInvitationUseCase,
     ConsumeAdminInvitationUseCase,
 
-    // Password verifier — feature 002 Phase 4 : PrismaPasswordVerifier
+    // Password verifier — feature 006 Phase 4 : PrismaPasswordVerifier
     // remplace StubPasswordVerifier (résout bug_007 du review 002a).
-    // Le stub reste exporté en infrastructure/ avec son throw
-    // NODE_ENV=production (C5 — défense en profondeur) ; il est injecté
-    // par les tests d'intégration MFA US6 via overrideProvider().
     { provide: PASSWORD_VERIFIER, useClass: PrismaPasswordVerifier },
 
     // Session Auth.js (livré par 001)
@@ -155,11 +190,8 @@ import { StepUpGuard } from './interface/step-up.guard';
     { provide: MFA_NOTIFICATION_MAILER, useClass: SesMfaNotificationMailer },
     { provide: MFA_RATE_LIMITER, useClass: PostgresMfaRateLimiter },
 
-    // Ports feature 002 (Phase 2 de 006)
-    {
-      provide: CREDENTIAL_ACCOUNT_REPOSITORY,
-      useClass: PrismaCredentialAccountRepository,
-    },
+    // Ports feature 006 (Phase 2)
+    { provide: CREDENTIAL_ACCOUNT_REPOSITORY, useClass: PrismaCredentialAccountRepository },
     {
       provide: EMAIL_VERIFICATION_TOKEN_REPOSITORY,
       useClass: PrismaEmailVerificationTokenRepository,
@@ -168,13 +200,20 @@ import { StepUpGuard } from './interface/step-up.guard';
     { provide: AUTH_OUTBOX_WRITER, useClass: PrismaAuthOutboxWriter },
     { provide: TOKEN_ISSUER, useClass: JoseTokenIssuer },
     { provide: LOGIN_LOCKOUT_REPOSITORY, useClass: PrismaLoginLockoutRepository },
+    { provide: PASSWORD_RESET_TOKEN_REPOSITORY, useClass: PrismaPasswordResetTokenRepository },
+    { provide: ADMIN_INVITATION_TOKEN_REPOSITORY, useClass: PrismaAdminInvitationTokenRepository },
+
+    // Legal (T034-T036 + T041 feature 004)
+    // PrismaLegalAcceptanceRepository implémente Reader + Writer — on
+    // l'enregistre une fois puis alias les deux symboles via useExisting
+    // (sinon Nest crée deux instances distinctes du même repository).
+    PrismaLegalAcceptanceRepository,
+    { provide: LEGAL_ACCEPTANCE_READER, useExisting: PrismaLegalAcceptanceRepository },
+    { provide: LEGAL_ACCEPTANCE_WRITER, useExisting: PrismaLegalAcceptanceRepository },
+    { provide: LEGAL_DOCUMENT_REPOSITORY, useClass: PrismaLegalDocumentRepository },
     {
-      provide: PASSWORD_RESET_TOKEN_REPOSITORY,
-      useClass: PrismaPasswordResetTokenRepository,
-    },
-    {
-      provide: ADMIN_INVITATION_TOKEN_REPOSITORY,
-      useClass: PrismaAdminInvitationTokenRepository,
+      provide: LEGAL_ACCEPTANCE_ANONYMIZATION_WRITER,
+      useClass: PrismaLegalAcceptanceAnonymizationRepository,
     },
 
     // Guards
@@ -196,6 +235,13 @@ import { StepUpGuard } from './interface/step-up.guard';
     AuthGuard,
     RoleGuard,
     StepUpGuard,
+    // Legal — consommé par les use cases d'identité côté 004 et par
+    // 002-voyageur-intake via la façade LegalAcceptanceFacade.
+    LEGAL_ACCEPTANCE_READER,
+    LEGAL_ACCEPTANCE_WRITER,
+    LEGAL_DOCUMENT_REPOSITORY,
+    LEGAL_ACCEPTANCE_ANONYMIZATION_WRITER,
+    LegalAcceptanceFacade,
   ],
 })
 export class IdentiteModule {}

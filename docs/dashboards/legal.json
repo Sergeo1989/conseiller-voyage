@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "title": "Conseiller Voyage — Legal (feature 004)",
+  "description": "Acceptances CGU/Loi 25, cookie HMAC version, middleware re-acceptance. Cf. spec 004 + ADR-0008/0009.",
+  "panels": [
+    {
+      "title": "Acceptances par type & version",
+      "type": "stat",
+      "promql": "sum by (type, version) (rate(legal_acceptances_total[5m]))"
+    },
+    {
+      "title": "Re-acceptances requises — 7 jours glissants",
+      "type": "graph",
+      "promql": "sum(rate(legal_reacceptance_required_total[1h]))"
+    },
+    {
+      "title": "Cookie HMAC — répartition résultat (ok / expired / invalid)",
+      "type": "pie",
+      "promql": "sum by (result) (rate(legal_cookie_valid_total[15m]))"
+    },
+    {
+      "title": "Forge detection (signature HMAC invalide)",
+      "type": "graph",
+      "promql": "sum(rate(legal_cookie_forge_detected_total[5m]))",
+      "thresholds": [
+        { "value": 0, "color": "green" },
+        { "value": 0.001, "color": "orange" },
+        { "value": 0.0014, "color": "red" }
+      ]
+    },
+    {
+      "title": "Appels GET /version-status",
+      "type": "graph",
+      "promql": "sum(rate(legal_version_status_api_calls_total[5m]))"
+    },
+    {
+      "title": "Middleware redirects — raison",
+      "type": "graph",
+      "promql": "sum by (reason) (rate(legal_middleware_redirect_total[5m]))"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+# T097 — Alertes Grafana / Prometheus pour la feature 004 (legal).
+#
+# Cf. spec 004 + ADR-0008 (plan d'incident salt anonymisation) + ADR-0009
+# (forge detection cookie HMAC).
+
+groups:
+  - name: legal-critical
+    rules:
+      - alert: LegalCookieForgeDetected
+        expr: sum(increase(legal_cookie_forge_detected_total[1h])) > 5
+        for: 5m
+        labels:
+          severity: critical
+          feature: 004-legal
+          on_call: secops
+        annotations:
+          summary: "Signature HMAC du cookie legal-version invalide — attaque potentielle"
+          description: >
+            Plus de 5 cookies `__Host-cv.legal-version` avec signature
+            HMAC invalide reçus dans la dernière heure. Possible attaque
+            par forge (cf. ADR-0009). Vérifier les logs Sentry pour
+            sources (IP/UA), envisager rotation `LEGAL_COOKIE_HMAC_SECRET`
+            (runbook legal-secrets-setup.md section 3.3).
+          runbook: https://github.com/Sergeo1989/conseiller-voyage/blob/main/docs/runbooks/legal-incident-response.md
+
+  - name: legal-warning
+    rules:
+      - alert: LegalReacceptanceChurnHigh
+        expr: sum(rate(legal_reacceptance_required_total[7d])) > 10
+        for: 1d
+        labels:
+          severity: warning
+          feature: 004-legal
+        annotations:
+          summary: "Trop de ré-acceptations CGU requises — signal de churn"
+          description: >
+            Plus de 10 conseillers redirigés vers `/cgu-conseiller/
+            re-accepter` sur 7 jours. Peut signaler un bump trop
+            agressif ou un problème UX sur la page de ré-acceptation.
+
+      - alert: LegalApiVersionStatusErrorRate
+        expr: |
+          sum(rate(legal_version_status_api_calls_total{status="error"}[15m]))
+            / sum(rate(legal_version_status_api_calls_total[15m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          feature: 004-legal
+        annotations:
+          summary: "Taux d'erreur > 5% sur GET /api/me/legal/version-status"
+          description: >
+            Le middleware tombe en fallback safe quand l'API est en
+            erreur — les ré-acceptations CGU ne sont plus enforcées.
+            Investiguer immédiatement.

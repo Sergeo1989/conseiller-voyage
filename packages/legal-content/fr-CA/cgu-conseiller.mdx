@@ -1,0 +1,82 @@
+---
+type: cgu_b2b
+version: 1
+slug: cgu-conseiller
+title: Conditions d'utilisation — Conseiller
+description: Conditions B2B pour conseillers vérifiés CCV/TICO abonnés à la plateforme pour recevoir des leads voyageurs qualifiés.
+publishedAt: 2026-05-25T00:00:00Z
+effectiveAt: 2026-05-25T00:00:00Z
+locale: fr-CA
+---
+
+> ⚠ **Placeholder à valider par juriste avant déploiement public.** Texte structurant les obligations B2B du conseiller : éligibilité réglementaire, abonnement, transmission des leads, conformité Loi 25.
+
+## 1. Éligibilité au service
+
+L'inscription en tant que conseiller sur la Plateforme Conseiller Voyage est strictement réservée aux personnes physiques :
+
+- titulaires d'un **certificat de conseiller en voyages (CCV)** délivré par l'Office de la protection du consommateur du Québec **OU** d'un enregistrement actif auprès du **Travel Industry Council of Ontario (TICO)** ;
+- **affiliées à une agence titulaire d'un permis OPC ou TICO actif** au moment de chaque interaction avec un voyageur ;
+- ayant accepté les présentes conditions au moment de la création de leur compte.
+
+Toute affiliation expirée ou retirée entraîne **immédiatement** (dans un délai maximum de 10 secondes selon le SLO Principe X) le retrait de la visibilité du conseiller pour les voyageurs et de son éligibilité au matching.
+
+## 2. Acceptation des présentes conditions
+
+L'inscription sur la Plateforme implique l'acceptation explicite des présentes conditions, recueillie via une case à cocher non pré-cochée au moment de la création du compte. L'acceptation est horodatée avec adresse IP et User-Agent, conformément à la **Loi 25 du Québec** (article 8 sur le consentement éclairé).
+
+En cas de modification de fond des présentes conditions, le conseiller est invité à ré-accepter la nouvelle version à sa prochaine connexion (cf. mécanisme de ré-acceptation décrit dans l'ADR-0009).
+
+## 3. Engagements du conseiller
+
+Le conseiller s'engage à :
+
+- maintenir à jour son certificat provincial et son affiliation à une agence titulaire de permis ;
+- soumettre les documents demandés (certificat, preuve d'affiliation) pour vérification manuelle par l'équipe de la Plateforme ;
+- ré-soumettre ces documents au plus tard **60 jours avant l'expiration** de son certificat (rappels automatiques à J-60, J-30, J-7) ;
+- traiter les leads voyageurs transmis par la Plateforme avec la **diligence professionnelle** requise par sa profession régulée (CCV ou TICO) ;
+- **ne pas** facturer le voyageur directement via la Plateforme (toute transaction de voyage se fait hors plateforme) ;
+- respecter la Loi 25 dans le traitement des renseignements personnels du voyageur (notamment la finalité limitée à la proposition de service).
+
+## 4. Modèle de mise en relation
+
+La Plateforme transmet à chaque conseiller éligible **jusqu'à trois leads voyageurs maximum par projet**. Le conseiller est libre d'accepter ou de refuser chaque lead. L'acceptation engage le conseiller à proposer une soumission au voyageur dans un délai raisonnable.
+
+La Plateforme **ne prélève aucune commission** sur les transactions effectuées entre voyageur et conseiller. Le modèle économique de la Plateforme repose exclusivement sur l'**abonnement mensuel ou annuel** du conseiller (cf. [Politique tarifaire — à venir feature 006-007]).
+
+## 5. Engagements de la Plateforme
+
+La Plateforme s'engage à :
+
+- vérifier manuellement la certification de chaque conseiller à l'inscription et à chaque renouvellement ;
+- maintenir le statut « vérifié » uniquement tant que les critères réglementaires sont remplis ;
+- transmettre les leads conformément à l'algorithme de matching (au maximum 3 par projet, sans tri commercial) ;
+- offrir un canal de support technique (courriel) pour les questions relatives à la Plateforme.
+
+## 6. Suspension et résiliation
+
+La Plateforme peut suspendre ou résilier l'accès d'un conseiller en cas :
+
+- de perte de la certification provinciale ou de l'affiliation (suspension automatique immédiate) ;
+- de manquement professionnel grave attesté (plainte fondée OPC/TICO, fraude) ;
+- de non-paiement de l'abonnement (suspension après préavis, conformément à l'ADR-0002 — la suspension d'abonnement n'invalide PAS le statut « vérifié » côté conformité, le conseiller redevient visible dès régularisation).
+
+Le conseiller peut résilier son abonnement à tout moment, sans préavis. Les leads déjà transmis avant résiliation ne sont pas affectés.
+
+## 7. Données personnelles
+
+Le traitement des renseignements personnels du conseiller (identité, certificat, affiliations, historique d'événements de conformité) est régi par la **Loi 25 du Québec**. Voir la [Politique de confidentialité](/fr/confidentialite). Le conseiller dispose des droits d'accès, de rectification, d'effacement et de portabilité prévus par la loi.
+
+Le journal d'audit conformité (événements de soumission, approbation, refus, renouvellement, révocation) est conservé **7 ans** après le dernier événement, conformément aux obligations professionnelles. Une demande d'effacement Loi 25 anonymise les données personnelles tout en conservant le journal d'audit comme preuve historique (cf. ADR-0008).
+
+## 8. Limitations de responsabilité
+
+La Plateforme n'est pas partie aux contrats conclus entre conseillers et voyageurs. La responsabilité professionnelle du conseiller relève de sa profession régulée et de sa couverture par l'agence à laquelle il est affilié. La Plateforme ne garantit aucun volume de leads ni aucun taux de conversion.
+
+## 9. Juridiction et droit applicable
+
+Les présentes conditions sont régies par le **droit québécois**. Tout litige relève des **tribunaux du district judiciaire de Montréal, province de Québec**.
+
+## 10. Dernière mise à jour
+
+**Version :** 1 (initiale) · **Date de prise d'effet :** *[automatique]*
