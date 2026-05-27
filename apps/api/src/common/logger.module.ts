@@ -21,6 +21,14 @@ const PII_REDACT_PATHS = [
   '*.password',
   '*.token',
   '*.apiKey',
+  // Feature 002 (auth) — chemins body explicites pour SC-005 / H10.
+  // Le glob `*.password` ci-dessus capture déjà ces chemins, mais
+  // l'énumération explicite documente l'intention et résiste à des
+  // serializers personnalisés qui contournent les globs.
+  'req.body.password',
+  'req.body.newPassword',
+  'req.body.currentPassword',
+  'req.body.newPasswordConfirmation',
 ];
 
 @Module({

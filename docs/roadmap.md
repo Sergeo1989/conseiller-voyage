@@ -6,7 +6,13 @@ entrée numérotée est destinée à devenir une spec détaillée via
 (ajouts, repriorisations, suppressions) ; chaque modification est
 référencée par commit.
 
-**Dernière mise à jour** : 2026-05-22
+**Dernière mise à jour** : 2026-05-26
+
+> **Note de numérotation** : les IDs de cette roadmap (001, 002, …) sont des
+> identifiants logiques de feature. Les dossiers de spec sous `specs/`
+> utilisent leur propre numérotation Spec Kit (`specs/<NNN>-<short-name>/`)
+> qui peut diverger. Le mapping est tenu à jour dans la colonne *Spec* du
+> tableau ci-dessous quand une spec a été créée.
 
 ---
 
@@ -44,12 +50,13 @@ Scope : **S** (1 spec, < 5 user stories) · **M** (~5 US, ~20 FR, équivalent au
 
 ## Tier 0 — Fondations (bloquent tout)
 
-| ID | Feature | Module | Scope | État | Pourquoi en premier |
-|---|---|---|---|---|---|
-| **001** | Module conformité (statut vérifié, source de vérité) | conformité | M | 🔵 plan en cours | Gardien Principe I. Bloque toute visibilité publique de conseiller et toute éligibilité matching. |
-| 002 | Identité — auth conseiller + admin avec MFA, RBAC | identité | L (à scinder) | ⏳ | Bloque tout consommateur authentifié. MFA conseiller exigé par Principe IX. AuthGuard NestJS partagé. |
-| 003 | Identité — notifications + courriel transactionnel | identité | M | ⏳ | Bloque FR-005 conformité, rappels d'expiration, accusés de soumission. Provider canadien (ADR à venir). |
-| 004 | Mentions légales, CGU, page « Pas un agent de voyages » | transverse | S | ⏳ | Obligation contractuelle dès première mise en ligne publique. Texte FR-CA. |
+| ID | Feature | Module | Scope | État | Spec | Pourquoi en premier |
+|---|---|---|---|---|---|---|
+| **001** | Module conformité (statut vérifié, source de vérité) | conformité | M | ✅ mergé (PR #1) | `specs/001-conformite-module/` | Gardien Principe I. Bloque toute visibilité publique de conseiller et toute éligibilité matching. 73 commits, 200/200 tests verts. |
+| **002** | Identité — auth conseiller + admin, RBAC (base AuthGuard) | identité | M | 🔵 implémentation en cours | `specs/006-auth-conseiller-admin/` | Bloque tout consommateur authentifié. AuthGuard NestJS partagé Auth.js v5 (ADR-0004). 7 user stories livrées (signup, login, verify email, logout, reset password, change password, admin bootstrap+invitation), `PrismaPasswordVerifier` remplace définitivement le stub 002a (résout bug_007). |
+| **002a** | Identité — MFA conseiller TOTP + step-up + reset admin + auto-service device + admin J1 | identité | M | ✅ mergé (PR #13) | `specs/005-mfa-conseiller/` | Extraction du scope MFA de l'ancien 002. Exigence Principe IX NON-NÉGOCIABLE. 6 user stories livrées (US1-US6), 13 commits (12 features + 1 fix ultrareview), 60 tests pure + 55 tests intégration verts. ~~Stub `PasswordVerifier` à remplacer quand 002 livre~~ **(résolu par 002 — `PrismaPasswordVerifier` wiré).** |
+| 003 | Identité — notifications + courriel transactionnel | identité | M | ⏳ | — | Bloque FR-005 conformité, rappels d'expiration, accusés de soumission. Provider canadien (ADR à venir). Drainera aussi `mfa_outbox_emails` posé par 002a. |
+| 004 | Mentions légales, CGU, page « Comment ça marche », politique Loi 25 | transverse | M | 🟡 PR ouverte (#12) | `specs/004-mentions-legales/` | Obligation contractuelle dès première mise en ligne publique. Texte FR-CA. Page « Comment ça marche » = pédagogie modèle anti-marketplace (ADR-0002). |
 
 ---
 
@@ -186,13 +193,14 @@ cas via un `/speckit.specify` quand le moment vient.
                               ┌──────────────────────────┐
                               │ 002-003 Identité (auth + │
                               │  notifs + courriel)      │
+                              │ 002a MFA ✅              │
                               └────────┬─────────────────┘
                                        │ (bloque presque tout)
               ┌────────────────────────┼─────────────────────┐
               ▼                        ▼                     ▼
       ┌─────────────┐         ┌────────────────┐    ┌────────────────┐
       │ 001 Confor- │         │ 006-007        │    │ 008-009 Intake │
-      │   mité  🔵   │         │  Facturation   │    │  brief + LLM   │
+      │   mité  ✅   │         │  Facturation   │    │  brief + LLM   │
       └──────┬──────┘         └────────────────┘    └────────┬───────┘
              │                                               │
              │     ┌────────────────────┐                    │
@@ -232,14 +240,14 @@ cas via un `/speckit.specify` quand le moment vient.
 
 | Sprint | Features visées | Justification |
 |---|---|---|
-| **0** | 001 (en cours) | Spec + plan fait. Implémentation à venir via `/speckit.tasks`. |
-| **1** | 002, 004 | Auth + mentions légales en parallèle. Bloquant pour Tier 1+. |
-| **2** | 003, 005 | Notifications + profil. 005 dépend de 001+002 (déjà faits). |
+| **0** | ✅ 001 (mergé PR #1), ✅ 002a MFA (mergé PR #13), 🟡 004 (PR #12 en review) | 001 finalisé 73 commits / 200 tests. 002a livré avant 002 sur stub `PasswordVerifier`. 004 = mentions légales + CGU + Loi 25 + Comment ça marche, livrable web public minimal. |
+| **1** | 002, 003 | Auth conseiller + admin (mot de passe Prisma → branche le `PrismaPasswordVerifier` qui remplace le stub 005). Notifications transactionnelles + drainage `mfa_outbox_emails` (worker SES). |
+| **2** | 005 (profil conseiller) | Dépend de 001 + 002 + 002a (MFA actif avant accès aux leads). |
 | **3** | 006, 008 | Facturation onboarding + intake brief. Parallélisable. |
 | **4** | 009, 010, 011, 024 | Enrichissement LLM, magic-link, scoring matching, infra i18n. |
 | **5** | 012, 013, 007 | Notifs + état de lead, conversation, facturation récurrence. |
 | **6** | 014, 015, 020 | Dashboards conseiller, voyageur, admin. |
-| **7** | 016, 017, 021 | Premières pages publiques SEO + observabilité centrale. |
+| **7** | 016, 017, 021 | Premières pages publiques SEO + observabilité centrale (drainera aussi métriques `cv_active_admins_total` posées par 002a). |
 | **8** | 018, 019, 022, 023 | Pages thématiques, GEO/AI, retention sweep, effacement Loi 25. |
 | **9** | 025 | Design system formalisé (peut démarrer plus tôt si capacité). |
 | **post** | Tier 5 selon traction | Au cas par cas. |

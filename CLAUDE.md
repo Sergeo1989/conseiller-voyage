@@ -115,10 +115,16 @@ feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
 `contracts/{legal-acceptance.port,http-endpoints,mdx-frontmatter}.md`, et
 `quickstart.md` du même répertoire `specs/004-mentions-legales/`.
 
-**Features précédentes** :
-- `001-conformite-module` (PR #1 mergé sur `main` le 2026-05-25, squash
-  `8592922`). Source de vérité pour le statut `verified` des conseillers ;
-  consommée via `ConformiteQueryPort` par les modules matching et SEO.
+**Features précédentes mergées** :
+- `001-conformite-module` (PR #1, squash `8592922`). Source de vérité pour
+  le statut `verified` des conseillers ; consommée via `ConformiteQueryPort`
+  par les modules matching et SEO.
+- `005-mfa-conseiller` (PR #13, MFA conseiller TOTP). Module `identite`
+  étendu — `MfaSecret`, `BackupCode`, ports MFA.
+- `006-auth-conseiller-admin` (PR #14). Auth conseiller + admin + RBAC
+  AuthGuard NestJS partagé Auth.js v5 (ADR-0004) ; 7 user stories
+  (signup, login, verify, logout, reset/change password, admin bootstrap).
+  Module `identite` enrichi de ~20 ports applicatifs.
 - `002-voyageur-intake` (en cours sur sa propre branche) : module intake /
   préqualification voyageur. Consommera `LegalAcceptanceFacade.acceptForBrief`
   défini par cette feature 004 pour le double consentement Loi 25 au moment

@@ -113,44 +113,142 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-async function main(): Promise<void> {
-  let modules: string[] = [];
+// T043 — Pureté des packages domain. Les paquets `@cv/auth-domain`
+// (feature 002) et `@cv/mfa` (feature 002a) sont des paquets TS pur,
+// sans I/O, sans framework. Si un import interdit s'y glisse, le check
+// échoue. Cf. Principe VIII (Clean Architecture).
+//
+// Pour étendre : ajouter des paquets dans DOMAIN_PACKAGES.
+
+const DOMAIN_PACKAGES = ['auth-domain', 'mfa'];
+
+const FORBIDDEN_DOMAIN_IMPORTS: ReadonlyArray<{
+  readonly pattern: RegExp;
+  readonly reason: string;
+}> = [
+  { pattern: /from\s+['"]@nestjs\//, reason: '@nestjs/* (framework backend)' },
+  { pattern: /from\s+['"]@prisma\/client['"]/, reason: '@prisma/client (ORM)' },
+  { pattern: /from\s+['"]@cv\/db['"]/, reason: '@cv/db (ORM wrapper)' },
+  { pattern: /from\s+['"]next\//, reason: 'next/* (framework frontend)' },
+  { pattern: /from\s+['"]next-auth/, reason: 'next-auth (Auth.js)' },
+  { pattern: /from\s+['"]@auth\//, reason: '@auth/* (Auth.js v5)' },
+  { pattern: /from\s+['"]react['"]/, reason: 'react (UI)' },
+  { pattern: /from\s+['"]fastify['"]/, reason: 'fastify (server)' },
+];
+
+interface DomainPurityViolation {
+  file: string;
+  packageName: string;
+  forbiddenImport: string;
+  reason: string;
+}
+
+async function scanFileForForbiddenImports(
+  file: string,
+  pkg: string,
+): Promise<DomainPurityViolation[]> {
+  const content = await readFile(file, 'utf-8');
+  const violations: DomainPurityViolation[] = [];
+  for (const { pattern, reason } of FORBIDDEN_DOMAIN_IMPORTS) {
+    const match = content.match(pattern);
+    if (match) {
+      violations.push({
+        file: relative(ROOT, file),
+        packageName: pkg,
+        forbiddenImport: match[0],
+        reason,
+      });
+    }
+  }
+  return violations;
+}
+
+async function pkgSrcRootIfExists(pkg: string): Promise<string | null> {
+  const pkgRoot = join(ROOT, 'packages', pkg, 'src');
+  try {
+    const stats = await stat(pkgRoot);
+    return stats.isDirectory() ? pkgRoot : null;
+  } catch {
+    return null;
+  }
+}
+
+async function scanDomainPurity(): Promise<DomainPurityViolation[]> {
+  const violations: DomainPurityViolation[] = [];
+  for (const pkg of DOMAIN_PACKAGES) {
+    const pkgRoot = await pkgSrcRootIfExists(pkg);
+    if (!pkgRoot) continue;
+    const files = await walkTs(pkgRoot);
+    for (const file of files) {
+      violations.push(...(await scanFileForForbiddenImports(file, pkg)));
+    }
+  }
+  return violations;
+}
+
+async function listModules(): Promise<string[] | null> {
   try {
     const stats = await stat(MODULES_ROOT);
-    if (!stats.isDirectory()) {
-      process.stdout.write('[check-module-boundaries] modules/ not a directory, skipping.\n');
-      return;
-    }
-    modules = (await readdir(MODULES_ROOT, { withFileTypes: true }))
+    if (!stats.isDirectory()) return null;
+    return (await readdir(MODULES_ROOT, { withFileTypes: true }))
       .filter((e) => e.isDirectory())
       .map((e) => e.name);
   } catch {
-    process.stdout.write('[check-module-boundaries] No modules directory yet, skipping.\n');
-    return;
+    return null;
   }
+}
 
+async function scanAllModules(modules: string[]): Promise<Violation[]> {
   const allViolations: Violation[] = [];
   for (const moduleName of modules) {
     const files = await walkTs(join(MODULES_ROOT, moduleName));
     for (const file of files) {
-      const violations = await scanFile(file, moduleName);
-      allViolations.push(...violations);
+      allViolations.push(...(await scanFile(file, moduleName)));
     }
   }
+  return allViolations;
+}
 
-  if (allViolations.length === 0) {
-    process.stdout.write(
-      `[check-module-boundaries] ✓ No cross-module Prisma imports (${modules.length} module(s) scanned).\n`,
-    );
-    return;
-  }
-
+function reportCrossModuleViolations(violations: Violation[]): void {
   process.stderr.write('\n❌ Cross-module boundary violations detected:\n\n');
-  for (const v of allViolations) {
+  for (const v of violations) {
     process.stderr.write(
       `  ${v.file}\n    Module '${v.importingModule}' references '${v.forbiddenSymbol}' owned by module '${v.fromModule}'\n    → Use ${v.fromModule}'s public facade (e.g., ${capitalize(v.fromModule)}QueryFacade) instead.\n\n`,
     );
   }
+}
+
+function reportDomainPurityViolations(violations: DomainPurityViolation[]): void {
+  process.stderr.write('\n❌ Domain package purity violations detected:\n\n');
+  for (const v of violations) {
+    process.stderr.write(
+      `  ${v.file}\n    Package '@cv/${v.packageName}' imports forbidden: ${v.forbiddenImport}\n    → Reason: ${v.reason}. Move I/O / framework code to apps/api or apps/web.\n\n`,
+    );
+  }
+}
+
+async function main(): Promise<void> {
+  const modules = await listModules();
+  if (modules === null) {
+    process.stdout.write('[check-module-boundaries] No modules directory yet, skipping.\n');
+    return;
+  }
+
+  const crossModuleViolations = await scanAllModules(modules);
+  const domainViolations = await scanDomainPurity();
+
+  if (crossModuleViolations.length === 0 && domainViolations.length === 0) {
+    process.stdout.write(
+      `[check-module-boundaries] ✓ No cross-module Prisma imports (${modules.length} module(s) scanned).\n`,
+    );
+    process.stdout.write(
+      `[check-module-boundaries] ✓ Domain packages pure (${DOMAIN_PACKAGES.join(', ')}).\n`,
+    );
+    return;
+  }
+
+  if (crossModuleViolations.length > 0) reportCrossModuleViolations(crossModuleViolations);
+  if (domainViolations.length > 0) reportDomainPurityViolations(domainViolations);
   process.exit(1);
 }
 

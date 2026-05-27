@@ -9,7 +9,6 @@
     "./en/*": "./en/*"
   },
   "scripts": {
-    "lint": "biome check --error-on-warnings .",
-    "test": "vitest run --passWithNoTests"
+    "lint": "biome check --error-on-warnings ."
   }
 }
