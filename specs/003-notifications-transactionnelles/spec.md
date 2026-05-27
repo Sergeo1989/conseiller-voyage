@@ -459,6 +459,18 @@ que les changements sont audités.
   permettant au destinataire de mettre à jour ses préférences (sans
   unsubscribe car transactionnel obligatoire, mais lien vers ses
   paramètres de notification).
+- **FR-010-a** *(CASL Loi C-28)* : Chaque courriel DOIT contenir dans
+  son corps visible : (a) le nom légal de l'expéditeur (entité
+  Conseiller Voyage Inc.), (b) une adresse postale physique du siège
+  social canadien, (c) un mécanisme de contact valide (URL, téléphone
+  ou adresse courriel). Source unique pour ces champs :
+  `packages/shared/src/brand/brand-info.ts`.
+- **FR-010-b** *(Délivrabilité Gmail/Yahoo 2024+)* : Chaque courriel
+  envoyé DOIT inclure le header SMTP
+  `List-Unsubscribe: <mailto:unsubscribe-notifications@conseiller-voyage.ca>`
+  et `List-Unsubscribe-Post: List-Unsubscribe=One-Click` (RFC 8058).
+  Ces headers sont posés via le `SendEmailCommand` v2 du SDK SES, pas
+  dans le template lui-même.
 
 **Provider et délivrabilité (US3)**
 
