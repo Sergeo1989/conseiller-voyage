@@ -3,9 +3,11 @@
 // Phase 2 de feature 005 (MFA) — wiring de tous les ports MFA + guards.
 // Les use cases et contrôleurs HTTP MFA arrivent en Phase 3 (US1)
 // et au-delà.
+// Feature 003 : AuthOutboxDispatchWorker + MfaOutboxDispatchWorker branchés.
 
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { env } from '../../env';
+import { NotificationsModule } from '../notifications/interface/notifications.module';
 import { ACTIVE_SESSION_REVOKER } from './application/ports/active-session-revoker.port';
 import { ADMIN_INVITATION_TOKEN_REPOSITORY } from './application/ports/admin-invitation-token-repository.port';
 import { AUTH_AUDIT_WRITER } from './application/ports/auth-audit-writer.port';
@@ -46,6 +48,8 @@ import { VerifyBackupCodeUseCase } from './application/use-cases/verify-backup-c
 import { VerifyEmailUseCase } from './application/use-cases/verify-email.use-case';
 import { VerifyTotpUseCase } from './application/use-cases/verify-totp.use-case';
 import { BcryptBackupCodeHasher } from './infrastructure/bcrypt-backup-code-hasher';
+import { AuthOutboxDispatchWorker } from './infrastructure/jobs/auth-outbox-dispatch.worker';
+import { MfaOutboxDispatchWorker } from './infrastructure/jobs/mfa-outbox-dispatch.worker';
 import { JoseTokenIssuer } from './infrastructure/jose-token-issuer';
 import {
   ENV_TOKEN,
@@ -87,7 +91,10 @@ import { MfaVerificationController } from './interface/mfa-verification.controll
 import { RoleGuard } from './interface/role.guard';
 import { StepUpGuard } from './interface/step-up.guard';
 
+const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000 : 5_000;
+
 @Module({
+  imports: [NotificationsModule],
   controllers: [
     // Auth (feature 002)
     AuthSignupController,
@@ -181,6 +188,10 @@ import { StepUpGuard } from './interface/step-up.guard';
     AuthGuard,
     RoleGuard,
     StepUpGuard,
+
+    // Feature 003 — outbox dispatch workers
+    AuthOutboxDispatchWorker,
+    MfaOutboxDispatchWorker,
   ],
   exports: [
     AUTH_SESSION_READER,
@@ -198,4 +209,26 @@ import { StepUpGuard } from './interface/step-up.guard';
     StepUpGuard,
   ],
 })
-export class IdentiteModule {}
+export class IdentiteModule implements OnModuleInit, OnModuleDestroy {
+  private authOutboxInterval?: NodeJS.Timeout;
+  private mfaOutboxInterval?: NodeJS.Timeout;
+
+  constructor(
+    private readonly authOutboxWorker: AuthOutboxDispatchWorker,
+    private readonly mfaOutboxWorker: MfaOutboxDispatchWorker,
+  ) {}
+
+  onModuleInit(): void {
+    this.authOutboxInterval = setInterval(() => {
+      void this.authOutboxWorker.drain();
+    }, OUTBOX_DRAIN_INTERVAL_MS);
+    this.mfaOutboxInterval = setInterval(() => {
+      void this.mfaOutboxWorker.drain();
+    }, OUTBOX_DRAIN_INTERVAL_MS);
+  }
+
+  onModuleDestroy(): void {
+    if (this.authOutboxInterval) clearInterval(this.authOutboxInterval);
+    if (this.mfaOutboxInterval) clearInterval(this.mfaOutboxInterval);
+  }
+}

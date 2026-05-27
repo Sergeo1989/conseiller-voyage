@@ -188,8 +188,12 @@ jobs:
         # `--excludePrivatePackages` ignore les workspaces internes (@cv/*)
         # marqués `private: true` — ils n'ont pas de license publique par
         # design. Le check s'applique aux deps externes uniquement.
+        #
+        # Version pinnée 4.x : la 5.x exige Node >= 24 (cf. engines.node),
+        # incompatible avec NODE_VERSION=22 du workflow. À débloquer si l'on
+        # bump Node 24 — autoriser alors `@5` ou `@latest`.
         run: |
-          pnpm dlx license-checker-rseidelsohn \
+          pnpm dlx license-checker-rseidelsohn@4 \
             --production \
             --excludePrivatePackages \
             --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;MPL-2.0;CC0-1.0;CC-BY-4.0;CC-BY-3.0;Unlicense;0BSD;Python-2.0;BlueOak-1.0.0"

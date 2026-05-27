@@ -2,9 +2,10 @@
 // Cf. ADR-0003 (Grafana Cloud Canada). Init désactivée si
 // OTEL_EXPORTER_OTLP_ENDPOINT n'est pas défini (dev sans observabilité).
 //
-// MVP : traces uniquement. Les métriques seront ajoutées dans une itération
-// ultérieure (alignement de versions entre @opentelemetry/sdk-metrics et
-// @opentelemetry/sdk-node — actuellement type-incompatible).
+// Traces uniquement pour l'instant. Les métriques sont collectées via
+// `@opentelemetry/api` (cf. notifications-metrics.ts) mais l'export OTLP
+// reste désactivé tant que les versions `@opentelemetry/sdk-metrics` et
+// `@opentelemetry/sdk-node` n'auront pas un type `MetricReader` partagé.
 
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';

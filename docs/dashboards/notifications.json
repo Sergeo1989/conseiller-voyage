@@ -1,0 +1,267 @@
+{
+  "annotations": { "list": [] },
+  "description": "Module Notifications — délivrabilité SES, bounces/complaints, DLQ, durée envoi, liste de suppression.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Emails envoyés (24h)",
+      "id": 1,
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "sum(increase(notification_email_sent_total[24h]))",
+          "legendFormat": "Envoyés"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Emails délivrés (24h)",
+      "id": 2,
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "sum(increase(notification_email_delivered_total[24h]))",
+          "legendFormat": "Délivrés"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Taux de délivrance (1h)",
+      "id": 3,
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "sum(rate(notification_email_delivered_total[1h])) / (sum(rate(notification_email_sent_total[1h])) > 0) * 100",
+          "legendFormat": "Délivrance %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 90 },
+              { "color": "green", "value": 97 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Taux de bounce (1h)",
+      "id": 4,
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "sum(rate(notification_email_bounced_total[1h])) / (sum(rate(notification_email_sent_total[1h])) > 0) * 100",
+          "legendFormat": "Bounce %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Taux de plainte (24h)",
+      "id": 5,
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "sum(rate(notification_email_complained_total[24h])) / (sum(rate(notification_email_sent_total[24h])) > 0) * 100",
+          "legendFormat": "Plainte %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.05 },
+              { "color": "red", "value": 0.1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "DLQ size",
+      "id": 6,
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "notification_email_dlq_size",
+          "legendFormat": "DLQ"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Emails envoyés / délivrés / bouncés par template (1h)",
+      "id": 7,
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "sum by (template_id) (rate(notification_email_sent_total[5m])) * 60",
+          "legendFormat": "sent — {{template_id}}"
+        },
+        {
+          "expr": "sum by (template_id) (rate(notification_email_delivered_total[5m])) * 60",
+          "legendFormat": "delivered — {{template_id}}"
+        },
+        {
+          "expr": "sum by (template_id) (rate(notification_email_bounced_total[5m])) * 60",
+          "legendFormat": "bounced — {{template_id}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Durée envoi SES p50 / p95 / p99 (par template)",
+      "id": 8,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (template_id, le) (rate(notification_email_send_duration_seconds_bucket[5m])))",
+          "legendFormat": "p50 — {{template_id}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (template_id, le) (rate(notification_email_send_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95 — {{template_id}}"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (template_id, le) (rate(notification_email_send_duration_seconds_bucket[5m])))",
+          "legendFormat": "p99 — {{template_id}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Bounces par type (1h)",
+      "id": 9,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "sum by (bounce_type) (rate(notification_email_bounced_total[5m])) * 60",
+          "legendFormat": "{{bounce_type}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "DLQ size (évolution)",
+      "id": 10,
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "notification_email_dlq_size",
+          "legendFormat": "dead_letter queue"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Emails envoyés par source_module",
+      "id": 11,
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "sum by (source_module) (rate(notification_email_sent_total[5m])) * 60",
+          "legendFormat": "{{source_module}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["notifications", "ses", "deliverability"],
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Notifications — Délivrabilité SES",
+  "uid": "cv-notifications-deliverability",
+  "version": 1
+}

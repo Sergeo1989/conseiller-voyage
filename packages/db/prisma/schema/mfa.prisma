@@ -205,15 +205,19 @@ model MfaOutboxEmail {
   // Payload typé par templateKind (cf. packages/email-templates/mfa/*).
   payload         Json
   queuedAt        DateTime               @default(now())
-  // null tant que le courriel n'a pas été envoyé (stub MVP — sera mis
-  // à jour quand 003 branche AWS SES).
+  // null tant que le courriel n'a pas été envoyé. Mis à jour par
+  // MfaOutboxDispatchWorker (feature 003).
   sentAt          DateTime?
   attempts        Int                    @default(0)
   lastError       String?                @db.Text
+  // T011 (feature 003) — expand compatible : backoff exponentiel
+  // homogénéisé avec les autres outbox.
+  nextAttemptAt   DateTime?              @db.Timestamptz(6)
 
   recipient AuthUser @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
 
   @@index([sentAt, queuedAt])
+  @@index([sentAt, nextAttemptAt])
   @@index([recipientUserId])
   @@map("mfa_outbox_emails")
 }

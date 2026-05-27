@@ -1,0 +1,156 @@
+// T007 — Schéma Prisma du module notifications (feature 003).
+// Cf. specs/003-notifications-transactionnelles/data-model.md.
+//
+// Conventions :
+//   - UUID v4 partout en `@db.Uuid`.
+//   - Noms de table préfixés `notification_` pour matérialiser la
+//     frontière module V (cf. tools/check-module-boundaries.ts).
+//   - Aucune FK transverse vers d'autres modules — pseudonymisation
+//     via `recipientEmailHashHMAC` (HMAC peppered, ADR-0013 à venir).
+//   - `notification_audit_entries` est append-only via 2 triggers
+//     SQL bruts (UPDATE/DELETE row-level + TRUNCATE statement-level).
+//   - `notification_email_log.erasedAt` non-null implique tous les
+//     champs PII = null ET `recipientEmailHashHMAC` reste NOT NULL
+//     (vérifié par CHECK constraint Postgres — fix B-5 review architecte).
+
+model NotificationLogEntry {
+  id            String @id @default(uuid()) @db.Uuid
+  // Identifiant outbox source — unique = idempotence stricte. Deux
+  // appels NotificationPort.send() avec le même correlationId produisent
+  // zéro ou un seul envoi SES (l'idempotence est aussi propagée à SES
+  // via X-Amzn-SES-Outbound-Idempotency-Token — cf. research R17).
+  correlationId String @unique @db.Uuid
+  sourceModule  NotificationModule
+  eventType     String @db.VarChar(100)
+  templateId    String @db.VarChar(100)
+
+  // Destinataire — soumis à effacement Loi 25 (US5 / FR-022). Tous
+  // nullables car effaçables à T+24m ou sur demande.
+  recipientEmailClear     String? @db.VarChar(254)
+  recipientEmailCanonical String? @db.VarChar(254)
+  // Hash HMAC peppered — permanent même après effacement, sert l'audit
+  // anti-resoumission. NOT NULL forcé par CHECK constraint.
+  recipientEmailHashHMAC  String  @db.VarChar(64)
+  recipientLocale         String  @db.VarChar(5)
+
+  // Contenu rendu — soumis à effacement Loi 25.
+  subject  String? @db.VarChar(998)
+  htmlBody String? @db.Text
+  textBody String? @db.Text
+
+  // État
+  status        NotificationStatus
+  attempts      Int                @default(0) @db.SmallInt
+  lastError     String?            @db.Text
+  nextAttemptAt DateTime?          @db.Timestamptz(6)
+
+  // Horodatages
+  enqueuedAt    DateTime  @db.Timestamptz(6)
+  sentAt        DateTime? @db.Timestamptz(6)
+  deliveredAt   DateTime? @db.Timestamptz(6)
+  bouncedAt     DateTime? @db.Timestamptz(6)
+  complainedAt  DateTime? @db.Timestamptz(6)
+  failedAt      DateTime? @db.Timestamptz(6)
+  erasedAt      DateTime? @db.Timestamptz(6)
+
+  // Données de rendu originales — conservées pour retry dead-letter (T122).
+  templateData Json?
+
+  // SES tracking — corrèle les events SNS Bounce/Complaint/Delivery.
+  sesMessageId String? @unique @db.VarChar(100)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  @@index([status, nextAttemptAt])
+  @@index([recipientEmailHashHMAC])
+  @@index([sourceModule, eventType, enqueuedAt])
+  @@index([sentAt])
+  @@map("notification_email_log")
+}
+
+model SuppressionListEntry {
+  id                     String              @id @default(uuid()) @db.Uuid
+  recipientEmailHashHMAC String              @unique @db.VarChar(64)
+  reason                 SuppressionReason
+  source                 SuppressionSource
+  details                Json?
+  addedAt                DateTime            @default(now()) @db.Timestamptz(6)
+  // null = permanent (hard bounce, complaint, manual permanent).
+  // Non-null uniquement pour soft_bounce_repeated (TTL 30 jours).
+  expiresAt              DateTime?           @db.Timestamptz(6)
+  // Soft-delete pour audit (vrai DELETE jamais utilisé).
+  removedAt              DateTime?           @db.Timestamptz(6)
+  removedByActorId       String?             @db.Uuid
+  removedReason          String?             @db.Text
+
+  @@index([expiresAt])
+  @@index([reason, addedAt])
+  @@map("notification_suppression_list")
+}
+
+model NotificationAuditEntry {
+  id                  String                     @id @default(uuid()) @db.Uuid
+  eventType           String                     @db.VarChar(120)
+  actorId             String                     @db.Uuid
+  actorRole           NotificationAuditActorRole
+  targetEmailHashHMAC String?                    @db.VarChar(64)
+  reason              String?                    @db.Text
+  metadata            Json                       @default("{}")
+  occurredAt          DateTime                   @default(now()) @db.Timestamptz(6)
+
+  @@index([eventType, occurredAt])
+  @@index([targetEmailHashHMAC])
+  @@index([actorId, occurredAt])
+  @@map("notification_audit_entries")
+}
+
+enum NotificationStatus {
+  queued
+  sent
+  delivered
+  bounced
+  complained
+  failed
+  dead_letter
+  skipped_suppressed
+  cancelled_erased
+  rendering_failed
+
+  @@map("notification_status")
+}
+
+enum NotificationModule {
+  conformite
+  identite
+  intake
+  matching
+  facturation
+
+  @@map("notification_module")
+}
+
+enum SuppressionReason {
+  hard_bounce
+  soft_bounce_repeated
+  complaint
+  manual
+
+  @@map("suppression_reason")
+}
+
+enum SuppressionSource {
+  ses_sns_bounce
+  ses_sns_complaint
+  manual_admin
+  system_auto
+
+  @@map("suppression_source")
+}
+
+enum NotificationAuditActorRole {
+  admin
+  system
+
+  @@map("notification_audit_actor_role")
+}

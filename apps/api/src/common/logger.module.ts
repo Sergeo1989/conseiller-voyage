@@ -29,6 +29,32 @@ const PII_REDACT_PATHS = [
   'req.body.newPassword',
   'req.body.currentPassword',
   'req.body.newPasswordConfirmation',
+  // Feature 003 (notifications) — fix I-4 review architecte.
+  // SC-007 : zéro adresse courriel en clair dans les logs.
+  // Couverture des chemins notifications + SES + SNS. Pino utilise
+  // fast-redact qui n'accepte que des paths absolus depuis root,
+  // donc on liste explicitement les chemins observés en production.
+  'recipientEmail',
+  'recipientEmailClear',
+  'recipientEmailCanonical',
+  'envelope.recipientEmail',
+  'envelope.recipientEmailClear',
+  'envelope.recipientEmailCanonical',
+  // Format SES envoyé via @aws-sdk
+  'mail.source',
+  'mail.destination[*]',
+  // Format SNS Bounce reçu via Lambda (chemin absolu)
+  'bounce.bouncedRecipients[*].emailAddress',
+  // Format SNS Complaint
+  'complaint.complainedRecipients[*].emailAddress',
+  // Format SNS Delivery
+  'delivery.recipients[*]',
+  // Body HTTP entrant
+  'req.body.recipientEmail',
+  // Contenu rendu (sujet + corps) — interdire systématiquement
+  '*.subject',
+  '*.htmlBody',
+  '*.textBody',
 ];
 
 @Module({

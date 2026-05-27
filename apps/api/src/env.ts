@@ -80,6 +80,26 @@ const EnvSchema = z
     // En prod derrière CloudFront/ALB : 'true'. En dev local : 'false' (défaut).
     // Cf. apps/api/src/common/actor-ip.util.ts (002a) + research R9.
     TRUSTED_PROXY_HEADERS: z.enum(['true', 'false']).default('false'),
+
+    // Notifications — feature 003 (ADR-0006)
+    // Pepper HMAC pour hashage des emails dans la suppression list.
+    // En dev : valeur de test quelconque (non vide). En prod : AWS Secrets Manager.
+    NOTIFICATIONS_EMAIL_HASH_PEPPER: z.string().min(1).default('dev-pepper-change-me'),
+    // HMAC secret partagé avec la Lambda bounces-handler (feature 003).
+    NOTIFICATIONS_SNS_HMAC_SECRET: z.string().min(1).default('dev-sns-hmac-change-me'),
+    // Adresse expéditeur SES (sous-domaine notifications.conseiller-voyage.ca).
+    NOTIFICATIONS_FROM_EMAIL: z
+      .string()
+      .email()
+      .default('notifications@notifications.conseiller-voyage.ca'),
+    NOTIFICATIONS_FROM_NAME: z.string().default('Conseiller Voyage'),
+    // URL de désabonnement (List-Unsubscribe header, CASL FR-010-b).
+    NOTIFICATIONS_UNSUBSCRIBE_URL: z
+      .string()
+      .url()
+      .default('https://conseiller-voyage.ca/unsubscribe'),
+    // Nom du Configuration Set SES (notifications-prod | notifications-staging).
+    NOTIFICATIONS_SES_CONFIG_SET: z.string().default('notifications-dev'),
   })
   .superRefine((env, ctx) => {
     // T006 — refus de la KEK de test (32 octets de zéro) en production.

@@ -106,12 +106,12 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/006-auth-conseiller-admin/plan.md`](specs/006-auth-conseiller-admin/plan.md)
-(Auth conseiller + admin + RBAC — feature 002 de la roadmap, branche
-`006-auth-conseiller-admin`).
+**Plan courant** : [`specs/003-notifications-transactionnelles/plan.md`](specs/003-notifications-transactionnelles/plan.md)
+(Notifications + courriel transactionnel — feature 003 de la roadmap,
+branche `003-notifications-transactionnelles`).
 
 Pour le contexte technologique détaillé et la structure de répertoires de la
-feature courante, lire ce plan ainsi que `data-model.md`, `contracts/`,
-`research.md` et `quickstart.md` du même répertoire
-`specs/006-auth-conseiller-admin/`.
+feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
+`contracts/{notification.port,http-endpoints,outbox-source-contract,sns-event-schema}.md`,
+et `quickstart.md` du même répertoire `specs/003-notifications-transactionnelles/`.
 <!-- SPECKIT END -->

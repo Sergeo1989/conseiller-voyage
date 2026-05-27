@@ -48,8 +48,12 @@ describe('encryption (AES-256-GCM)', () => {
     it("altération d'un byte du ciphertext → TotpSecretIntegrityError", () => {
       const encrypted = encrypt('JBSWY3DPEHPK3PXP', ZERO_KEK);
       // Modifie un caractère en milieu de blob — change un byte de
-      // ciphertext ou auth tag.
-      const tampered = `${encrypted.slice(0, 20)}X${encrypted.slice(21)}`;
+      // ciphertext ou auth tag. On choisit un remplacement DIFFÉRENT du
+      // caractère original (sinon, si pos 20 contient déjà 'X', le blob
+      // reste identique et decrypt réussit — test flaky historique).
+      const original = encrypted.charAt(20);
+      const replacement = original === 'A' ? 'B' : 'A';
+      const tampered = `${encrypted.slice(0, 20)}${replacement}${encrypted.slice(21)}`;
       expect(() => decrypt(tampered as never, ZERO_KEK)).toThrow(TotpSecretIntegrityError);
     });
 

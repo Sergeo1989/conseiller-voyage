@@ -6,7 +6,7 @@ entrée numérotée est destinée à devenir une spec détaillée via
 (ajouts, repriorisations, suppressions) ; chaque modification est
 référencée par commit.
 
-**Dernière mise à jour** : 2026-05-26
+**Dernière mise à jour** : 2026-05-27
 
 > **Note de numérotation** : les IDs de cette roadmap (001, 002, …) sont des
 > identifiants logiques de feature. Les dossiers de spec sous `specs/`
@@ -53,9 +53,9 @@ Scope : **S** (1 spec, < 5 user stories) · **M** (~5 US, ~20 FR, équivalent au
 | ID | Feature | Module | Scope | État | Spec | Pourquoi en premier |
 |---|---|---|---|---|---|---|
 | **001** | Module conformité (statut vérifié, source de vérité) | conformité | M | ✅ mergé (PR #1) | `specs/001-conformite-module/` | Gardien Principe I. Bloque toute visibilité publique de conseiller et toute éligibilité matching. 73 commits, 200/200 tests verts. |
-| **002** | Identité — auth conseiller + admin, RBAC (base AuthGuard) | identité | M | 🔵 implémentation en cours | `specs/006-auth-conseiller-admin/` | Bloque tout consommateur authentifié. AuthGuard NestJS partagé Auth.js v5 (ADR-0004). 7 user stories livrées (signup, login, verify email, logout, reset password, change password, admin bootstrap+invitation), `PrismaPasswordVerifier` remplace définitivement le stub 002a (résout bug_007). |
+| **002** | Identité — auth conseiller + admin, RBAC (base AuthGuard) | identité | M | ✅ mergé (PR #14) | `specs/006-auth-conseiller-admin/` | Bloque tout consommateur authentifié. AuthGuard NestJS partagé Auth.js v5 (ADR-0004). 7 user stories livrées (signup, login, verify email, logout, reset password, change password, admin bootstrap+invitation). `PrismaPasswordVerifier` remplace définitivement le stub 002a (résout bug_007 ultrareview). 10 commits, 84/84 tests intégration verts, 59/59 tests pure-fn `@cv/auth-domain`. ADR-0012 (audit no-FK Loi 25) + 3 runbooks ops livrés. |
 | **002a** | Identité — MFA conseiller TOTP + step-up + reset admin + auto-service device + admin J1 | identité | M | ✅ mergé (PR #13) | `specs/005-mfa-conseiller/` | Extraction du scope MFA de l'ancien 002. Exigence Principe IX NON-NÉGOCIABLE. 6 user stories livrées (US1-US6), 13 commits (12 features + 1 fix ultrareview), 60 tests pure + 55 tests intégration verts. ~~Stub `PasswordVerifier` à remplacer quand 002 livre~~ **(résolu par 002 — `PrismaPasswordVerifier` wiré).** |
-| 003 | Identité — notifications + courriel transactionnel | identité | M | ⏳ | — | Bloque FR-005 conformité, rappels d'expiration, accusés de soumission. Provider canadien (ADR à venir). Drainera aussi `mfa_outbox_emails` posé par 002a. |
+| 003 | Identité — notifications + courriel transactionnel | identité | M | 🔵 implémentation en cours (branche `003-notifications-transactionnelles`) | `specs/003-notifications-transactionnelles/` | Bloque FR-005 conformité, rappels d'expiration, accusés de soumission. AWS SES ca-central-1 (ADR-0006). Drainera aussi `mfa_outbox_emails` posé par 002a. ADR-0013 (pepper hash) + ADR-0014 (templates) livrés. Phase 9 (polish) en cours. |
 | 004 | Mentions légales, CGU, page « Comment ça marche », politique Loi 25 | transverse | M | 🟡 PR ouverte (#12) | `specs/004-mentions-legales/` | Obligation contractuelle dès première mise en ligne publique. Texte FR-CA. Page « Comment ça marche » = pédagogie modèle anti-marketplace (ADR-0002). |
 
 ---
@@ -240,8 +240,8 @@ cas via un `/speckit.specify` quand le moment vient.
 
 | Sprint | Features visées | Justification |
 |---|---|---|
-| **0** | ✅ 001 (mergé PR #1), ✅ 002a MFA (mergé PR #13), 🟡 004 (PR #12 en review) | 001 finalisé 73 commits / 200 tests. 002a livré avant 002 sur stub `PasswordVerifier`. 004 = mentions légales + CGU + Loi 25 + Comment ça marche, livrable web public minimal. |
-| **1** | 002, 003 | Auth conseiller + admin (mot de passe Prisma → branche le `PrismaPasswordVerifier` qui remplace le stub 005). Notifications transactionnelles + drainage `mfa_outbox_emails` (worker SES). |
+| **0** | ✅ 001 (mergé PR #1), ✅ 002a MFA (mergé PR #13), ✅ 002 Auth (mergé PR #14), 🟡 004 (PR #12 en review) | 001 finalisé 73 commits / 200 tests. 002a + 002 livrent toute la pile identité (signup, login, MFA, password reset/change, admin bootstrap+invitation). 004 = mentions légales + CGU + Loi 25 + Comment ça marche, livrable web public minimal. |
+| **1** | 003 | Notifications transactionnelles + drainage `mfa_outbox_emails` + `auth_outbox_emails` (worker SES). |
 | **2** | 005 (profil conseiller) | Dépend de 001 + 002 + 002a (MFA actif avant accès aux leads). |
 | **3** | 006, 008 | Facturation onboarding + intake brief. Parallélisable. |
 | **4** | 009, 010, 011, 024 | Enrichissement LLM, magic-link, scoring matching, infra i18n. |
