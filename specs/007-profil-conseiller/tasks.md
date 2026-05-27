@@ -72,16 +72,16 @@ séparé visible dans git (constitution Principe VI).
 
 ### Ports applicatifs (interfaces, pas d'implémentation)
 
-- [ ] T026 [P] Créer le port `apps/api/src/modules/identite/application/ports/profil-conseiller-repository.port.ts` avec interface complète (CRUD + `findBySlug`, `findByAuthUserId`, `updateStatutAndPublishedAt`, `countByVerifiedAt`) — cf. data-model.md
-- [ ] T027 [P] Créer le port `apps/api/src/modules/identite/application/ports/photo-historique-repository.port.ts` (`insertPending`, `markCommit`, `markEvicted`, `findCommitsByProfile`, `findOlderPendingThan`)
-- [ ] T028 [P] Créer le port `apps/api/src/modules/identite/application/ports/slug-reservation-repository.port.ts` (`reserve`, `existsForSlug`, `listAll`)
-- [ ] T029 [P] Créer le port `apps/api/src/modules/identite/application/ports/photo-storage.port.ts` (`upload(key, buffer, contentType)`, `delete(key)`, `listKeysWithPrefix(prefix)`)
-- [ ] T030 [P] Créer le port `apps/api/src/modules/identite/application/ports/cloudfront-cache-invalidator.port.ts` (`invalidatePaths(paths: string[])`)
-- [ ] T031 [P] Créer le port `apps/api/src/modules/identite/application/ports/onboarding-relance-scheduler.port.ts` (`planifierRelances(profileId, verifiedAt)`, `annulerRelances(profileId)`)
-- [ ] T032 [P] Créer le port `apps/api/src/modules/identite/application/ports/profil-moderation-audit-writer.port.ts` (`recordModeration(action, adminId, profileId, raison, metadata?)`)
-- [ ] T033 [P] Créer le port `apps/api/src/modules/identite/application/ports/auth-user-legal-name-reader.port.ts` (renommé suite exploration : nom légal vit dans `AuthUser`, pas conformité). Interface `AuthUserLegalNameReader { lireNomLegal(authUserId): Promise<NomLegal | null> }` + type `NomLegal { prenomLegal, nomLegal }`. Le port lit `AuthUser.firstName` + `AuthUser.lastName` via Prisma (`@cv/db`). Retourne `null` si l'utilisateur est anonymisé (à définir : champ `anonymizedAt` à ajouter à `AuthUser` si pas déjà présent, ou check via `first_name IS NULL`).
-- [ ] T034 [P] Créer le port `apps/api/src/modules/identite/application/ports/profil-public-reader.port.ts` avec interface `ProfilPublicReader` (`lireParSlug`, `lireSlugsPubliables`) + types `ProfilPublicPayload`, `CertificationPublique` (cf. contracts/profil-public.port.md)
-- [ ] T035 [P] Créer le port `packages/identite-public/src/est-profil-public.port.ts` (port public consommé par 011+016) — interface `EstProfilPublicPort` avec `estPublic(id)`, `filtrerPublics(ids)` (cf. contracts/est-profil-public.port.md)
+- [X] T026 Port ProfilConseillerRepository (snapshot + CRUD + findBySlug + listSlugsPubliables + publish + updateStatut + anonymize)
+- [X] T027 Port PhotoHistoriqueRepository (saga pending_upload → commit → evicted + findOlderPendingThan pour cleanup orphans)
+- [X] T028 Port SlugReservationRepository (reserve append-only + isReserved + listAll)
+- [X] T029 Port PhotoStorage (S3 upload/delete/listKeysWithPrefix, SSE-KMS implicite côté adapter)
+- [X] T030 Port CloudFrontCacheInvalidator (invalidatePaths, best-effort)
+- [X] T031 Port OnboardingRelanceScheduler (planifierRelances/annulerRelances + ETAPE_DELAY_MS constante)
+- [X] T032 Port ProfilModerationAuditWriter (append-only avec adminEmailHash SHA-256)
+- [X] T033 Port AuthUserLegalNameReader (renommé A1 — lit AuthUser.firstName/lastName via @cv/db)
+- [X] T034 Port ProfilPublicReader (ProfilPublicPayload + lireParSlug null-anti-énumération + lireSlugsPubliables)
+- [X] T035 Port EstProfilPublicPort exposé via @cv/shared/profil-public (interface) + symbole DI côté apps/api (estPublic + filtrerPublics batch)
 
 ### Adaptateurs Prisma (infrastructure)
 
