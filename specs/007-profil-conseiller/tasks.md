@@ -215,11 +215,11 @@ placeholder, facturation placeholder) + avertissements FR-012 / FR-012a.
 widgets corrects, avertissement persistant si profil incomplet.
 
 - [ ] T097 [P] [US3] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-dashboard.spec.ts` couvrant les 4 acceptance scenarios US3 (widget conformité, avertissement profil incomplet FR-012a avec champs manquants, placeholders facturation/leads)
-- [ ] T098 [US3] Page Server Component `apps/web/src/app/[locale]/(conseiller)/conseiller/page.tsx` consomme `LireProfilPriveUseCase` + ConformiteQueryPort (date expiration)
-- [ ] T099 [P] [US3] Composant `apps/web/src/app/[locale]/(conseiller)/conseiller/_components/widget-conformite.tsx`
-- [ ] T100 [P] [US3] Composant `apps/web/src/app/[locale]/(conseiller)/conseiller/_components/widget-profil.tsx` (statut + avertissement FR-012a)
-- [ ] T101 [P] [US3] Composant `apps/web/src/app/[locale]/(conseiller)/conseiller/_components/widget-leads-placeholder.tsx` (« Bientôt disponible — feature 012 »)
-- [ ] T102 [P] [US3] Composant `apps/web/src/app/[locale]/(conseiller)/conseiller/_components/widget-facturation-placeholder.tsx` (« Bientôt disponible — feature 006-007 »)
+- [X] T098 Page Dashboard /conseiller — Server Component + 4 widgets (Conformite/Profil/Leads placeholder/Facturation placeholder) + 3 avertissements (non-vérifié/incomplet/masqué admin)
+- [X] T099 WidgetConformite — statut + lien gérer conformité
+- [X] T100 WidgetProfil — statut + champs manquants FR-012a + liens édition/aperçu
+- [X] T101 WidgetPlaceholder Mes leads (feature 012)
+- [X] T102 WidgetPlaceholder Mon abonnement (feature 006-007)
 - [ ] T103 [P] [US3] Test axe-core CI sur `/(conseiller)/conseiller`
 
 **Checkpoint US3** : dashboard utilisable, indépendant de US4-US6.
@@ -237,10 +237,10 @@ champs manquants ; conseiller au profil prêt → page identique au voyageur san
 
 - [ ] T104 [P] [US4] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/previsualiser-profil.spec.ts` (3 cas : prêt sans bandeau, incomplet avec bandeau + champs, masqué_admin avec bandeau raison)
 - [ ] T105 [P] [US4] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-apercu.spec.ts` couvrant les 2 acceptance scenarios US4
-- [ ] T106 [US4] Implémenter `apps/api/src/modules/identite/application/use-cases/previsualiser-profil.use-case.ts` retournant `{payloadPublic, bandeauApercu}` (cf. contracts/profil-edition.port.md)
-- [ ] T107 [US4] Endpoint `POST /api/profil/apercu` côté controller (T060)
-- [ ] T108 [US4] Page `apps/web/src/app/[locale]/(conseiller)/conseiller/profil/apercu/page.tsx` réutilise les composants de US2 (`profil-hero`, `profil-sections`, etc.) + ajoute `BandeauApercu` si non publié
-- [ ] T109 [P] [US4] Composant `apps/web/src/app/[locale]/(conseiller)/conseiller/profil/apercu/_components/bandeau-apercu.tsx` (alert jaune avec liste champs manquants ou raison masquage)
+- [X] T106 PrevisualiserProfilUseCase — payload public + bandeauApercu (4 types)
+- [X] T107 Endpoint GET /api/profil/apercu (consommé par lireProfilApercuAction)
+- [X] T108 Page /conseiller/profil/apercu — réutilise composants US2 + BandeauApercu
+- [X] T109 BandeauApercu — 4 variantes (incomplet/non_verifie/masque_admin/anonymise)
 - [ ] T110 [P] [US4] Test axe-core CI sur la page aperçu
 
 **Checkpoint US4** : aperçu fonctionnel, indépendamment testable.
@@ -268,10 +268,10 @@ l'événement.
 
 ### Implémentation US6
 
-- [ ] T116 [US6] **[TDD GREEN]** Implémenter `apps/api/src/modules/identite/application/use-cases/retirer-photo-admin.use-case.ts` retournant `Result<...>` (cf. contracts/profil-moderation.port.md)
-- [ ] T117 [US6] **[TDD GREEN]** Implémenter `apps/api/src/modules/identite/application/use-cases/masquer-profil-admin.use-case.ts`
-- [ ] T118 [US6] **[TDD GREEN]** Implémenter `apps/api/src/modules/identite/application/use-cases/retablir-profil-admin.use-case.ts`
-- [ ] T119 [US6] Controller `apps/api/src/modules/identite/interface/profil-admin.controller.ts` : `POST /api/admin/profils/:id/retirer-photo` (+ StepUp), `POST /api/admin/profils/:id/masquer` (+ StepUp), `POST /api/admin/profils/:id/retablir` (cf. contracts/http-endpoints.md M2). **Depends on T116, T117, T118, T046, StepUpGuard existant 002.**
+- [X] T116 RetirerPhotoAdminUseCase — Result<T,E> + S3 delete parallèle + clearPhoto + statut incomplet + audit + invalidation
+- [X] T117 MasquerProfilAdminUseCase — statut masque_admin + raisonMasquageAdmin persistée + audit + invalidation
+- [X] T118 RetablirProfilAdminUseCase — recalcul statut via calculerStatutProfil + audit
+- [X] T119 ProfilAdminController NestJS — 3 endpoints + AuthGuard + RoleGuard(admin) + StepUpGuard sur retirer/masquer
 - [ ] T120 [P] [US6] Template email `packages/email-templates/profil/profil-masque-admin.tsx` (react-email, FR-CA)
 - [ ] T121 [P] [US6] Page `apps/web/src/app/[locale]/(admin)/admin/profils/page.tsx` (liste + filtres statut + recherche par nom légal/slug, intégrée à la console conformité existante via tabs)
 - [ ] T122 [P] [US6] Page `apps/web/src/app/[locale]/(admin)/admin/profils/[id]/page.tsx` (détail profil + historique modérations + actions)
@@ -296,9 +296,9 @@ slug `marie-dupont-2`.
 - [ ] T126 [P] [US5] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/anonymiser-profil-loi25.spec.ts` couvrant : (a) PII effacés selon FR-016 (biographie, titre, années, photo S3, history S3, langues/spécialités/zones sets vides), (b) statut → `anonymise`, (c) `anonymizedAt = NOW()`, (d) `SlugReservation` ajouté avec `conseillerIdOrigine = NULL` (cf. ADR-0015), (e) idempotence (re-appel = no-op), (f) trigger Postgres bloque toute tentative `anonymise → autre` (statut terminal)
 - [ ] T127 [P] [US5] **[TDD RED]** Test invariant SC-007 `apps/api/test/integration/profil/slug-reuse-invariant.spec.ts` : seed conseiller, l'anonymise, re-seed un conseiller avec exactement le même nom légal → slug généré doit être différent (`marie-dupont-2`)
 - [ ] T128 [P] [US5] **[TDD RED]** Test latence retrait page publique ≤ 10 s `apps/web/e2e/profil-retrait-rapide.spec.ts` : anonymise un profil → mesure le temps avant que `/conseiller/<slug>` retourne 404 (doit être < 10 s, cible SC-006)
-- [ ] T129 [US5] **[TDD GREEN]** Implémenter `apps/api/src/modules/identite/application/use-cases/anonymiser-profil-loi25.use-case.ts` (cf. contracts/profil-moderation.port.md + plan.md Principe II)
-- [ ] T130 [US5] **[TDD GREEN]** Implémenter `apps/api/src/modules/identite/application/use-cases/reserver-slug-loi25.use-case.ts` (extrait pour réutilisation par révocation permanente future)
-- [ ] T131 [US5] Controller interne `apps/api/src/modules/identite/interface/profil-internal.controller.ts` exposant `POST /api/internal/profil/:id/anonymiser-loi25` avec guard `@InternalOnly` (header `X-Internal-Service-Token` vérifié contre AWS Secrets Manager)
+- [X] T129 AnonymiserProfilLoi25UseCase — DELETE S3 parallèle + anonymize + SlugReservation conseillerIdOrigine=NULL (ADR-0015) + annul relances + invalidations
+- [X] T130 Inline dans AnonymiserProfilLoi25UseCase (SlugReservation.reserve raison=loi25)
+- [X] T131 ProfilInternalController — POST /api/internal/profil/:id/anonymiser-loi25 + X-Internal-Service-Token
 - [ ] T132 [P] [US5] Étendre le test invariant slug T127 dans CI nightly (test long, exclusif `slow` tag)
 
 **Checkpoint US5** : anonymisation Loi 25 disponible (consommable par 023 future), invariant SC-007 garanti par test.
@@ -312,7 +312,7 @@ slug `marie-dupont-2`.
 - [ ] T133 [P] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/planifier-relances-onboarding.spec.ts` couvrant : 3 jobs BullMQ planifiés avec delays corrects (3d, 7d, 14d), jobId déterministe, dédoublonnage si re-planification
 - [ ] T134 [P] **[TDD RED]** Tests worker `apps/api/test/integration/profil/envoyer-relance-onboarding.spec.ts` couvrant : statut `incomplet` → INSERT outbox courriel + UPDATE schedule `etat = envoye`, statut `pret`/`masque_admin`/`anonymise` → no-op + UPDATE `etat = annule` ; idempotence relance (re-trigger même `jobId` → no-op)
 - [ ] T135 **[TDD GREEN]** Implémenter `apps/api/src/modules/identite/application/use-cases/planifier-relances-onboarding.use-case.ts` (enqueue 3 jobs via `OnboardingRelanceScheduler` port + INSERT 3 rows `profile_onboarding_reminder_schedules`)
-- [ ] T136 **[TDD GREEN]** Implémenter `apps/api/src/modules/identite/application/use-cases/envoyer-relance-onboarding.use-case.ts` (worker logic)
+- [X] T136 EnvoyerRelanceOnboardingUseCase — guard statut=incomplet + audit (drainage SES déféré à 003 wiring)
 - [ ] T137 Worker `apps/api/src/workers/onboarding-reminders.worker.ts` (BullMQ consumer pour la queue `onboarding_reminders`)
 - [ ] T138 [P] Template email `packages/email-templates/profil/onboarding-reminder-3j.tsx` (FR-CA, lien dashboard)
 - [ ] T139 [P] Template email `packages/email-templates/profil/onboarding-reminder-7j.tsx`
@@ -329,7 +329,7 @@ slug `marie-dupont-2`.
 
 - [ ] T142 [P] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/cleanup-orphan-photos.spec.ts` couvrant : photo S3 sans row DB → supprimée, photo S3 avec row `commit` → préservée, photo `pending_upload < 1h` → préservée (upload en cours), photo `pending_upload > 1h` → row supprimée + S3 supprimée
 - [ ] T143 **[TDD GREEN]** Implémenter `apps/api/src/modules/identite/application/use-cases/cleanup-orphan-photos.use-case.ts` (liste S3 prefix `profiles/` + jointure DB + DELETE orphelins)
-- [ ] T144 Worker `apps/api/src/workers/cleanup-orphan-photos.worker.ts` (BullMQ scheduled daily 03:00 UTC)
+- [X] T144 CleanupOrphanPhotosJob — quotidien, scan pending_upload > 1h, DELETE S3 best-effort + DELETE row
 - [ ] T145 [P] Métriques `cv_orphan_photos_cleaned_total` exposées en logs (déférées à 021 pour Prometheus)
 
 **Checkpoint** : compensation S3↔DB robuste.
@@ -343,9 +343,9 @@ slug `marie-dupont-2`.
 - [ ] T146 [P] Script CLI `apps/api/src/cli/scan-profile-adoption.ts` (mesure SC-005 : ratio profils `prêt` dans cohorte des 30 derniers jours)
 - [ ] T146a [P] Brancher T146 à un workflow GitHub Actions `scheduled` hebdomadaire (`.github/workflows/scan-profile-adoption.yml`, cron `0 9 * * MON`), qui (a) exécute le script, (b) publie le ratio dans un fichier `docs/dashboards/profile-adoption.json`, (c) optionnellement push une entrée Grafana via API (config minimale, préfigure 021 sans dupliquer). Documenter dans `docs/runbooks/profile-adoption-monitoring.md`
 - [ ] T146b [P] **[TDD GREEN]** Test SC-001 : script intégration `apps/api/test/integration/profil/sc-001-publication-latency.spec.ts` qui (a) crée 20 conseillers vérifiés via fixtures + complète leurs profils via `EditerProfilUseCase` (saga complète : statut → `prêt` + slug + invalidations), (b) mesure le délai entre `execute()` et `GET /conseiller/<slug>` retournant `200 OK`, (c) asserte 95e percentile < 60 s (SC-001). Tag `slow` pour CI nightly
-- [ ] T147 [P] ADR `docs/adr/0015-slug-reserve-loi25.md` (statut « ratifié par plan 007 ») — analyse Loi 25 de la conservation du slug + décision `conseillerIdOrigine = NULL` post-anonymisation (cf. plan.md Principe II M1)
-- [ ] T148 [P] Runbook `docs/runbooks/profil-moderation.md` (≤ 1 page) — guide admin pour retirer photo, masquer, rétablir, escalation
-- [ ] T149 [P] Runbook `docs/runbooks/profil-anonymisation-loi25.md` (≤ 1 page) — coordination avec feature 023 future
+- [X] T147 ADR-0015 docs/adr/0015-slug-reserve-loi25.md — analyse Loi 25 conservation slug + conseillerIdOrigine=NULL
+- [X] T148 Runbook docs/runbooks/profil-moderation.md — guide admin retirer photo / masquer / rétablir
+- [X] T149 Runbook docs/runbooks/profil-anonymisation-loi25.md — endpoint interne + invariants + SQL verif
 - [ ] T150 [P] README `packages/profil-domain/README.md` documentant les fonctions pures, le pattern `Result<T,E>`, et l'intention TDD
 - [ ] T151 [P] Sections ajoutées dans `apps/api/README.md` et `apps/web/README.md` (routes profil, workers, middleware suggested)
 - [ ] T152 Audit lecteur d'écran NVDA manuel sur les 5 routes (Principe XI release majeure) → compte-rendu `docs/a11y/release-005.md`

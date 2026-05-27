@@ -125,13 +125,20 @@ import { PROFIL_CONSEILLER_REPOSITORY } from './application/ports/profil-conseil
 import { PROFIL_MODERATION_AUDIT_WRITER } from './application/ports/profil-moderation-audit-writer.port';
 import { PROFIL_PUBLIC_READER } from './application/ports/profil-public-reader.port';
 import { SLUG_RESERVATION_REPOSITORY } from './application/ports/slug-reservation-repository.port';
+import { AnonymiserProfilLoi25UseCase } from './application/use-cases/anonymiser-profil-loi25.use-case';
 import { EditerProfilUseCase } from './application/use-cases/editer-profil.use-case';
+import { EnvoyerRelanceOnboardingUseCase } from './application/use-cases/envoyer-relance-onboarding.use-case';
 import { LirePageProfilPubliqueUseCase } from './application/use-cases/lire-page-profil-publique.use-case';
 import { LireProfilPriveUseCase } from './application/use-cases/lire-profil-prive.use-case';
+import { MasquerProfilAdminUseCase } from './application/use-cases/masquer-profil-admin.use-case';
+import { PrevisualiserProfilUseCase } from './application/use-cases/previsualiser-profil.use-case';
+import { RetablirProfilAdminUseCase } from './application/use-cases/retablir-profil-admin.use-case';
+import { RetirerPhotoAdminUseCase } from './application/use-cases/retirer-photo-admin.use-case';
 import { UploaderPhotoUseCase } from './application/use-cases/uploader-photo.use-case';
 import { BullmqOnboardingRelanceScheduler } from './infrastructure/bullmq-onboarding-relance-scheduler';
 import { AwsCloudFrontCacheInvalidator } from './infrastructure/cloudfront-cache-invalidator';
 import { HttpNextjsRevalidator } from './infrastructure/http-nextjs-revalidator';
+import { CleanupOrphanPhotosJob } from './infrastructure/jobs/cleanup-orphan-photos.job';
 import { PrismaAuthUserLegalNameReader } from './infrastructure/prisma-auth-user-legal-name-reader';
 import { PrismaEstProfilPublic } from './infrastructure/prisma-est-profil-public';
 import { PrismaPhotoHistoriqueRepository } from './infrastructure/prisma-photo-historique-repository';
@@ -140,7 +147,9 @@ import { PrismaProfilModerationAuditWriter } from './infrastructure/prisma-profi
 import { PrismaProfilPublicReader } from './infrastructure/prisma-profil-public-reader';
 import { PrismaSlugReservationRepository } from './infrastructure/prisma-slug-reservation-repository';
 import { S3PhotoStorage } from './infrastructure/s3-photo-storage';
+import { ProfilAdminController } from './interface/profil-admin.controller';
 import { ProfilConseillerController } from './interface/profil-conseiller.controller';
+import { ProfilInternalController } from './interface/profil-internal.controller';
 import { ProfilPublicController } from './interface/profil-public.controller';
 
 @Module({
@@ -176,6 +185,10 @@ import { ProfilPublicController } from './interface/profil-public.controller';
     ProfilConseillerController,
     // Profil public (feature 007 US2)
     ProfilPublicController,
+    // Profil admin modération (feature 007 US6)
+    ProfilAdminController,
+    // Profil interne (feature 007 US5 — orchestré par 023)
+    ProfilInternalController,
   ],
   providers: [
     // Env injecté (cf. NodeCryptoTotpSecretEncrypter qui en a besoin
@@ -266,8 +279,15 @@ import { ProfilPublicController } from './interface/profil-public.controller';
     // --- Feature 007 (profil conseiller) — use cases ---
     LireProfilPriveUseCase,
     LirePageProfilPubliqueUseCase,
+    PrevisualiserProfilUseCase,
     EditerProfilUseCase,
     UploaderPhotoUseCase,
+    RetirerPhotoAdminUseCase,
+    MasquerProfilAdminUseCase,
+    RetablirProfilAdminUseCase,
+    AnonymiserProfilLoi25UseCase,
+    EnvoyerRelanceOnboardingUseCase,
+    CleanupOrphanPhotosJob,
 
     // --- Feature 007 — listener cross-module (ConformiteStatusChanged) ---
     ConformiteStatusChangedListener,

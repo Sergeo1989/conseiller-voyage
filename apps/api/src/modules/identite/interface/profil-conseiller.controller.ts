@@ -39,6 +39,8 @@ import { EditerProfilUseCase } from '../application/use-cases/editer-profil.use-
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
 import { LireProfilPriveUseCase } from '../application/use-cases/lire-profil-prive.use-case';
 // biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
+import { PrevisualiserProfilUseCase } from '../application/use-cases/previsualiser-profil.use-case';
+// biome-ignore lint/style/useImportType: NestJS DI requires runtime class references
 import { UploaderPhotoUseCase } from '../application/use-cases/uploader-photo.use-case';
 import { AuthGuard } from './auth.guard';
 import { RequireRole, RoleGuard } from './role.guard';
@@ -75,6 +77,7 @@ interface EditerProfilBody {
 export class ProfilConseillerController {
   constructor(
     private readonly lireProfilPrive: LireProfilPriveUseCase,
+    private readonly previsualiserProfil: PrevisualiserProfilUseCase,
     private readonly editerProfil: EditerProfilUseCase,
     private readonly uploaderPhoto: UploaderPhotoUseCase,
   ) {
@@ -90,6 +93,15 @@ export class ProfilConseillerController {
   @ApiResponse({ status: 404, description: 'PROFIL_NOT_FOUND ou PROFIL_ANONYMISE' })
   async getMe(@Req() req: ProfilRequest) {
     return this.lireProfilPrive.execute({ authUserId: req.user.id });
+  }
+
+  @Get('apercu')
+  @ApiOperation({ summary: 'Aperçu de la page publique (US4)' })
+  @ApiResponse({ status: 200, description: 'Payload public + bandeauApercu si non publié' })
+  async getApercu(@Req() req: ProfilRequest) {
+    const result = await this.previsualiserProfil.execute({ authUserId: req.user.id });
+    if (!result) throw new BadRequestException({ code: 'PROFIL_NOT_FOUND' });
+    return result;
   }
 
   @Post()
