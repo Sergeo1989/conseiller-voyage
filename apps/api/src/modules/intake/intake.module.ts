@@ -1,28 +1,32 @@
-// T024 — IntakeModule (placeholder Phase 2 Foundational).
+// T024 + T025d — IntakeModule.
 //
-// Wiring DI minimal au stade Foundational :
-//   - Aucun controller exposé (les controllers viendront en Phase 3 US1
-//     T056/T082/T106/T115d, Phase 4 US2 T082, Phase 7 US5 T120, etc.)
-//   - Aucun use case (Phase 3+)
-//   - Aucun adapter Prisma/Redis/SES (Phase 3+)
-//   - Le RollingSessionCookieInterceptor sera wired ici en T025d
-//     (APP_INTERCEPTOR scoped au module, pas global app — Principe V)
+// Phase 2 Foundational wiring :
+//   - RollingSessionCookieInterceptor wired via APP_INTERCEPTOR scoped
+//     module (Principe V — pas global app, l'interceptor ne traverse
+//     que les controllers intake quand ils seront ajoutés en Phase 3+).
+//   - Aucun controller exposé pour l'instant — viennent en T056/T082/
+//     T082a/T106/T115d/T120.
+//   - Aucun use case ni adapter — Phase 3+.
 //
 // Pattern hérité de packages/api/src/modules/conformite/interface/conformite.module.ts.
-//
-// Conformément au Principe VIII.a §6 et au Principe V :
-//   - Les ports (interfaces) vivent dans application/ports/
-//   - Les use cases (classes injectables) vivent dans application/use-cases/
-//   - Les adapters (implémentation concrète) vivent dans infrastructure/
-//   - Les controllers vivent dans interface/http/
-//   - Aucun import de @nestjs/* dans domain/
 
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { RollingSessionCookieInterceptor } from './interface/http/rolling-session-cookie.interceptor';
 
 @Module({
   imports: [],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      // T025d — interceptor scoped au module intake.
+      // Quand un controller intake est ajouté (Phase 3 US1), ses handlers
+      // passeront par cet interceptor pour le rolling renewal du cookie
+      // session voyageur (FR-014a Q5).
+      provide: APP_INTERCEPTOR,
+      useClass: RollingSessionCookieInterceptor,
+    },
+  ],
   exports: [],
 })
 export class IntakeModule {}

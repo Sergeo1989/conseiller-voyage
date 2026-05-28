@@ -117,7 +117,9 @@ describe('RollingSessionCookieInterceptor', () => {
     await lastValueFrom(interceptor.intercept(context, buildHandler()));
 
     expect(res.cookie).toHaveBeenCalledTimes(1);
-    const [name, value, options] = res.cookie.mock.calls[0];
+    const call = res.cookie.mock.calls[0];
+    expect(call).toBeDefined();
+    const [name, value, options] = call as [string, string, Record<string, unknown>];
     expect(name).toBe('__Host-cv.intake.token');
     expect(value).toBe('voyageur-session-abc');
     expect(options).toMatchObject({
@@ -137,7 +139,9 @@ describe('RollingSessionCookieInterceptor', () => {
     await lastValueFrom(interceptor.intercept(context, buildHandler()));
 
     expect(res.cookie).toHaveBeenCalledTimes(1);
-    expect(res.cookie.mock.calls[0][0]).toBe('cv.intake.session');
+    const call = res.cookie.mock.calls[0];
+    expect(call).toBeDefined();
+    expect((call as [string, string, Record<string, unknown>])[0]).toBe('cv.intake.session');
   });
 
   it('(c) statut 401 → PAS de renewal (anti-extension de session sur erreur)', async () => {
