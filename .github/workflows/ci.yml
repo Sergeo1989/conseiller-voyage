@@ -241,8 +241,8 @@ jobs:
         run: pnpm --filter @cv/db generate
       - name: Apply Prisma migrations
         run: pnpm --filter @cv/db exec prisma migrate deploy --schema=./prisma/schema
-      - name: Build apps/web
-        run: pnpm --filter @cv/web build
+      - name: Build all packages (Turbo — résout l'ordre workspace deps)
+        run: pnpm build
       - name: Install Playwright Chromium
         run: pnpm --filter @cv/web exec playwright install --with-deps chromium
       - name: Start Next.js production server
@@ -300,8 +300,8 @@ jobs:
         run: pnpm --filter @cv/db generate
       - name: Apply Prisma migrations
         run: pnpm --filter @cv/db exec prisma migrate deploy --schema=./prisma/schema
-      - name: Build apps/web
-        run: pnpm --filter @cv/web build
+      - name: Build all packages (Turbo — résout l'ordre workspace deps)
+        run: pnpm build
       - name: Start Next.js production server
         run: pnpm --filter @cv/web exec next start -p 3000 &
         env:
