@@ -18,6 +18,14 @@
       "types": "./src/conformite/*.ts",
       "default": "./dist/conformite/*.js"
     },
+    "./intake": {
+      "types": "./src/intake/index.ts",
+      "default": "./dist/intake/index.js"
+    },
+    "./intake/*": {
+      "types": "./src/intake/*.ts",
+      "default": "./dist/intake/*.js"
+    },
     "./profil-public": {
       "types": "./src/profil-public/index.ts",
       "default": "./dist/profil-public/index.js"

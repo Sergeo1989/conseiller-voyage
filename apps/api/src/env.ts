@@ -104,6 +104,32 @@ const EnvSchema = z
     // En prod derrière CloudFront/ALB : 'true'. En dev local : 'false' (défaut).
     // Cf. apps/api/src/common/actor-ip.util.ts (002a) + research R9.
     TRUSTED_PROXY_HEADERS: z.enum(['true', 'false']).default('false'),
+
+    // ── Intake (feature 002-voyageur-intake) ─────────────────────────
+    // T006 — 5 env vars du module intake. Voir
+    // docs/runbooks/intake-secrets-rotation.md (T008) pour la rotation.
+
+    /** Secret HMAC SHA-256 du magic link voyageur (R1). 32+ octets en prod. */
+    INTAKE_MAGIC_LINK_SECRET: z
+      .string()
+      .min(32, 'INTAKE_MAGIC_LINK_SECRET doit faire au moins 32 octets')
+      .default('dev-only-intake-magic-link-secret-32b'),
+
+    /** Intervalle (heures) entre 2 refresh du snapshot Redis disposable-emails (R3). */
+    INTAKE_DISPOSABLE_EMAILS_REFRESH_INTERVAL_HOURS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(168), // 7 jours
+
+    /** Plafond email-scoped (FR-019). Au-delà → 429 EMAIL_RATE_LIMIT_EXCEEDED. */
+    INTAKE_RATE_LIMIT_EMAIL_PER_24H: z.coerce.number().int().positive().default(3),
+
+    /** Plafond IP-scoped (FR-020). Au-delà → 429 RATE_LIMIT_EXCEEDED (neutre). */
+    INTAKE_RATE_LIMIT_IP_PER_24H: z.coerce.number().int().positive().default(5),
+
+    /** Durée de vie d'un brief actif (FR-024). À J+N : anonymisation Loi 25. */
+    INTAKE_BRIEF_EXPIRATION_DAYS: z.coerce.number().int().positive().default(90),
   })
   .superRefine((env, ctx) => {
     // T006 — refus de la KEK de test (32 octets de zéro) en production.
@@ -131,6 +157,21 @@ const EnvSchema = z
           message:
             'AUTH_TOKEN_SECRET must not be the all-zeros test value in production. ' +
             'Provision a real secret via AWS Secrets Manager (cv-auth-token-secret).',
+        });
+      }
+
+      // T006 (feature 002-voyageur-intake) — refus du secret intake dev en prod.
+      // Le default 'dev-only-intake-magic-link-secret-32b' permet le boot
+      // local sans config ; il NE DOIT JAMAIS être laissé en prod (sinon
+      // tout magic link pourrait être forgé). Voir
+      // docs/runbooks/intake-secrets-rotation.md.
+      if (env.INTAKE_MAGIC_LINK_SECRET === 'dev-only-intake-magic-link-secret-32b') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['INTAKE_MAGIC_LINK_SECRET'],
+          message:
+            'INTAKE_MAGIC_LINK_SECRET must not be the default dev value in production. ' +
+            'Provision a real 32+ byte secret via AWS Secrets Manager (cv-intake-magic-link-secret).',
         });
       }
     }

@@ -32,16 +32,16 @@
 
 **Purpose** : scaffolding workspace + schéma Prisma + secrets + dépendances. Aucune logique métier ici.
 
-- [ ] T001 Créer le namespace `packages/shared/src/intake/` avec `index.ts` placeholder ré-exportant les futurs schemas / contracts / formatters ; `packages/shared/package.json` n'a rien à changer (export `./intake` existe via `./*`)
-- [ ] T002 Étendre `turbo.json` avec env vars intake : `INTAKE_MAGIC_LINK_SECRET`, `INTAKE_DISPOSABLE_EMAILS_REFRESH_INTERVAL_HOURS`, `INTAKE_RATE_LIMIT_EMAIL_PER_24H`, `INTAKE_RATE_LIMIT_IP_PER_24H`, `INTAKE_BRIEF_EXPIRATION_DAYS` dans `globalPassThroughEnv`
-- [ ] T003 [P] Ajouter les dépendances domain pures à `packages/shared/package.json` (rien à ajouter — Zod, libphonenumber-js déjà présents) ; documenter la couverture cible (≥ 95 % lines/funcs/stmts, ≥ 90 % branches) dans `packages/shared/src/intake/README.md`
-- [ ] T004 [P] Ajouter `disposable-email-domains` (npm, snapshot embedded en fallback) à `apps/api/package.json` ; documenter dans research.md R3 que le snapshot est régénéré par cron BullMQ
-- [ ] T005 Créer `packages/db/prisma/schema/intake.prisma` (file vide avec en-tête de feature) ; étendre `packages/db/prisma/schema.prisma` (multi-file) pour inclure intake
-- [ ] T006 [P] `apps/api/src/env.ts` : ajouter les 5 env vars intake (INTAKE_MAGIC_LINK_SECRET ≥ 32 chars en prod, défaut dev fail-safe) avec validation Zod
-- [ ] T007 [P] `apps/web/src/env.ts` : si une Server Action lit une var côté Web (rate-limit affichage, etc.), l'ajouter ici ; sinon NOOP
-- [ ] T008 Documenter dans `docs/runbooks/intake-secrets-rotation.md` la procédure de rotation `INTAKE_MAGIC_LINK_SECRET` (annual, double-token grace period 14 jours)
-- [ ] T009 [P] LocalStack SES : ajouter `intake-noreply@conseiller-voyage.local` aux verified identities dans `scripts/localstack/setup-ses.sh`
-- [ ] T010 Smoke test `pnpm typecheck && pnpm lint` après scaffolding — commit T001-T009 séparé pour avoir un point de retour propre
+- [X] T001 Créer le namespace `packages/shared/src/intake/` avec `index.ts` placeholder ré-exportant les futurs schemas / contracts / formatters ; `packages/shared/package.json` n'a rien à changer (export `./intake` existe via `./*`) — **note exécution : `./*` n'existait pas, l'export `./intake` + `./intake/*` a été ajouté à `packages/shared/package.json`**
+- [X] T002 Étendre `turbo.json` avec env vars intake : `INTAKE_MAGIC_LINK_SECRET`, `INTAKE_DISPOSABLE_EMAILS_REFRESH_INTERVAL_HOURS`, `INTAKE_RATE_LIMIT_EMAIL_PER_24H`, `INTAKE_RATE_LIMIT_IP_PER_24H`, `INTAKE_BRIEF_EXPIRATION_DAYS` dans `globalPassThroughEnv`
+- [X] T003 [P] Ajouter les dépendances domain pures à `packages/shared/package.json` (rien à ajouter — Zod, libphonenumber-js déjà présents) ; documenter la couverture cible (≥ 95 % lines/funcs/stmts, ≥ 90 % branches) dans `packages/shared/src/intake/README.md` — **note : libphonenumber-js n'est pas encore présent, sera ajouté en US1 quand le normaliseur sera implémenté**
+- [X] T004 [P] Ajouter `disposable-email-domains` (npm, snapshot embedded en fallback) à `apps/api/package.json` ; documenter dans research.md R3 que le snapshot est régénéré par cron BullMQ
+- [X] T005 Créer `packages/db/prisma/schema/intake.prisma` (file vide avec en-tête de feature) ; étendre `packages/db/prisma/schema.prisma` (multi-file) pour inclure intake — **note : `prismaSchemaFolder` preview auto-découvre les fichiers, pas de master schema.prisma à éditer**
+- [X] T006 [P] `apps/api/src/env.ts` : ajouter les 5 env vars intake (INTAKE_MAGIC_LINK_SECRET ≥ 32 chars en prod, défaut dev fail-safe) avec validation Zod + superRefine refusant le défaut en prod
+- [X] T007 [P] `apps/web/src/env.ts` : si une Server Action lit une var côté Web (rate-limit affichage, etc.), l'ajouter ici ; sinon NOOP — **NOOP confirmé, commentaire ajouté**
+- [X] T008 Documenter dans `docs/runbooks/intake-secrets-rotation.md` la procédure de rotation `INTAKE_MAGIC_LINK_SECRET` (annual, double-token grace period 14 jours)
+- [X] T009 [P] LocalStack SES : ajouter `intake-noreply@conseiller-voyage.local` aux verified identities dans `scripts/localstack/setup-ses.sh` — **note exécution : créé `02-init-ses.sh` (pattern numéroté, le `setup-ses.sh` n'existait pas), liste 3 identités (auth/conformite/intake)**
+- [X] T010 Smoke test `pnpm typecheck && pnpm lint` après scaffolding — commit T001-T009 séparé pour avoir un point de retour propre — **OK : typecheck 17 packages successful + lint 620 files no errors + prisma validate OK**
 
 ---
 

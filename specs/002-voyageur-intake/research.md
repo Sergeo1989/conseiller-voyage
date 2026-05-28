@@ -95,9 +95,17 @@ GitHub raw fetch hebdomadaire ($0, ca-central-1 ECS egress négligeable)
 suffit. La liste est cachée Redis (key `intake:disposable-emails`, TTL 30j).
 Cron BullMQ `IntakeDisposableEmailsRefreshJob` toutes les 7 jours.
 
-**Fallback embedded** : si fetch échoue (network, GitHub down), la liste
-embedded `packages/shared/src/intake/disposable-emails-snapshot.json`
-(snapshot du dernier fetch réussi) sert. Génération via script au build.
+**Fallback embedded** : si fetch échoue (network, GitHub down), deux
+sources de repli successives :
+1. Package npm `disposable-email-domains` (T004 — ajouté à `apps/api/
+   package.json`), maintenu par la communauté avec un snapshot semi-récent.
+2. Snapshot statique `packages/shared/src/intake/disposable-emails-snapshot.json`
+   (T099) — régénéré par le cron `IntakeDisposableEmailsRefreshJob`
+   (T098) toutes les 7 jours, committé au build dans le repo pour rester
+   accessible offline.
+
+Cohérent avec ADR-0001 (résidence canadienne) puisque le fetch GitHub
+raw + le package npm sont du contenu public, pas du PII.
 
 **Service externe (Kickbox etc.) rejeté** : 100% des PII voyageur transitant
 hors Canada — violation Principe II (résidence canadienne, ADR-0001).

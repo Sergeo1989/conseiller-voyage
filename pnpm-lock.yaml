@@ -143,6 +143,9 @@ importers:
       bullmq:
         specifier: ^5.28.0
         version: 5.77.1
+      disposable-email-domains:
+        specifier: ^1.0.62
+        version: 1.0.62
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -4626,6 +4629,9 @@ packages:
 
   dijkstrajs@1.0.3:
     resolution: {integrity: sha512-qiSlmBq9+BCdCA/L46dw8Uy93mloxsPSbwnm5yrKn2vMPiy8KyAskTF6zuV/j5BMsmOGZDPs7KjU+mjb670kfA==}
+
+  disposable-email-domains@1.0.62:
+    resolution: {integrity: sha512-LBQvhRw7mznQTPoyZbsmYeNOZt1pN5aCsx4BAU/3siVFuiM9f2oyKzUaB8v1jbxFjE3aYqYiMo63kAL4pHgfWQ==}
 
   dom-serializer@2.0.0:
     resolution: {integrity: sha512-wIkAryiqt/nV5EQKqQpo3SToSOV9J0DnbJqwK7Wv/Trc92zIAYZ4FlMu+JPFW1DfGFt81ZTCGgDEabffXeLyJg==}
@@ -11723,6 +11729,8 @@ snapshots:
       dequal: 2.0.3
 
   dijkstrajs@1.0.3: {}
+
+  disposable-email-domains@1.0.62: {}
 
   dom-serializer@2.0.0:
     dependencies:

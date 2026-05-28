@@ -1,0 +1,17 @@
+// Schéma Prisma du module intake — préqualification voyageur.
+// Cf. specs/002-voyageur-intake/data-model.md
+//
+// Conventions (héritées 001 + Principe V) :
+//   - UUID v4 partout en `@db.Uuid` (parité 001 + branded types
+//     packages/shared/intake/branded-ids.ts)
+//   - Tables préfixées `intake_*` pour matérialiser la frontière
+//     module (`tools/check-module-boundaries.ts`)
+//   - onDelete: Restrict par défaut — anonymisation Loi 25 nullifie les
+//     PII sans cascade silencieuse (cf. data-model §VoyageurContact)
+//   - Audit log append-only dans `intake_audit_entries` (table séparée
+//     R2 / ADR-0017 — Principe V) avec trigger SQL bloquant UPDATE/DELETE
+//   - Pattern outbox dans `intake_outbox_entries` drainé par
+//     `OutboxPublisherJob` (étendu depuis 001)
+//
+// T005 (Phase 1 Setup) : placeholder vide, modèles + enums seront ajoutés
+// en T011 + T012 (Phase 2 Foundational).
