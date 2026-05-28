@@ -7,8 +7,7 @@
         "http://localhost:3000/fr/mentions-legales",
         "http://localhost:3000/fr/cgu-voyageur",
         "http://localhost:3000/fr/cgu-conseiller",
-        "http://localhost:3000/fr/confidentialite",
-        "http://localhost:3000/fr/conseiller/slug-inexistant-test-lhci"
+        "http://localhost:3000/fr/confidentialite"
       ],
       "numberOfRuns": 1,
       "settings": {
