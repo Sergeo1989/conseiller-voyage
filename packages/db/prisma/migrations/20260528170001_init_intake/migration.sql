@@ -32,7 +32,7 @@ CREATE TYPE "MagicLinkPurpose" AS ENUM ('verify_email', 'view_brief_status');
 
 CREATE TABLE "intake_voyageur_contacts" (
     "id" UUID NOT NULL,
-    "email" VARCHAR(254) NOT NULL,
+    "email" VARCHAR(254),
     "emailHashAfterErasure" CHAR(64),
     "firstName" VARCHAR(100),
     "lastName" VARCHAR(100),

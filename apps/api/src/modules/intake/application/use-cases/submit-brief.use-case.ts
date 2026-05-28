@@ -216,7 +216,9 @@ export class SubmitBriefUseCase {
       voyageurContactId: contactId,
       expiresAt,
       consentGivenAt: now,
-      destinations: data.destinations,
+      // Cast safe : Zod garantit la shape, exactOptionalPropertyTypes
+      // diffère légèrement de la signature du port.
+      destinations: data.destinations as ReadonlyArray<{ country: string; region?: string }>,
       departureDate: new Date(data.departureDate),
       returnDate: new Date(data.returnDate),
       datesFlexible: data.datesFlexible,

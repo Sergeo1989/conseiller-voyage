@@ -79,7 +79,9 @@ enum MagicLinkPurpose {
 model VoyageurContact {
   id String @id @default(uuid()) @db.Uuid
 
-  email                  String  @unique @db.VarChar(254) // RFC 5321
+  // Nullable post-anonymisation Loi 25 (trigger T015 garantit que NULL → NON-NULL est rejeté).
+  // Le @unique reste effectif sur les valeurs non-NULL ; Postgres traite chaque NULL comme distinct.
+  email                  String? @unique @db.VarChar(254) // RFC 5321
   emailHashAfterErasure  String? @db.Char(64) // SHA-256 hex post-anonymisation (N4 résolu)
   firstName              String? @db.VarChar(100)
   lastName               String? @db.VarChar(100)
