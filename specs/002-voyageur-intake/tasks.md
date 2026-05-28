@@ -185,6 +185,10 @@
 - [ ] T080 [P] [US2] **[TDD RED]** `apps/api/src/modules/intake/application/use-cases/__tests__/list-briefs-by-email.use-case.test.ts`
 - [ ] T081 [P] [US2] **[TDD GREEN]** `apps/api/src/modules/intake/application/use-cases/list-briefs-by-email.use-case.ts`
 - [ ] T082 [US2] Étendre `voyageur-intake.controller.ts` avec GET `/api/intake/briefs/:briefId` + GET `/api/intake/briefs/by-email` (auth via `IntakeAuthGuard` qui valide le cookie `__Host-cv.intake.token`)
+- [ ] T081b [P] [US1] **(N1, TDD RED)** `apps/api/src/modules/intake/application/use-cases/__tests__/resend-magic-link.use-case.test.ts` : cas nominal (brief existant en `pending_verification` OU `active`/expiration < 7j → nouveau token + email), brief inexistant (réponse 202 quand même — anti-énumération), brief anonymisé (refus silencieux), rate-limit déclenché (5/heure/IP + 3/24h/email)
+- [ ] T081c [P] [US1] **(N1, TDD GREEN)** `apps/api/src/modules/intake/application/use-cases/resend-magic-link.use-case.ts` : recherche brief par email (le caller a vérifié son adresse, donc lookup OK), marque les anciens MagicLinkToken `verify_email` comme expirés, crée un nouveau MagicLinkToken random + enqueue mailer, retourne toujours `{ status: 'sent_or_email_not_found' }` (anti-énumération)
+- [ ] T082a [US1] **(N1)** Étendre `voyageur-intake.controller.ts` avec POST `/api/intake/briefs/:briefId/resend-magic-link` — body Zod `{ email }`, rate-limit `5/heure/IP + 3/24h/email` (réutilise `@IntakeRateLimit`), retour 202 uniforme (anti-énumération), `@SkipRollingRenewal()` (pas de cookie en jeu)
+- [ ] T082b [P] [US1] **(N1, intégration)** `apps/api/src/modules/intake/interface/http/__tests__/resend-magic-link.integration.test.ts` : Testcontainers — golden path 202, brief inexistant → 202 identique (assert pas de leak email), rate-limit → 429 avec body neutre `RATE_LIMIT_EXCEEDED`, anciens tokens marqués expirés en DB
 - [ ] T083 [P] [US2] `apps/api/src/modules/intake/interface/http/intake-auth.guard.ts` : guard NestJS lit le cookie, dérive le `contactId` du token, attache à `req.intakeContext`
 
 ### Frontend — page récap

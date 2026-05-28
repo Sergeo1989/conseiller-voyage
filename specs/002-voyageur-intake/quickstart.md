@@ -191,5 +191,5 @@ Dashboard Grafana `intake.json` (à provisionner via CDK) :
 | Magic link 401 « expiré » | TTL J+7 dépassé | Cliquer « Renvoyer un nouveau lien » |
 | Brief reste en `pending_verification` | SES en panne ou bounce email | Inspecter LocalStack SES inbox + Job retry |
 | HTTP 429 sur soumission | Rate-limit IP ou email | Attendre 24h ou changer adresse |
-| Formulaire perdu après crash navigateur | localStorage non chiffré ou clé volatile expirée | Reprendre depuis étape 1 (UX dégradée, à améliorer en v2) |
+| Formulaire perdu après crash navigateur | localStorage TTL 24h dépassé ou auto-clear post-submit | Reprendre depuis étape 1 (cf. R5 : pas de cache serveur tant que consent Loi 25 pas accordé étape 5) |
 | Audit log ne s'écrit pas | Trigger SQL bloque (manqué d'INSERT GRANT) | Vérifier `GRANT INSERT ON intake_audit_entries TO app_intake` |

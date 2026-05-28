@@ -130,25 +130,42 @@ hors Canada — violation Principe II (résidence canadienne, ADR-0001).
 
 ## R5 — Multi-step form state management
 
-**Décision** : **State en RAM client (React useState) + brouillon Server
-Action sauvegardé en `localStorage` côté navigateur (chiffré AES-GCM avec
-clé volatile session)**. Pas de cache serveur.
+**Décision** (révisée 2026-05-28 post-clarify Q3) : **State en RAM client
+(React useState orchestré par react-hook-form) + brouillon en `localStorage`
+côté navigateur en clair**, key `intake:draft:v1`, TTL 24h via timestamp
+dans le payload, scope PII complet (5 étapes intégrales). Pas de cache
+serveur.
+
+> **Note de révision (2026-05-28)** : la première version de cette décision
+> (2026-05-25) imposait un chiffrement AES-GCM avec clé volatile en
+> `sessionStorage`. Cette mitigation a été retirée suite à la clarification
+> Q3 du spec (session 2026-05-28) — voir Rationale §3 ci-bas pour
+> justification.
 
 **Rationale** :
 
 1. **RAM client** : le formulaire 5 étapes est rempli en 6 min médian (SC-002).
-   Pas besoin de persistence serveur entre étapes — un useState suffit.
+   Pas besoin de persistence serveur entre étapes — react-hook-form suffit.
 
-2. **localStorage chiffré pour reprise après 24 h** : si le voyageur ferme
-   son navigateur (crash, fermeture accidentelle), pouvoir reprendre dans
-   les 24 h sans perdre la saisie est un wins UX majeur. **Mais** stocker
-   en clair en localStorage = PII exposée à tout script tiers du site.
-   Solution : chiffrement AES-GCM avec clé volatile (sessionStorage)
-   regénérée à chaque visite. La clé meurt en fermant la fenêtre →
-   localStorage devient inutile, mais ce sont les seuls cas où on perdrait
-   la session de toute façon.
+2. **localStorage pour reprise après 24h** : si le voyageur ferme son
+   navigateur (crash, fermeture accidentelle), pouvoir reprendre dans les
+   24h sans perdre la saisie est un gain UX majeur. Auto-clear au submit
+   réussi (FR-022/022a + post-verify magic link).
 
-3. **Pas de cache serveur** : éviter la complexité d'une table
+3. **Pas de chiffrement (Q3 clarify 2026-05-28)** : la mitigation AES-GCM
+   initialement envisagée présentait deux problèmes : (a) la clé volatile
+   `sessionStorage` meurt à la fermeture de fenêtre — exactement le scénario
+   pour lequel la reprise est utile, donc inutile dans le use case réel ;
+   (b) le seul vecteur de risque réel est un script tiers exécuté dans
+   l'origine `conseiller-voyage.ca` — ce qui suppose déjà une compromission
+   XSS, contre laquelle la CSP Helmet (héritée 001) est la défense
+   appropriée. Q3 confirme : le device voyageur lui appartient, le
+   localStorage est sous son contrôle physique, hors scope Loi 25 (qui
+   couvre la donnée détenue par l'entreprise). À documenter dans la
+   politique de confidentialité (feature 004) sous la clause « stockage
+   local côté client ».
+
+4. **Pas de cache serveur** : éviter la complexité d'une table
    `intake_brief_drafts` qui exigerait sa propre politique de rétention
    (PII en clair côté serveur sans consentement Loi 25 explicite encore !).
 
@@ -158,6 +175,9 @@ donnée ne doit toucher la DB**. Le state client-only respecte cette
 contrainte.
 
 **Alternatives considérées** :
+- **Chiffrement AES-GCM (version initiale R5)** : rejetée post-Q3 pour les
+  raisons §3 ci-haut (clé volatile incompatible avec le use case, CSP
+  appropriée comme défense XSS).
 - **Redis temp storage** : viole le principe pas-de-PII-avant-consent.
 - **PostgreSQL `intake_brief_drafts`** : idem + dette de rétention.
 - **Pas de reprise du tout** : friction UX pour ~5% des users qui crashent
@@ -272,7 +292,7 @@ si non-listée.
 | R2 — Audit log | Table séparée `intake_audit_entries` avec trigger identique (ADR-0017) |
 | R3 — Emails jetables | Liste GitHub publique + cron mensuel + fallback embedded |
 | R4 — Captcha | Pas en J1, trigger sur métrique abuse_blocked |
-| R5 — Form state | Client RAM + localStorage chiffré AES-GCM 24h |
+| R5 — Form state | Client RAM (react-hook-form) + localStorage clair 24h (Q3 2026-05-28 supersede ; CSP comme défense XSS) |
 | R6 — Téléphone | Libre client + normalisation E.164 serveur (libphonenumber-js) |
 | R7 — Spécialités | Enum Prisma 11 values + `specialityOther` texte libre |
 | R8 — Langues | Enum `fr/en/es/other` + code ISO 639-1 si other |
