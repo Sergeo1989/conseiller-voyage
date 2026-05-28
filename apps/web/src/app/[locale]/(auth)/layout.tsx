@@ -10,8 +10,15 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+// Note Next.js 15 : un `title: 'string'` plain dans un layout n'est PAS
+// hérité par les pages enfants — il faut le format `title.default` qui
+// déclare une valeur de fallback pour les pages sans metadata.title
+// propre. Cf. https://nextjs.org/docs/app/api-reference/file-conventions/metadata#title
 export const metadata: Metadata = {
-  title: 'Conseiller Voyage',
+  title: {
+    default: 'Conseiller Voyage',
+    template: '%s — Conseiller Voyage',
+  },
   robots: {
     index: false,
     follow: false,
