@@ -10,7 +10,7 @@
 // Toutes les strings passent par getTranslations() — convention T074a.
 
 import { auth } from '@/auth';
-import { HistorySection } from '@/features/conformite/ui/HistorySection';
+import { HistorySection } from '@/features/conformite';
 import { type Locale, toUrlLocale } from '@/i18n';
 import { apiClient } from '@/shared/lib/http';
 import { formatDate } from '@cv/shared/conformite';

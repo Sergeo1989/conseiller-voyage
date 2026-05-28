@@ -1,6 +1,6 @@
 // Page /admin/accepter-invitation/[token] — US7 acceptance.
 
-import { AcceptAdminInvitationForm } from '@/features/auth/ui/AcceptAdminInvitationForm';
+import { AcceptAdminInvitationForm } from '@/features/auth';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 

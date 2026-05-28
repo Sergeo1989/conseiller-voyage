@@ -10,8 +10,7 @@
 // Libellés FR-CA via next-intl. Pas d'index moteur (route privée).
 
 import { auth } from '@/auth';
-import { lireProfilPriveAction } from '@/features/profil-conseiller';
-import { ProfilForm } from '@/features/profil-conseiller/ui/ProfilForm';
+import { ProfilForm, lireProfilPriveAction } from '@/features/profil-conseiller';
 import type { Locale } from '@/i18n';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';

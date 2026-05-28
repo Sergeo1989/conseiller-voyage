@@ -1,7 +1,7 @@
 // Server Component /mfa/recovery (US3 — code de récupération).
 
 import { auth } from '@/auth';
-import { VerifyBackupCodeForm } from '@/features/mfa/ui/VerifyBackupCodeForm';
+import { VerifyBackupCodeForm } from '@/features/mfa';
 import { toUrlLocale } from '@/i18n';
 import { redirect } from 'next/navigation';
 

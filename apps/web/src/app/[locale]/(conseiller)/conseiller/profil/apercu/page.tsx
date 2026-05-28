@@ -5,10 +5,8 @@
 // le profil n'est pas en état d'être publié.
 
 import { auth } from '@/auth';
-import { lireProfilApercuAction } from '@/features/profil-conseiller';
-import { BandeauApercu } from '@/features/profil-conseiller/ui/BandeauApercu';
-import { BadgeVerifie } from '@/features/profil-public/ui/BadgeVerifie';
-import { ProfilHero } from '@/features/profil-public/ui/ProfilHero';
+import { BandeauApercu, lireProfilApercuAction } from '@/features/profil-conseiller';
+import { BadgeVerifie, ProfilHero } from '@/features/profil-public';
 import { type Locale, toUrlLocale } from '@/i18n';
 import { redirect } from 'next/navigation';
 

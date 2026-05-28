@@ -3,7 +3,7 @@
 // noindex (Principe XII SEO — page privée par nature). Layout shadcn
 // minimal, formulaire Client SignupForm.
 
-import { SignupForm } from '@/features/auth/ui/SignupForm';
+import { SignupForm } from '@/features/auth';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 

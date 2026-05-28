@@ -1,7 +1,7 @@
 // Server Component /parametres/mfa/change-device (US6).
 
 import { auth } from '@/auth';
-import { DeviceChangeForm } from '@/features/mfa/ui/DeviceChangeForm';
+import { DeviceChangeForm } from '@/features/mfa';
 import { toUrlLocale } from '@/i18n';
 import { redirect } from 'next/navigation';
 

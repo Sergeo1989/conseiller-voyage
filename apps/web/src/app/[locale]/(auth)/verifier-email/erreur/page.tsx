@@ -4,7 +4,7 @@
 // est invalide, expiré, ou déjà consommé. Propose un renvoi de courriel
 // si l'utilisateur saisit son email.
 
-import { ResendCountdownButton } from '@/features/auth/ui/ResendCountdownButton';
+import { ResendCountdownButton } from '@/features/auth';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 

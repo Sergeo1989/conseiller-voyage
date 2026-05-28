@@ -1,6 +1,6 @@
 // Page /mot-de-passe-oublie — Server Component US5.
 
-import { PasswordResetRequestForm } from '@/features/auth/ui/PasswordResetRequestForm';
+import { PasswordResetRequestForm } from '@/features/auth';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 

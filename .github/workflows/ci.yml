@@ -56,6 +56,8 @@ jobs:
         run: pnpm exec tsx tools/check-no-contact-fields-profile.ts
       - name: Check anti-énumération profil (feature 007 — SC-003)
         run: pnpm exec tsx tools/check-anti-enum-profile.ts
+      - name: Check feature boundaries front (Principe VIII.a §6 — pas de deep cross-feature import)
+        run: pnpm exec tsx tools/check-feature-boundaries.ts
 
   test:
     name: Tests (Vitest unit + integration)

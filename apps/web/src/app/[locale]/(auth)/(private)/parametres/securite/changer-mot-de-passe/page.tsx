@@ -1,7 +1,7 @@
 // Page /parametres/securite/changer-mot-de-passe — US6.
 
 import { auth } from '@/auth';
-import { ChangePasswordForm } from '@/features/auth/ui/ChangePasswordForm';
+import { ChangePasswordForm } from '@/features/auth';
 import { toUrlLocale } from '@/i18n';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';

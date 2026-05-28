@@ -1,7 +1,7 @@
 // Page /admin/utilisateurs/nouveau — US7 invitation admin.
 
 import { auth } from '@/auth';
-import { InviteAdminForm } from '@/features/auth/ui/InviteAdminForm';
+import { InviteAdminForm } from '@/features/auth';
 import { toUrlLocale } from '@/i18n';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
