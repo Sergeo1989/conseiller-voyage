@@ -2,7 +2,7 @@
 
 **Input** : Design documents from `specs/002-voyageur-intake/`
 
-**Prerequisites** : spec.md (30 FRs, 5 US, 9 SC), plan.md, research.md (R1-R8), data-model.md (5 entités + 6 enums), contracts/http-endpoints.md (9 endpoints + 5 Server Actions + 4 outbox events), quickstart.md (10 scénarios)
+**Prerequisites** : spec.md (34 FRs post-clarify 2026-05-28, 5 US, 9 SC), plan.md, research.md (R1-R8), data-model.md (5 entités + 6 enums), contracts/http-endpoints.md (10 endpoints + 6 Server Actions + 4 outbox events), quickstart.md (10 scénarios)
 
 **Tests** : **OBLIGATOIRES** (constitution v2.3.0 Principe VI TDD + DoD complète : unit pure dans `packages/shared/intake/`, intégration Testcontainers `apps/api`, e2e Playwright + axe-core a11y bloquant + Lighthouse CI Principe XI/XII)
 
@@ -75,7 +75,14 @@
 - [ ] T024 [P] `apps/api/src/modules/intake/intake.module.ts` placeholder NestJS Module avec liste de providers vide (sera étendue par chaque US)
 - [ ] T025 Ajouter `IntakeModule` dans `apps/api/src/app.module.ts` (lazy : le module n'expose encore aucun controller)
 
-**Checkpoint** : Foundation prête — `pnpm --filter @cv/db prisma migrate dev` reproductible, `prisma.voyageurBrief` typé, schemas Zod partagés. Les user stories peuvent commencer en parallèle.
+### Rolling session cookie cross-cutting (FR-014a, Q5 clarify, C2)
+
+- [ ] T025a **(C2, TDD RED)** `apps/api/src/modules/intake/interface/http/__tests__/rolling-session-cookie.interceptor.test.ts` : tests unitaires NestJS de `RollingSessionCookieInterceptor` (mock `ExecutionContext`) — (a) requête sans cookie `__Host-cv.intake.token` → ne pose AUCUN Set-Cookie ; (b) requête avec cookie valide + handler retourne 200 → Set-Cookie posé avec `Max-Age=604800`, mêmes flags `HttpOnly/Secure/SameSite=Lax/Path=/` qu'à l'origine ; (c) handler retourne 4xx → PAS de renewal (anti-extension de session sur erreur) ; (d) handler annoté `@SkipRollingRenewal()` → PAS de renewal (utilisé sur POST `/erase-all-data` qui doit RÉVOQUER, pas renouveler).
+- [ ] T025b **(C2, TDD GREEN)** `apps/api/src/modules/intake/interface/http/rolling-session-cookie.interceptor.ts` : implémentation `NestInterceptor` global pour le module intake ; lit le cookie depuis `req.cookies` ; après `next.handle()`, si statut < 400 ET pas de décorateur `@SkipRollingRenewal()`, ajoute `res.cookie(name, value, { maxAge: 604800_000, httpOnly: true, secure: prod, sameSite: 'lax', path: '/' })` (en prod : préfixe `__Host-`).
+- [ ] T025c **(C2)** `apps/api/src/modules/intake/interface/http/skip-rolling-renewal.decorator.ts` : décorateur `@SkipRollingRenewal()` (Reflector metadata key `intake:skipRollingRenewal`)
+- [ ] T025d **(C2)** Wire `RollingSessionCookieInterceptor` dans `intake.module.ts` via `APP_INTERCEPTOR` (scoped au module, pas global app — Principe V frontières modulaires)
+
+**Checkpoint** : Foundation prête — `pnpm --filter @cv/db prisma migrate dev` reproductible, `prisma.voyageurBrief` typé, schemas Zod partagés, rolling cookie interceptor opérationnel. Les user stories peuvent commencer en parallèle.
 
 ---
 
@@ -140,16 +147,19 @@
 - [ ] T061 [P] [US1] `apps/web/src/features/intake/infrastructure/api-client.ts` : wrapper typé sur les endpoints `/api/intake/briefs*` (via `@/shared/lib/http`)
 - [ ] T062 [P] [US1] `apps/web/src/features/intake/actions/submit-brief.action.ts` : Server Action `'use server'`, validation Zod + forward NestJS, retourne `ActionResult<{ briefId; emailSent: boolean }>` typé
 - [ ] T063 [P] [US1] `apps/web/src/features/intake/actions/verify-magic-link.action.ts`
-- [ ] T064 [P] [US1] `apps/web/src/features/intake/ui/BriefFormWizard.tsx` : Client Component orchestrateur (RHF + zodResolver + useTransition), 5 étapes navigables Next/Back, état multi-étape côté client (localStorage pour reprise 24h), aria-live erreurs
+- [ ] T064 [P] [US1] `apps/web/src/features/intake/ui/BriefFormWizard.tsx` : Client Component orchestrateur (RHF + zodResolver + useTransition), 5 étapes navigables Next/Back, aria-live erreurs. **localStorage reprise 24h (Q3 clarify 2026-05-28)** : key `intake:draft:v1`, payload = **5 étapes intégrales PII comprise** (destinations, dates, groupe, budget, langue, spécialité, familiarité, contact prénom/nom/email/téléphone/code postal — PAS le consentGiven qui doit être re-coché à chaque tentative), TTL 24h via timestamp dans le payload (lecture rejette si > 24h), auto-clear à `submit` réussi (status 201/429/422), auto-clear à `verify-magic-link` réussi (logout équivalent), hors scope Loi 25 (stockage device voyageur, pas serveur) — clause « stockage local côté client » dans politique de confidentialité (feature 004)
 - [ ] T065 [P] [US1] `apps/web/src/features/intake/ui/BriefStep1Destination.tsx` : autocomplete pays (liste canonique embedded), multi-stop
 - [ ] T066 [P] [US1] `apps/web/src/features/intake/ui/BriefStep2Dates.tsx` : datepicker accessible, toggle flexible + slider amplitude
 - [ ] T067 [P] [US1] `apps/web/src/features/intake/ui/BriefStep3Groupe.tsx` : compteurs adultes/enfants/bébés + ages enfants
 - [ ] T068 [P] [US1] `apps/web/src/features/intake/ui/BriefStep4Preferences.tsx` : radio budget, multi-select langue + spécialité (avec "autre + texte"), radio familiarité
 - [ ] T069 [P] [US1] `apps/web/src/features/intake/ui/BriefStep5ContactConsentement.tsx` : champs PII + case Loi 25 non pré-cochée (FR-010)
-- [ ] T070 [P] [US1] `apps/web/src/features/intake/ui/EmailSentNotice.tsx` : page après soumission
-- [ ] T071 [P] [US1] `apps/web/src/features/intake/index.ts` : barrel publiant `BriefFormWizard`, `EmailSentNotice`, `submitBriefAction`, `verifyMagicLinkAction`, types
-- [ ] T072 [US1] `apps/web/src/app/[locale]/(public)/voyage/nouveau/page.tsx` : Server Component MINCE qui rend `<BriefFormWizard />` ; metadata + JSON-LD `WebPage`
-- [ ] T073 [US1] `apps/web/src/app/[locale]/(public)/voyage/email-envoye/page.tsx` : rend `<EmailSentNotice />`
+- [ ] T070 [P] [US1] `apps/web/src/features/intake/ui/EmailSentNotice.tsx` : Client Component affiché après `submitBriefAction` succès (statut 201). **UX countdown FR-013a (Q1 clarify)** : (1) message principal *« Vérifiez votre courriel <email> »* + sous-titre discret *« Il peut y avoir un léger délai »* (FR-013a 5xx SES) ; (2) bouton *« Je n'ai rien reçu — renvoyer un lien »* **disabled** au premier rendu ; (3) compteur visible 120s côté client (`useEffect` + `setInterval`, libellé *« Disponible dans Xs »*) ; (4) bouton **enabled** à t=120s, libellé devient *« Renvoyer le lien »* ; (5) clic appelle `resendMagicLinkAction(email)` puis remet le compteur à zéro et redisable le bouton 120s ; (6) `aria-live="polite"` annonce le compteur final à 0 pour lecteurs d'écran ; (7) bouton désactivé reste focusable mais `aria-disabled="true"` + tooltip *« Veuillez patienter Xs »*. Imports via barrel `@/features/intake`.
+- [ ] T070b [P] [US1] `apps/web/src/features/intake/ui/MagicLinkExpiredNotice.tsx` (FR-015, H4) : Client Component pour la page `/voyage/lien-expire` — input email + bouton *« Renvoyer un nouveau lien »* → `resendMagicLinkAction` ; affiche un message générique de succès 202 (anti-énumération email)
+- [ ] T071 [P] [US1] `apps/web/src/features/intake/index.ts` : barrel publiant `BriefFormWizard`, `EmailSentNotice`, `MagicLinkExpiredNotice`, `submitBriefAction`, `verifyMagicLinkAction`, `resendMagicLinkAction`, types
+- [ ] T072 [US1] `apps/web/src/app/[locale]/(public)/voyage/nouveau/page.tsx` : Server Component MINCE qui rend `<BriefFormWizard />` ; **import UNIQUEMENT via le barrel** `import { BriefFormWizard } from '@/features/intake'` (jamais `@/features/intake/ui/BriefFormWizard` — Principe VIII.a §6) ; metadata + JSON-LD `WebPage`
+- [ ] T073 [US1] `apps/web/src/app/[locale]/(public)/voyage/email-envoye/page.tsx` : rend `<EmailSentNotice />` via barrel `@/features/intake`
+- [ ] T073b [US1] **(H4)** `apps/web/src/app/[locale]/(public)/voyage/lien-expire/page.tsx` : Server Component MINCE → `<MagicLinkExpiredNotice />` via barrel `@/features/intake` ; metadata `noindex` (page d'erreur, pas de valeur SEO) ; déclenchée par redirection depuis `/voyage/[token]` quand `verify-magic-link` retourne 401
+- [ ] T073c [P] [US1] **(H4)** `apps/web/src/features/intake/actions/resend-magic-link.action.ts` : Server Action `'use server'`, Zod parse `{ email }`, forward POST `/api/intake/briefs/:id/resend-magic-link`, retourne `ActionResult<{ status: 'sent_or_email_not_found' }>` (réponse uniforme 202 — anti-énumération)
 - [ ] T074 [US1] `apps/web/src/app/[locale]/(public)/layout.tsx` : déjà présent (#17) — vérifier que SEO indexable (pas de noindex) car page entrée funnel
 
 ### Tests e2e + a11y US1
@@ -183,14 +193,15 @@
 - [ ] T085 [P] [US2] `apps/web/src/features/intake/ui/BriefStatusBadge.tsx` : badge couleur par statut (pending/active/matched/expired/deleted) avec contraste ≥ 4.5:1
 - [ ] T086 [P] [US2] `apps/web/src/features/intake/ui/OtherBriefsLink.tsx` : link FR-017 "Voir mes autres briefs"
 - [ ] T087 [US2] `apps/web/src/app/[locale]/(voyageur)/layout.tsx` : nouveau route group, metadata `noindex` (page privée magic link)
-- [ ] T088 [US2] `apps/web/src/app/[locale]/(voyageur)/voyage/[token]/page.tsx` : Server Component MINCE → `<BriefRecap />`
-- [ ] T089 [US2] `apps/web/src/app/[locale]/(voyageur)/voyage/mes-briefs/page.tsx` : liste briefs du même contact (FR-017)
+- [ ] T088 [US2] `apps/web/src/app/[locale]/(voyageur)/voyage/[token]/page.tsx` : Server Component MINCE → `<BriefRecap />` via barrel `@/features/intake`
+- [ ] T089 [US2] `apps/web/src/app/[locale]/(voyageur)/voyage/mes-briefs/page.tsx` : liste briefs du même contact (FR-017) ; composants via barrel `@/features/intake`
 - [ ] T090 [US2] Exporter `BriefRecap`, `BriefStatusBadge`, `OtherBriefsLink` depuis `features/intake/index.ts`
 
 ### Tests US2
 
-- [ ] T091 [P] [US2] **[TDD intégration]** `apps/api/src/modules/intake/interface/http/__tests__/view-brief-status.integration.test.ts` : Testcontainers
-- [ ] T092 [P] [US2] `apps/web/test/e2e/intake-view-status.spec.ts` : Playwright avec cookie posé
+- [ ] T091 [P] [US2] **[TDD intégration]** `apps/api/src/modules/intake/interface/http/__tests__/view-brief-status.integration.test.ts` : Testcontainers. **Assertions rolling renewal FR-014a (Q5, C2)** : (a) 1ère visite récap → Set-Cookie présent avec `Max-Age=604800` ; (b) visite 6 jours plus tard → Set-Cookie présent, nouveau Max-Age recalculé à partir de t6 (donc cookie expire à t6+7j, pas t0+7j) ; (c) 8 jours sans visite après dernier renewal → 401 sur visite suivante (cookie expiré, navigateur ne l'envoie plus) ; (d) GET 404 sur briefId inexistant → PAS de renewal (statut ≥ 400).
+- [ ] T091b [P] [US2] **(C2)** `apps/api/src/modules/intake/interface/http/__tests__/list-briefs-by-email.integration.test.ts` : mêmes assertions rolling renewal sur GET `/api/intake/briefs/by-email`.
+- [ ] T092 [P] [US2] `apps/web/test/e2e/intake-view-status.spec.ts` : Playwright avec cookie posé ; assert que `document.cookie` montre `Max-Age` renouvelé après visite récap (via parse de la valeur ou en interceptant la response header `Set-Cookie`).
 - [ ] T093 [P] [US2] `apps/web/test/a11y/intake-recap.spec.ts` : axe-core sur récap + page mes-briefs
 
 **Checkpoint US2** : récap brief accessible, listing par email fonctionnel.
@@ -211,12 +222,13 @@
 - [ ] T097 [P] [US3] **[TDD GREEN]** Compléter `disposable-email-checker.ts`
 - [ ] T098 [US3] `apps/api/src/modules/intake/infrastructure/jobs/intake-disposable-emails-refresh.job.ts` : BullMQ cron 7 jours (R3) — fetch GitHub raw → set Redis key `intake:disposable-emails` (TTL 30j) → fallback snapshot embedded si fetch échoue
 - [ ] T099 [P] [US3] `packages/shared/src/intake/disposable-emails-snapshot.json` : snapshot v1 (régénéré au build, embedded en fallback)
-- [ ] T100 [US3] Étendre Throttler du `voyageur-intake.controller.ts` POST avec décorateur `@IntakeRateLimit(emailScoped: '3/24h', ipScoped: '5/24h')`
+- [ ] T100 [US3] Étendre Throttler du `voyageur-intake.controller.ts` POST avec décorateur `@IntakeRateLimit(emailScoped: '3/24h', ipScoped: '5/24h')`. **Ordre d'évaluation FR-020a (Q2 clarify) : email-first, IP-second** — si l'email hit la limite, retourner immédiatement `429` + `{ code: 'EMAIL_RATE_LIMIT_EXCEEDED', retryAfter: <s>, message: ... }` + header `Retry-After: <s>` (favorise l'utilisateur légitime, message FR-CA actionnable). Sinon, si l'IP hit la limite, retourner `429` + `{ code: 'RATE_LIMIT_EXCEEDED', message: <neutre> }` **sans** `retryAfter` ni header `Retry-After` (anti-énumération bot). Logger `intake_brief_abuse_blocked_total{reason="rate_limit_email"|"rate_limit_ip"}` selon le code émis.
 
 ### Tests US3
 
-- [ ] T101 [P] [US3] `apps/api/test/integration/intake/multi-briefs.spec.ts` : Testcontainers — 3 briefs OK, 4e refusé, message FR-CA précis
+- [ ] T101 [P] [US3] `apps/api/test/integration/intake/multi-briefs.spec.ts` : Testcontainers — 3 briefs OK, 4e refusé. **Assertions explicites FR-020a (Q2)** : (a) 4e brief même email → 429 + body `{ code: 'EMAIL_RATE_LIMIT_EXCEEDED', retryAfter: number, message: string }` + header `Retry-After` ; (b) 6e brief même IP (emails différents, IP identique) → 429 + body neutre `{ code: 'RATE_LIMIT_EXCEEDED', message: string }` SANS `retryAfter` ni header ; (c) hit simultané email+IP → reçoit `EMAIL_RATE_LIMIT_EXCEEDED` (ordre eval email-first).
 - [ ] T102 [P] [US3] `apps/api/test/integration/intake/disposable-emails.spec.ts` : 4 emails jetables connus → 422 avec code `DISPOSABLE_EMAIL_DETECTED`
+- [ ] T102b [P] [US1] **(H2)** `apps/web/test/unit/intake/EmailSentNotice.test.tsx` : Vitest+RTL — bouton « renvoyer » disabled à t=0, compteur décroit, `aria-disabled="true"`, enabled à t=120s, clic relance compteur. Mock `setInterval` via `vi.useFakeTimers()`.
 
 **Checkpoint US3** : multi-briefs avec rate-limit, disposable emails filtrés.
 
@@ -250,7 +262,21 @@
 - [ ] T114 [P] [US4] `apps/web/test/a11y/intake-erasure-form.spec.ts` : axe-core sur `<ErasureForm />` (focus trap Dialog)
 - [ ] T115 [P] [US4] **Test invariant SC-008** : `apps/api/test/integration/intake/sc-008-erasure-latency.spec.ts` — mesure latence entre POST erasure-request et nullification PII < 60s
 
-**Checkpoint US4** : effacement Loi 25 fonctionnel < 60s, audit append-only, brief neutre post-suppression.
+### Effacement global contact + tous briefs (FR-022a, Q4 clarify, C1)
+
+- [ ] T115a [P] [US4] **(C1, TDD RED)** `apps/api/src/modules/intake/application/use-cases/__tests__/erase-all-voyageur-data.use-case.test.ts` : cas nominal (contact + 3 briefs nullifiés en 1 transaction), confirmation incorrecte → refus, `acknowledgedBriefCount` stale → refus (anti-race condition UI), 2e appel idempotent (déjà supprimé → 409), audit `intake.contact.erase_all_requested` créée, événement `voyageur.brief.deleted` émis pour chaque brief affecté
+- [ ] T115b [P] [US4] **(C1, TDD GREEN)** `apps/api/src/modules/intake/application/use-cases/erase-all-voyageur-data.use-case.ts` : valide phrase exacte (`JE_CONFIRME_LA_SUPPRESSION_DE_TOUTES_MES_DONNEES`), valide `acknowledgedBriefCount === currentActiveBriefCount`, enqueue `IntakeAnonymizeAllJob` BullMQ (cascade contact + briefs en 1 transaction Prisma)
+- [ ] T115c [P] [US4] **(C1)** `apps/api/src/modules/intake/infrastructure/jobs/intake-anonymize-all-loi25.job.ts` : worker BullMQ idempotent — `applyAnonymisation()` sur VoyageurContact + tous `VoyageurBrief.status='deleted'` du contact + outbox `voyageur.brief.deleted` × N + audit `intake.contact.erase_all_completed` ; idempotence via lock Redis sur `contactId`
+- [ ] T115d [US4] **(C1 + C2)** Étendre `voyageur-intake.controller.ts` avec POST `/api/intake/voyageur/erase-all-data` — auth cookie voyageur, rate-limit `2/24h/contact`, **annoté `@SkipRollingRenewal()`** (T025c), retourne payload `{ status, contactId, briefsAffectedCount, message, estimatedCompletionSeconds }` + `Set-Cookie: __Host-cv.intake.token=; Max-Age=0; Path=/` (révoque la session — opération terminale, cf. contracts/http-endpoints.md §1 dernier endpoint)
+- [ ] T115e [P] [US4] **(C1)** `apps/web/src/features/intake/actions/erase-all-voyageur-data.action.ts` : Server Action `'use server'`, valide Zod `{ confirmation, acknowledgedBriefCount }`, forward au NestJS, retourne `ActionResult<{ briefsAffectedCount: number }>` ; sur succès, `cookies().delete('__Host-cv.intake.token')` côté serveur (défense en profondeur, le NestJS l'a déjà révoqué)
+- [ ] T115f [P] [US4] **(C1)** `apps/web/src/features/intake/ui/EraseAllDataForm.tsx` : Client Component (RHF) — affiche le **nombre de briefs concernés** (passé en prop depuis le RSC parent qui a fait le GET by-email), input `confirmation` text, bouton désactivé tant que phrase ≠ exacte, message `aria-live` annonce *« Cette action est irréversible et supprimera N briefs »*
+- [ ] T115g [US4] **(C1)** `apps/web/src/app/[locale]/(voyageur)/voyage/mes-donnees/effacer-tout/page.tsx` : Server Component — lit le contactId via cookie, GET `/api/intake/briefs/by-email` pour récupérer le count actuel, rend `<EraseAllDataForm activeBriefCount={N} />` ; metadata `noindex`, h1 *« Effacer toutes mes données »*
+- [ ] T115h [US4] **(C1)** `apps/web/src/app/[locale]/(voyageur)/voyage/mes-donnees/effacee/page.tsx` : page de confirmation post-effacement global (statique, FR-CA, pas d'exposition PII, lien retour `/voyage/nouveau`)
+- [ ] T115i [P] [US4] **(C1, TDD intégration)** `apps/api/src/modules/intake/interface/http/__tests__/erase-all-data.integration.test.ts` : Testcontainers Postgres + Redis — golden path, race condition stale count, cookie révoqué dans la réponse, idempotence si 2e appel après succès
+- [ ] T115j [P] [US4] **(C1)** `apps/web/test/e2e/intake-erase-all-data.spec.ts` : Playwright — soumet 2 briefs, vérifie email, navigue `/voyage/mes-donnees/effacer-tout`, type phrase exacte, confirme, asserte `mes-donnees/effacee` affichée + cookie `__Host-cv.intake.token` absent dans `document.cookie`
+- [ ] T115k [P] [US4] **(C1)** `apps/web/test/a11y/intake-erase-all-form.spec.ts` : axe-core sur `<EraseAllDataForm />` — zéro violation serious/critical
+
+**Checkpoint US4** : effacement Loi 25 brief seul (FR-022) **et** global contact + tous briefs (FR-022a) fonctionnels < 60s, audit append-only, brief neutre post-suppression, session révoquée sur erase-all.
 
 ---
 
@@ -275,8 +301,8 @@
 - [ ] T123 [P] [US5] `apps/web/src/features/intake-admin/ui/AdminBriefDetail.tsx` : Server Component — affiche brief + PII contact + bouton push manuel
 - [ ] T124 [P] [US5] `apps/web/src/features/intake-admin/ui/PushToConseillerForm.tsx` : Client Component (RHF) avec autocomplete conseiller vérifié (via `ConformiteQueryFacade`), motif texte 20-500 chars, Idempotency-Key auto-généré
 - [ ] T125 [P] [US5] `apps/web/src/features/intake-admin/index.ts` : barrel
-- [ ] T126 [US5] `apps/web/src/app/[locale]/(admin)/admin/intake/non-matche/page.tsx` : Server Component MINCE → `<UnmatchedBriefsTable />`
-- [ ] T127 [US5] `apps/web/src/app/[locale]/(admin)/admin/intake/[briefId]/page.tsx` : MINCE → `<AdminBriefDetail />`
+- [ ] T126 [US5] `apps/web/src/app/[locale]/(admin)/admin/intake/non-matche/page.tsx` : Server Component MINCE → `<UnmatchedBriefsTable />` via barrel `@/features/intake-admin`
+- [ ] T127 [US5] `apps/web/src/app/[locale]/(admin)/admin/intake/[briefId]/page.tsx` : MINCE → `<AdminBriefDetail />` via barrel `@/features/intake-admin`
 
 ### Tests US5
 
@@ -315,7 +341,10 @@
 
 - [ ] T141 [P] `apps/api/src/cli/scan-intake-completion.ts` : CLI mesure SC-001 (% voyageurs qui complètent les 5 étapes) + SC-002 (temps médian)
 - [ ] T142 [P] `apps/api/src/cli/scan-intake-quality.ts` : CLI mesure SC-003 (% briefs avec budget) + SC-004 (% briefs avec langue conseiller)
-- [ ] T143 [P] `.github/workflows/scan-intake-adoption.yml` : workflow cron hebdo (lundi 9h UTC) consommant les 2 CLIs, JSON dans `docs/dashboards/intake-adoption.json` (skip tant que `vars.PRODUCTION_DEPLOYED != 'true'`)
+- [ ] T142a [P] **(M5)** `apps/api/src/cli/scan-intake-validation-errors.ts` : CLI mesure **SC-005** (% soumissions rejetées validation Zod / total soumissions, par champ fautif) — lit `intake_brief_rejected_validation_total{field=...}` via Prom / OTel collector ou requête DB sur `intake_audit_entries WHERE action='brief.validation_failed'`
+- [ ] T142b [P] **(M5)** `apps/api/src/cli/scan-intake-magic-link-verification.ts` : CLI mesure **SC-006** (% voyageurs qui cliquent le magic link dans 24h / total briefs soumis) — diff `VoyageurBrief.verifiedAt - submittedAt < 24h` / count total
+- [ ] T142c [P] **(M5)** `apps/api/src/cli/scan-intake-abuse-rate.ts` : CLI mesure **SC-007** (% briefs marqués spam/jetables/bot via marquage manuel hebdo OU détection auto) — lit `intake_brief_abuse_blocked_total{reason=...}` + colonne `VoyageurBrief.abuseMarkedAt` (à ajouter en T012 si pas déjà présent)
+- [ ] T143 [P] `.github/workflows/scan-intake-adoption.yml` : workflow cron hebdo (lundi 9h UTC) consommant les **5 CLIs (T141, T142, T142a, T142b, T142c)**, JSON dans `docs/dashboards/intake-adoption.json` (skip tant que `vars.PRODUCTION_DEPLOYED != 'true'`) ; chaque CLI rapporte la métrique + un statut `OK | WARNING | ALERT` selon seuils (SC-005 ≤ 5% / SC-006 ≥ 70% / SC-007 ≤ 3%)
 
 ### A11y + Lighthouse + perf
 
@@ -418,14 +447,14 @@ Avec 2-3 devs :
 À cocher dans la PR finale :
 
 - [ ] **I — Conformité OPC/TICO** : aucun champ paiement / réservation / versement dans le brief (cf. T012, T020, audit code). Anti-marketplace : brief ne contient pas de mention de conseiller spécifique avant push admin (US5 séparé, traçable).
-- [ ] **II — Vie privée / Loi 25** : PII isolée dans `VoyageurContact` (T035) ; effacement < 60s (T103-T107, SC-008 invariant T115) ; rétention J+90 (T131, FR-024) ; émail hashé post-anonymisation (data-model §VoyageurContact).
+- [ ] **II — Vie privée / Loi 25** : PII isolée dans `VoyageurContact` (T035) ; effacement brief seul < 60s (T103-T107, SC-008 invariant T115) ; **effacement global contact + tous briefs (FR-022a)** (T115a-T115k) ; rétention J+90 (T131, FR-024) ; rolling cookie 7j d'inactivité maximum (T025a-T025d, FR-014a) ; émail hashé post-anonymisation (data-model §VoyageurContact).
 - [ ] **III — Qualité de lead** : brief structuré 9 dimensions (différenciateur positioning.md) ; rate-limit anti-spam (FR-019/020, T094-T102) ; magic link 2-step (anti-bot, FR-013).
 - [ ] **IV — Français d'abord** : i18n FR-CA premier + EN J1 (T059, FR-029) ; formats canadiens (postal code, monnaie CAD).
 - [ ] **V — Monolithe modulaire** : module `intake` séparé `apps/api/src/modules/intake/` ; tables Prisma préfixées `intake_*` ; audit log séparé (T014, ADR-0017 T135) ; `tools/check-module-boundaries.ts` vert.
 - [ ] **VI — TDD strict** : tests RED → GREEN visibles dans git log pour T026-T043 (VO/services), T044-T047 (use cases), T078-T081, T103-T104, T116-T119.
-- [ ] **VII — Observabilité boucle économique** : CLIs scan-intake-completion/quality + workflow scan hebdo (T141-T143) préfigurent SC-001/002/003/004/005/006 vers feature 021.
+- [ ] **VII — Observabilité boucle économique** : CLIs scan-intake-completion/quality/validation-errors/magic-link-verification/abuse-rate + workflow scan hebdo (T141-T143) couvrent SC-001/002/003/004/005/006/007 (vers feature 021).
 - [ ] **VIII — Clean Architecture + VIII.a** : 4 couches API (T023, T026-T057) ; feature slicing front `features/intake/` + `features/intake-admin/` (T060-T071, T121-T125) ; Server Actions normalisées `<verbe>.action.ts` ; pages `app/` minces (T072, T088, T126) ; `tools/check-feature-boundaries.ts` vert.
-- [ ] **IX — Sécurité applicative** : RBAC admin (T120) ; Zod côté serveur (T020, T056) ; CSRF + ThrottlerGuard + IdempotencyInterceptor hérités 001 ; magic link random DB (R1) ; cookie `__Host-cv.intake.token` strict HTTPS prod ; rotation secret documentée (T138).
+- [ ] **IX — Sécurité applicative** : RBAC admin (T120) ; Zod côté serveur (T020, T056) ; CSRF + ThrottlerGuard + IdempotencyInterceptor hérités 001 ; magic link random DB (R1) ; cookie `__Host-cv.intake.token` strict HTTPS prod + rolling renewal 7j (T025a-T025d) + révocation explicite sur erase-all (T115d `@SkipRollingRenewal()`) ; 2 codes 429 distincts anti-énumération (T100, FR-020a) ; rotation secret documentée (T138).
 - [ ] **X — Fiabilité et résilience** : outbox transactionnel (T054) ; idempotence Anonymize (T107) + Push manuel (T119) ; magic link retry SES (T133) ; expiration sweep idempotent (T131).
 - [ ] **XI — Accessibilité WCAG 2.1 AA** : axe-core CI bloquant (T076, T093, T114, T129, T146) ; clavier-only test invariant SC-009 (T146) ; aria-live erreurs Zod (T064).
 - [ ] **XII — SEO** : `/voyage/nouveau` indexable (T072, T074) ; metadata + JSON-LD (T084) ; Lighthouse CI étendu (T144) ; LCP < 2.0s cible (T145).

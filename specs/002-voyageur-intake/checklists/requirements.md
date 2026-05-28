@@ -32,11 +32,12 @@
 ## Notes
 
 - 5 user stories prioritisées P1 / P2 / P3.
-- 30 functional requirements (FR-001 à FR-030) regroupés par thème :
-  capture brief (P1), vérification email/statut (P1-P2), multi-briefs +
-  anti-spam (P2), Loi 25 + rétention (P3), file admin (P3), i18n + a11y.
-- 4 entités clé identifiées : VoyageurBrief, VoyageurContact,
-  MagicLinkToken, BriefAuditEntry.
+- 34 functional requirements (FR-001 à FR-030 + FR-013a, FR-014a, FR-020a,
+  FR-022a post-clarify 2026-05-28) regroupés par thème : capture brief
+  (P1), vérification email/statut (P1-P2), multi-briefs + anti-spam (P2),
+  Loi 25 + rétention (P3), file admin (P3), i18n + a11y.
+- 5 entités clé identifiées : VoyageurBrief, VoyageurContact,
+  MagicLinkToken, IntakeAuditEntry, IntakeOutboxEntry.
 - 9 success criteria mesurables, dont 5 directement issues du positioning
   document (vs Mon Voyage Mon Agence).
 - 8 assumptions documentées, dont 3 décisions clés : 2-step email

@@ -63,10 +63,10 @@ observabilité OTel + Sentry self-hosted, BullMQ pour les jobs background.
 - **Pas de compte permanent voyageur** : magic link J+7 suffit, feature future identité voyageur permanente ajoutera passkey/email optionnel plus tard
 
 **Scale/Scope**:
-- 5 user stories (spec.md US1-US5), 30 functional requirements
-- 4 entités principales (VoyageurBrief, VoyageurContact, MagicLinkToken, BriefAuditEntry)
-- ~12 endpoints HTTP (création, vérification magic link, suivi statut, effacement, liste briefs même email, admin file non-matché)
-- ~6 pages frontend (formulaire 5 étapes, page récap, page email-sent, page magic-link-error, page deletion-confirmed, page admin file)
+- 5 user stories (spec.md US1-US5), 34 functional requirements (post-clarify 2026-05-28)
+- 5 entités principales : VoyageurBrief, VoyageurContact, MagicLinkToken, IntakeAuditEntry, IntakeOutboxEntry (cf. data-model.md)
+- 10 endpoints HTTP (POST /briefs, POST /briefs/verify, POST /:id/resend-magic-link, GET /:briefId, GET /by-email, POST /:briefId/erasure-request, POST /erase-all-data (FR-022a), GET /admin/unmatched, GET /admin/briefs/:briefId, POST /admin/briefs/:briefId/push-manual) — détaillés dans contracts/http-endpoints.md
+- ~7 pages frontend (formulaire 5 étapes, page récap, page email-sent, page lien-expire, page deletion-confirmed, page erase-all-data, page admin file)
 
 Volume année 1 (vs MVMA — calibrage roadmap.md) :
 - 100 briefs / mois M1 → 2000 briefs / mois M18

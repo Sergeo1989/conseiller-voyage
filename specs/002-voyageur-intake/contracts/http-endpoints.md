@@ -1,8 +1,8 @@
 # Phase 1 — HTTP Contracts : Module Intake
 
-**Branch**: `002-voyageur-intake` | **Date**: 2026-05-25 | **Plan**: [plan.md](./plan.md) | **Data Model**: [data-model.md](../data-model.md)
+**Branch**: `002-voyageur-intake` | **Date**: 2026-05-25 (révisé 2026-05-28 post-clarify Q1-Q5) | **Plan**: [plan.md](../plan.md) | **Data Model**: [data-model.md](../data-model.md)
 
-12 endpoints HTTP côté NestJS + 5 Server Actions Next.js.
+10 endpoints HTTP côté NestJS + 6 Server Actions Next.js + 4 outbox events.
 
 Convention :
 - Tous les endpoints retournent JSON
@@ -58,10 +58,32 @@ Convention :
   ```json
   { "briefId": "uuid", "status": "pending_verification", "emailSent": true }
   ```
+  Note FR-013a (Q1) : si SES échoue (5xx/throttle/timeout), retour reste `201` avec `emailSent: false` ;
+  l'envoi est enqueué BullMQ retry exponentiel (5 tentatives, 30s → 30min).
 - `400 Bad Request` : validation Zod fail (FR-011)
-- `429 Too Many Requests` : rate-limit dépassé (FR-019/020)
+- `429 Too Many Requests` — **deux codes distincts** (Q2 clarify + FR-019/020/020a, ordre d'éval **email-first, IP-second**) :
+  - `EMAIL_RATE_LIMIT_EXCEEDED` (FR-019) :
+    ```json
+    {
+      "code": "EMAIL_RATE_LIMIT_EXCEEDED",
+      "retryAfter": 43200,
+      "message": "Vous avez soumis 3 briefs sur cette adresse en 24 h. Réessayez dans X heures ou utilisez une autre adresse courriel."
+    }
+    ```
+    Header HTTP `Retry-After: 43200` également présent (RFC 7231).
+  - `RATE_LIMIT_EXCEEDED` (FR-020) — body **neutre** anti-énumération bot :
+    ```json
+    {
+      "code": "RATE_LIMIT_EXCEEDED",
+      "message": "Votre demande ne peut être traitée actuellement, veuillez réessayer plus tard."
+    }
+    ```
+    **Pas** de `retryAfter` (anti-énumération), **pas** de header `Retry-After`.
 - `409 Conflict` : Idempotency-Key déjà utilisée pour un autre payload
 - `422 Unprocessable Entity` : email jetable détecté (FR-021)
+  ```json
+  { "code": "DISPOSABLE_EMAIL_DETECTED", "message": "Cette adresse semble temporaire. ..." }
+  ```
 
 ---
 
@@ -82,7 +104,10 @@ Convention :
   ```json
   { "briefId": "uuid", "status": "active", "expiresAt": "ISO 8601" }
   ```
-  Set-Cookie: `__Host-cv.intake.token=<view_brief_status_token>; Max-Age=604800; HttpOnly; Secure; SameSite=Lax; Path=/`
+  **Set-Cookie (FR-014a)** :
+  - Prod HTTPS : `__Host-cv.intake.token=<opaque_session_token>; Max-Age=604800; HttpOnly; Secure; SameSite=Lax; Path=/`
+  - Dev HTTP : `cv.intake.session=<opaque_session_token>; Max-Age=604800; HttpOnly; SameSite=Lax; Path=/`
+  - **Rolling renewal (Q5 clarify)** : chaque visite ultérieure à une route protégée par ce cookie (GET `/api/intake/briefs/:briefId`, GET `/api/intake/briefs/by-email`) **DOIT** rejouer le `Set-Cookie` avec un `Max-Age=604800` recalculé à partir de l'instant de la réponse. 7 jours d'inactivité → cookie expire → l'utilisateur doit demander un nouveau magic link via `/api/intake/briefs/:id/resend-magic-link`. Implémenté côté NestJS via `RollingSessionCookieInterceptor` (cf. tasks.md C2).
 - `400 Bad Request` : token mal formé
 - `401 Unauthorized` : token expiré ou déjà consommé
 - `410 Gone` : brief déjà anonymisé
@@ -113,6 +138,7 @@ Convention :
 
 **Auth** : cookie `__Host-cv.intake.token` correspondant au briefId, OU `__Host-cv.session.token` admin.
 **Rate-limit** : `60/min/IP`.
+**Rolling renewal** : si auth via cookie voyageur, la réponse 200 **DOIT** rejouer `Set-Cookie` avec `Max-Age=604800` (FR-014a, Q5 clarify, `RollingSessionCookieInterceptor`).
 
 **Réponses** :
 - `200 OK` :
@@ -135,7 +161,8 @@ Convention :
     "matchedConseillersCount": 0
   }
   ```
-- `401 Unauthorized` : pas de cookie valide
+  Set-Cookie : rolling renewal (voir ci-dessus).
+- `401 Unauthorized` : pas de cookie valide (cookie absent OU expiré post-7j d'inactivité)
 - `404 Not Found` : briefId inexistant
 - `410 Gone` : brief anonymisé
 
@@ -147,6 +174,7 @@ Convention :
 
 **Auth** : cookie `__Host-cv.intake.token` valide (extrait le contactId du token).
 **Rate-limit** : `30/min/IP`.
+**Rolling renewal** : la réponse 200 **DOIT** rejouer `Set-Cookie` avec `Max-Age=604800` (FR-014a, Q5 clarify, `RollingSessionCookieInterceptor`).
 
 **Réponses** :
 - `200 OK` :
@@ -158,7 +186,8 @@ Convention :
     ]
   }
   ```
-- `401 Unauthorized`
+  Set-Cookie : rolling renewal (voir ci-dessus).
+- `401 Unauthorized` : cookie absent OU expiré post-7j d'inactivité.
 
 ---
 
@@ -183,6 +212,42 @@ Convention :
 - `400 Bad Request` : confirmation incorrecte
 - `404 Not Found`
 - `409 Conflict` : déjà supprimé
+
+---
+
+### POST `/api/intake/voyageur/erase-all-data`
+
+**Description** : Demande l'effacement **global** — contact + tous les briefs du voyageur (FR-022a, Q4 clarify). Confirmation par typage exact d'une phrase distincte de FR-022.
+
+**Auth** : cookie `__Host-cv.intake.token` valide (dérive `contactId`).
+**Rate-limit** : `2/24h/contact` (suffisant — opération irréversible).
+**Rolling renewal** : NON applicable (opération destructive ; ne pas étendre la session).
+
+**Request body (Zod `ErasureRequestAllSchema`)** :
+```ts
+{
+  confirmation: 'JE_CONFIRME_LA_SUPPRESSION_DE_TOUTES_MES_DONNEES',
+  acknowledgedBriefCount: number  // doit matcher le nombre de briefs actifs côté serveur (anti-stale UI)
+}
+```
+
+**Réponses** :
+- `200 OK` :
+  ```json
+  {
+    "status": "pending",
+    "contactId": "uuid",
+    "briefsAffectedCount": 3,
+    "message": "Vos données seront effacées dans la minute. Une confirmation vous sera envoyée par courriel à <email>.",
+    "estimatedCompletionSeconds": 60
+  }
+  ```
+  Set-Cookie : `__Host-cv.intake.token=; Max-Age=0; Path=/` (révocation immédiate de la session ; le voyageur n'a plus rien à consulter).
+- `400 Bad Request` : confirmation incorrecte OU `acknowledgedBriefCount` ne matche pas le nombre réel (l'UI doit re-fetch et re-confirmer)
+- `401 Unauthorized` : pas de cookie
+- `409 Conflict` : effacement déjà en cours pour ce contact
+
+Émet l'événement `voyageur.brief.deleted` pour **chaque** brief affecté (réutilise le payload existant) + entrée audit dédiée `intake.contact.erase_all_requested`.
 
 ---
 
@@ -265,6 +330,7 @@ même validation Zod côté serveur + forward au NestJS via `apiClient`.
 | `verifyMagicLinkAction(token)` | `/voyage/[token]` | POST `/api/intake/briefs/verify` |
 | `resendMagicLinkAction(email)` | `/voyage/lien-expire` | POST `/api/intake/briefs/:id/resend-magic-link` |
 | `requestBriefErasureAction(briefId, confirmation)` | `/voyage/[token]` (form effacement) | POST `/api/intake/briefs/:id/erasure-request` |
+| `eraseAllVoyageurDataAction(confirmation, ackCount)` (FR-022a, Q4) | `/voyage/mes-donnees/effacer-tout` | POST `/api/intake/voyageur/erase-all-data` |
 | `adminPushBriefManualAction(briefId, conseillerId, reason)` | `/admin/intake/[briefId]` | POST `/api/intake/admin/briefs/:id/push-manual` |
 
 Chaque Server Action :

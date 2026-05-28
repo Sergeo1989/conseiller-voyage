@@ -445,10 +445,18 @@ le push lui-même est partie de la feature matching (ID roadmap 011)).
   (J+7 par défaut), un statut *unused / consumed / expired*. Un nouveau
   token est généré à chaque renvoi de magic link.
 
-- **BriefAuditEntry** : Entrée d'audit append-only de toute action sur un
+- **IntakeAuditEntry** : Entrée d'audit append-only de toute action sur un
   brief (création, vérification email, modification statut, effacement,
   push admin manuel). Réutilise le mécanisme audit append-only de la
-  feature 001 (Principe X-fiabilité).
+  feature 001 (Principe X-fiabilité), dans une table séparée
+  `intake_audit_entries` (Principe V — frontières modulaires, cf. R2 +
+  ADR-0017).
+
+- **IntakeOutboxEntry** : Entrée transactionnelle de l'outbox pattern
+  pour publier les évènements (`voyageur.brief.activated`,
+  `voyageur.brief.deleted`, `voyageur.brief.expired`,
+  `voyageur.brief.pushed_manual`) consommés par les features matching
+  et SEO en aval. Drainée par `OutboxPublisherJob` (réutilisé 001).
 
 ## Success Criteria *(mandatory)*
 
