@@ -62,25 +62,25 @@
 
 ### Zod schemas + branded IDs + contrats partagés
 
-- [ ] T017 [P] **[TDD RED]** `packages/shared/src/intake/__tests__/branded-ids.test.ts` : tests des helpers `toVoyageurBriefId(uuid)`, `toMagicLinkTokenId`, `toVoyageurContactId` (refuse string non-UUID, accepte UUID v4)
-- [ ] T018 [P] **[TDD GREEN]** `packages/shared/src/intake/branded-ids.ts` : type branding + helpers (pattern hérité de `packages/legal/src/branded-ids.ts`)
-- [ ] T019 [P] **[TDD RED]** `packages/shared/src/intake/__tests__/schemas.test.ts` : tests Zod pour `SubmitBriefSchema`, `VerifyMagicLinkSchema`, `ResendMagicLinkSchema`, `ErasureRequestBriefSchema`, `AdminPushManualSchema` (chacun avec ≥ 5 cas valides + ≥ 8 cas refus avec assertion sur le path d'erreur)
-- [ ] T020 [P] **[TDD GREEN]** `packages/shared/src/intake/schemas.ts` : Zod schemas alignés sur contracts/http-endpoints.md §1
-- [ ] T021 [P] `packages/shared/src/intake/contracts.ts` : interface `IntakeQueryPort` (1 méthode `findActiveBriefsByEmail`) + types `BriefSummary` exposés à la feature matching future
-- [ ] T022 [P] `packages/shared/src/intake/formatters.ts` : `formatBudgetRange`, `formatSpeciality`, `formatFamiliarity` FR-CA + EN (pure fns, testées)
+- [X] T017 [P] **[TDD RED]** `packages/shared/src/intake/__tests__/branded-ids.test.ts` : tests des helpers `toVoyageurBriefId(uuid)`, `toMagicLinkTokenId`, `toVoyageurContactId` (refuse string non-UUID, accepte UUID v4) — **commit RED `421ac78`**
+- [X] T018 [P] **[TDD GREEN]** `packages/shared/src/intake/branded-ids.ts` : type branding + helpers (pattern hérité de `packages/legal/src/branded-ids.ts`) — **commit GREEN `cd6519c`, 5 schémas brandés + 5 helpers, 14/14 tests**
+- [X] T019 [P] **[TDD RED]** `packages/shared/src/intake/__tests__/schemas.test.ts` : tests Zod pour `SubmitBriefSchema`, `VerifyMagicLinkSchema`, `ResendMagicLinkSchema`, `ErasureRequestBriefSchema`, `AdminPushManualSchema` (chacun avec ≥ 5 cas valides + ≥ 8 cas refus avec assertion sur le path d'erreur) — **commit RED `425d304`, +ErasureRequestAllSchema (C1)**
+- [X] T020 [P] **[TDD GREEN]** `packages/shared/src/intake/schemas.ts` : Zod schemas alignés sur contracts/http-endpoints.md §1 — **commit GREEN `289ec44`, 6 schémas + 5 enums + bornes (L2 resolved) + phrases distinctes Q4, 48/48 tests**
+- [X] T021 [P] `packages/shared/src/intake/contracts.ts` : interface `IntakeQueryPort` (1 méthode `findActiveBriefsByEmail`) + types `BriefSummary` exposés à la feature matching future — **commit `78437a7`, 2 méthodes listActiveBriefsByEmail + findBriefSummaryById**
+- [X] T022 [P] `packages/shared/src/intake/formatters.ts` : `formatBudgetRange`, `formatSpeciality`, `formatFamiliarity` FR-CA + EN (pure fns, testées) — **+formatConseillerLanguage (R8), 15 unit tests couverture 100%**
 
 ### Ports applicatifs + base infrastructure
 
-- [ ] T023 [P] `apps/api/src/modules/intake/application/ports/` : créer les 7 ports — `VoyageurBriefReader`, `VoyageurBriefWriter`, `VoyageurContactReader`, `VoyageurContactWriter`, `MagicLinkTokenWriter`, `MagicLinkMailer`, `DisposableEmailChecker`, `IntakeRateLimiter`, `IntakeAuditLogWriter`, `IntakeOutboxWriter` (interfaces TS pures, jamais d'import infrastructure)
-- [ ] T024 [P] `apps/api/src/modules/intake/intake.module.ts` placeholder NestJS Module avec liste de providers vide (sera étendue par chaque US)
-- [ ] T025 Ajouter `IntakeModule` dans `apps/api/src/app.module.ts` (lazy : le module n'expose encore aucun controller)
+- [X] T023 [P] `apps/api/src/modules/intake/application/ports/` : créer les 7 ports — `VoyageurBriefReader`, `VoyageurBriefWriter`, `VoyageurContactReader`, `VoyageurContactWriter`, `MagicLinkTokenWriter`, `MagicLinkMailer`, `DisposableEmailChecker`, `IntakeRateLimiter`, `IntakeAuditLogWriter`, `IntakeOutboxWriter` (interfaces TS pures, jamais d'import infrastructure) — **commit `8fb3e7c`, 10 ports + Symbol DI tokens + index.ts barrel**
+- [X] T024 [P] `apps/api/src/modules/intake/intake.module.ts` placeholder NestJS Module avec liste de providers vide (sera étendue par chaque US) — **wire APP_INTERCEPTOR RollingSessionCookieInterceptor (T025d) inclus**
+- [X] T025 Ajouter `IntakeModule` dans `apps/api/src/app.module.ts` (lazy : le module n'expose encore aucun controller)
 
 ### Rolling session cookie cross-cutting (FR-014a, Q5 clarify, C2)
 
-- [ ] T025a **(C2, TDD RED)** `apps/api/src/modules/intake/interface/http/__tests__/rolling-session-cookie.interceptor.test.ts` : tests unitaires NestJS de `RollingSessionCookieInterceptor` (mock `ExecutionContext`) — (a) requête sans cookie `__Host-cv.intake.token` → ne pose AUCUN Set-Cookie ; (b) requête avec cookie valide + handler retourne 200 → Set-Cookie posé avec `Max-Age=604800`, mêmes flags `HttpOnly/Secure/SameSite=Lax/Path=/` qu'à l'origine ; (c) handler retourne 4xx → PAS de renewal (anti-extension de session sur erreur) ; (d) handler annoté `@SkipRollingRenewal()` → PAS de renewal (utilisé sur POST `/erase-all-data` qui doit RÉVOQUER, pas renouveler).
-- [ ] T025b **(C2, TDD GREEN)** `apps/api/src/modules/intake/interface/http/rolling-session-cookie.interceptor.ts` : implémentation `NestInterceptor` global pour le module intake ; lit le cookie depuis `req.cookies` ; après `next.handle()`, si statut < 400 ET pas de décorateur `@SkipRollingRenewal()`, ajoute `res.cookie(name, value, { maxAge: 604800_000, httpOnly: true, secure: prod, sameSite: 'lax', path: '/' })` (en prod : préfixe `__Host-`).
-- [ ] T025c **(C2)** `apps/api/src/modules/intake/interface/http/skip-rolling-renewal.decorator.ts` : décorateur `@SkipRollingRenewal()` (Reflector metadata key `intake:skipRollingRenewal`)
-- [ ] T025d **(C2)** Wire `RollingSessionCookieInterceptor` dans `intake.module.ts` via `APP_INTERCEPTOR` (scoped au module, pas global app — Principe V frontières modulaires)
+- [X] T025a **(C2, TDD RED)** `apps/api/src/modules/intake/interface/http/__tests__/rolling-session-cookie.interceptor.test.ts` : tests unitaires NestJS de `RollingSessionCookieInterceptor` (mock `ExecutionContext`) — (a) requête sans cookie `__Host-cv.intake.token` → ne pose AUCUN Set-Cookie ; (b) requête avec cookie valide + handler retourne 200 → Set-Cookie posé avec `Max-Age=604800`, mêmes flags `HttpOnly/Secure/SameSite=Lax/Path=/` qu'à l'origine ; (c) handler retourne 4xx → PAS de renewal (anti-extension de session sur erreur) ; (d) handler annoté `@SkipRollingRenewal()` → PAS de renewal (utilisé sur POST `/erase-all-data` qui doit RÉVOQUER, pas renouveler) — **commit RED `7129245`, 9 scénarios test**
+- [X] T025b **(C2, TDD GREEN)** `apps/api/src/modules/intake/interface/http/rolling-session-cookie.interceptor.ts` : implémentation `NestInterceptor` global pour le module intake ; lit le cookie depuis `req.cookies` ; après `next.handle()`, si statut < 400 ET pas de décorateur `@SkipRollingRenewal()`, ajoute `res.cookie(name, value, { maxAge: 604800_000, httpOnly: true, secure: prod, sameSite: 'lax', path: '/' })` (en prod : préfixe `__Host-`) — **commit `00a2fe0`, N3 résolu (filter scope), 9/9 tests GREEN**
+- [X] T025c **(C2)** `apps/api/src/modules/intake/interface/http/skip-rolling-renewal.decorator.ts` : décorateur `@SkipRollingRenewal()` (Reflector metadata key `intake:skipRollingRenewal`)
+- [X] T025d **(C2)** Wire `RollingSessionCookieInterceptor` dans `intake.module.ts` via `APP_INTERCEPTOR` (scoped au module, pas global app — Principe V frontières modulaires)
 
 **Checkpoint** : Foundation prête — `pnpm --filter @cv/db prisma migrate dev` reproductible, `prisma.voyageurBrief` typé, schemas Zod partagés, rolling cookie interceptor opérationnel. Les user stories peuvent commencer en parallèle.
 
