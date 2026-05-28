@@ -4,10 +4,10 @@
 // message pointant vers le modal step-up qui sera intégré quand
 // l'orchestrator step-up sera en place dans le layout privé.
 
+import { auth } from '@/auth';
+import { RegenerateCodesForm } from '@/features/mfa/ui/RegenerateCodesForm';
+import { toUrlLocale } from '@/i18n';
 import { redirect } from 'next/navigation';
-import { auth } from '../../../../../../../auth';
-import { RegenerateCodesForm } from '../../../../../../../components/mfa/RegenerateCodesForm';
-import { toUrlLocale } from '../../../../../../../i18n';
 
 export const metadata = {
   title: 'Régénérer les codes de récupération — Conseiller Voyage',

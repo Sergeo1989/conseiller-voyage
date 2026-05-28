@@ -4,11 +4,11 @@
 // interdit. Charge les infos cible (email + role + MFA actif) +
 // le compteur d'admins actifs pour le warning FR-026b.
 
+import { auth } from '@/auth';
+import { AdminResetForm } from '@/features/mfa/ui/AdminResetForm';
+import { toUrlLocale } from '@/i18n';
 import { prisma } from '@cv/db';
 import { redirect } from 'next/navigation';
-import { auth } from '../../../../../../../auth';
-import { AdminResetForm } from '../../../../../../../components/mfa/AdminResetForm';
-import { toUrlLocale } from '../../../../../../../i18n';
 
 export const metadata = {
   title: 'Réinitialisation MFA — Conseiller Voyage',

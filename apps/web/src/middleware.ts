@@ -21,18 +21,18 @@
 
 import createMiddleware from 'next-intl/middleware';
 import { type NextRequest, NextResponse } from 'next/server';
-import { defaultLocale, localeUrlPrefixes, locales } from './i18n';
 import {
   LEGAL_VERSION_COOKIE_NAME,
   fetchCurrentCguB2bVersion,
   readLegalVersionCookie,
-} from './lib/legal/version-check';
+} from './features/legal/infrastructure/version-check';
 import {
   UUID_V4_REGEX,
   appendEntry,
   decodeSuggestedCookie,
   encodeSuggestedCookie,
-} from './lib/profil/cv-suggested-edge';
+} from './features/profil-public/lib/cv-suggested-edge';
+import { defaultLocale, localeUrlPrefixes, locales } from './i18n';
 
 const intlMiddleware = createMiddleware({
   locales: [...locales],

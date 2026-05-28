@@ -1,6 +1,6 @@
 // Page publique « Politique de confidentialité » (US2 P1 — Loi 25).
 
-import { buildLegalMetadata, renderLegalPage } from '@/lib/legal/page-helpers';
+import { buildLegalMetadata, renderLegalPage } from '@/features/legal/ui/page-helpers';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 

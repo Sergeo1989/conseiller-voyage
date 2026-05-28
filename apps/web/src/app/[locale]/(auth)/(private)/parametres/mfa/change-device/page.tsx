@@ -1,9 +1,9 @@
 // Server Component /parametres/mfa/change-device (US6).
 
+import { auth } from '@/auth';
+import { DeviceChangeForm } from '@/features/mfa/ui/DeviceChangeForm';
+import { toUrlLocale } from '@/i18n';
 import { redirect } from 'next/navigation';
-import { auth } from '../../../../../../../auth';
-import { DeviceChangeForm } from '../../../../../../../components/mfa/DeviceChangeForm';
-import { toUrlLocale } from '../../../../../../../i18n';
 
 export const metadata = {
   title: "Changer d'appareil MFA — Conseiller Voyage",
