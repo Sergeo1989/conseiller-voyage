@@ -47,6 +47,9 @@ test.describe('a11y — 5 pages légales (Principe XI WCAG 2.1 AA) @a11y', () =>
     const footer = page.locator('footer');
     await expect(footer).toBeVisible();
 
+    // Les liens du footer utilisent aria-label descriptif (a11y), pas le
+    // textContent. On vérifie par filter({ hasText }) qui matche le texte
+    // visible. Couvre les 5 slugs légaux.
     const legalLinks = [
       'Mentions légales',
       'CGU voyageur',
@@ -55,7 +58,7 @@ test.describe('a11y — 5 pages légales (Principe XI WCAG 2.1 AA) @a11y', () =>
       'Comment ça marche',
     ];
     for (const label of legalLinks) {
-      await expect(footer.getByRole('link', { name: new RegExp(label) })).toBeVisible();
+      await expect(footer.locator('a').filter({ hasText: label })).toBeVisible();
     }
 
     // Tous les liens du footer doivent être focusables séquentiellement

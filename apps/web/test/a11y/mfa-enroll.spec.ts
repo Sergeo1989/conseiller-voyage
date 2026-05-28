@@ -9,6 +9,8 @@ import { expect, test } from '@playwright/test';
 test.describe('@a11y MFA enrollment page', () => {
   test('/fr/mfa/enroll → no axe-core violations (sérieuses/critiques)', async ({ page }) => {
     await page.goto('/fr/mfa/enroll');
+    // Next.js 15 stream le <title> APRÈS l'HTML initial (redirect chain) — attendre injection.
+    await page.waitForFunction(() => document.title.length > 0);
 
     // La page redirige vers /login sans session valide.
     // On accepte les deux cas pour ce smoke test a11y :

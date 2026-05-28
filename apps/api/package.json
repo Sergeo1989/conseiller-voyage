@@ -15,6 +15,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudfront": "^3.685.0",
     "@aws-sdk/client-s3": "^3.685.0",
     "@aws-sdk/client-secrets-manager": "^3.685.0",
     "@aws-sdk/client-sesv2": "^3.685.0",
@@ -24,7 +25,9 @@
     "@cv/email-templates": "workspace:*",
     "@cv/legal": "workspace:*",
     "@cv/mfa": "workspace:*",
+    "@cv/profil-domain": "workspace:*",
     "@cv/shared": "workspace:*",
+    "sharp": "^0.33.0",
     "@fastify/helmet": "^11.1.1",
     "@fastify/static": "^7",
     "@nest-lab/throttler-storage-redis": "^1.1.0",

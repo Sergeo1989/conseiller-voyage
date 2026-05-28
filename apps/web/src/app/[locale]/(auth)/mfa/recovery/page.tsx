@@ -5,6 +5,11 @@ import { auth } from '../../../../../auth';
 import { VerifyBackupCodeForm } from '../../../../../components/mfa/VerifyBackupCodeForm';
 import { toUrlLocale } from '../../../../../i18n';
 
+export const metadata = {
+  title: 'Code de récupération MFA — Conseiller Voyage',
+  robots: { index: false, follow: false },
+};
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 

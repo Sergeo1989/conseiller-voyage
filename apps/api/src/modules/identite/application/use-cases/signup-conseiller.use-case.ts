@@ -124,7 +124,13 @@ export class SignupConseillerUseCase {
           email,
           emailVerified: null,
           role: 'conseiller',
+          // `name` reste concaténé pour rétrocompatibilité Auth.js + écosystème.
           name: `${input.firstName} ${input.lastName}`,
+          // Feature 007 (profil conseiller) : stocker firstName + lastName
+          // explicitement pour permettre la slugification déterministe
+          // `prenom-nom` et le formatage `Marie D.` (cf. FR-006a + R5).
+          firstName: input.firstName,
+          lastName: input.lastName,
         },
       });
       await tx.authAccount.create({

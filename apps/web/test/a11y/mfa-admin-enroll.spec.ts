@@ -6,6 +6,8 @@ import { expect, test } from '@playwright/test';
 test.describe('@a11y Admin MFA enrollment page', () => {
   test('/fr/admin/mfa/enroll → no axe-core violations (sérieuses/critiques)', async ({ page }) => {
     await page.goto('/fr/admin/mfa/enroll');
+    // Next.js 15 stream le <title> APRÈS l'HTML initial (redirect chain) — attendre injection.
+    await page.waitForFunction(() => document.title.length > 0);
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();

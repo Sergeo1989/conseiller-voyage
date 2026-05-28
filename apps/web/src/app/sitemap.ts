@@ -1,12 +1,16 @@
-// Sitemap statique au MVP (Principe XII — pages publiques indexables).
-// Les 5 pages légales SSG sont déclarées explicitement. La feature 017
-// (Tier 3) générera un sitemap dynamique qui inclura les profils
-// conseillers + pages thématiques + ces 5 pages.
+// Sitemap dynamique (Principe XII — pages publiques indexables).
+// - 5 pages légales SSG (statiques)
+// - Profils conseillers publiables (statut='pret' + verified) lus via
+//   l'API publique apps/api → /api/public/profil (T091 feature 007).
+//   À pagination future > 50k URLs (cf. research.md R4-bis).
 //
-// Référencé automatiquement par Next.js à `/sitemap.xml`.
+// Référencé automatiquement par Next.js à `/sitemap.xml`. Revalidation 1h.
 
 import type { MetadataRoute } from 'next';
 import { locales, toUrlLocale } from '../i18n';
+import { lireSlugsPubliables } from '../lib/profil/public-reader';
+
+export const revalidate = 3600;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
@@ -18,26 +22,25 @@ const LEGAL_SLUGS = [
   'confidentialite',
 ] as const;
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const entries: MetadataRoute.Sitemap = [];
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  return [...buildLocaleHomes(), ...buildLegalPages(), ...(await buildProfilPages())];
+}
 
-  // Pages racines (accueil par locale)
-  for (const locale of locales) {
-    const urlLocale = toUrlLocale(locale);
-    entries.push({
-      url: `${SITE_URL}/${urlLocale}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 1.0,
-    });
-  }
+function buildLocaleHomes(): MetadataRoute.Sitemap {
+  return locales.map((locale) => ({
+    url: `${SITE_URL}/${toUrlLocale(locale)}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 1.0,
+  }));
+}
 
-  // Pages légales — toutes locales
+function buildLegalPages(): MetadataRoute.Sitemap {
+  const out: MetadataRoute.Sitemap = [];
   for (const slug of LEGAL_SLUGS) {
     for (const locale of locales) {
-      const urlLocale = toUrlLocale(locale);
-      entries.push({
-        url: `${SITE_URL}/${urlLocale}/${slug}`,
+      out.push({
+        url: `${SITE_URL}/${toUrlLocale(locale)}/${slug}`,
         lastModified: new Date('2026-05-25'),
         changeFrequency: 'yearly',
         priority: slug === 'comment-ca-marche' ? 0.9 : 0.5,
@@ -51,6 +54,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
       });
     }
   }
+  return out;
+}
 
-  return entries;
+async function buildProfilPages(): Promise<MetadataRoute.Sitemap> {
+  // T091 — best-effort, fallback safe si l'API publique est indisponible.
+  let slugs: readonly string[] = [];
+  try {
+    slugs = await lireSlugsPubliables();
+  } catch {
+    return [];
+  }
+  const out: MetadataRoute.Sitemap = [];
+  for (const slug of slugs) {
+    for (const locale of locales) {
+      out.push({
+        url: `${SITE_URL}/${toUrlLocale(locale)}/conseiller/${slug}`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.7,
+      });
+    }
+  }
+  return out;
 }

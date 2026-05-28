@@ -11,12 +11,14 @@
 //     publique LegalAcceptanceFacade sont ajoutés dans les phases 5-7 + N
 //     du plan 004 (T065-T097).
 
-import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { Module, forwardRef } from '@nestjs/common';
 import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
 import { SystemClock } from '../../common/infrastructure/system-clock';
 import { CLOCK } from '../../common/ports/clock.port';
 import { UUID_GENERATOR } from '../../common/ports/uuid-generator.port';
 import { env } from '../../env';
+import { ConformiteModule } from '../conformite/interface/conformite.module';
 import { ACTIVE_SESSION_REVOKER } from './application/ports/active-session-revoker.port';
 import { ADMIN_INVITATION_TOKEN_REPOSITORY } from './application/ports/admin-invitation-token-repository.port';
 import { AUTH_AUDIT_WRITER } from './application/ports/auth-audit-writer.port';
@@ -109,7 +111,61 @@ import { LegalAcceptanceFacade } from './interface/public-api/legal-acceptance.f
 import { RoleGuard } from './interface/role.guard';
 import { StepUpGuard } from './interface/step-up.guard';
 
+import { ConformiteStatusChangedListener } from './application/listeners/conformite-status-changed.listener';
+import { ProfilCacheInvalidator } from './application/listeners/profil-cache-invalidation.listener';
+// Feature 007 (profil conseiller) — ports + adaptateurs
+import { AUTH_USER_LEGAL_NAME_READER } from './application/ports/auth-user-legal-name-reader.port';
+import { CLOUDFRONT_CACHE_INVALIDATOR } from './application/ports/cloudfront-cache-invalidator.port';
+import { EST_PROFIL_PUBLIC_PORT } from './application/ports/est-profil-public.port';
+import { NEXTJS_REVALIDATOR } from './application/ports/nextjs-revalidator.port';
+import { ONBOARDING_RELANCE_SCHEDULER } from './application/ports/onboarding-relance-scheduler.port';
+import { PHOTO_HISTORIQUE_REPOSITORY } from './application/ports/photo-historique-repository.port';
+import { PHOTO_STORAGE } from './application/ports/photo-storage.port';
+import { PROFIL_CONSEILLER_REPOSITORY } from './application/ports/profil-conseiller-repository.port';
+import { PROFIL_MODERATION_AUDIT_READER } from './application/ports/profil-moderation-audit-reader.port';
+import { PROFIL_MODERATION_AUDIT_WRITER } from './application/ports/profil-moderation-audit-writer.port';
+import { PROFIL_PUBLIC_READER } from './application/ports/profil-public-reader.port';
+import { SLUG_RESERVATION_REPOSITORY } from './application/ports/slug-reservation-repository.port';
+import { AnonymiserProfilLoi25UseCase } from './application/use-cases/anonymiser-profil-loi25.use-case';
+import { EditerProfilUseCase } from './application/use-cases/editer-profil.use-case';
+import { EnvoyerRelanceOnboardingUseCase } from './application/use-cases/envoyer-relance-onboarding.use-case';
+import { LirePageProfilPubliqueUseCase } from './application/use-cases/lire-page-profil-publique.use-case';
+import { LireProfilAdminUseCase } from './application/use-cases/lire-profil-admin.use-case';
+import { LireProfilPriveUseCase } from './application/use-cases/lire-profil-prive.use-case';
+import { ListerProfilsAdminUseCase } from './application/use-cases/lister-profils-admin.use-case';
+import { MasquerProfilAdminUseCase } from './application/use-cases/masquer-profil-admin.use-case';
+import { PrevisualiserProfilUseCase } from './application/use-cases/previsualiser-profil.use-case';
+import { RetablirProfilAdminUseCase } from './application/use-cases/retablir-profil-admin.use-case';
+import { RetirerPhotoAdminUseCase } from './application/use-cases/retirer-photo-admin.use-case';
+import { UploaderPhotoUseCase } from './application/use-cases/uploader-photo.use-case';
+import { BullmqOnboardingRelanceScheduler } from './infrastructure/bullmq-onboarding-relance-scheduler';
+import { AwsCloudFrontCacheInvalidator } from './infrastructure/cloudfront-cache-invalidator';
+import { HttpNextjsRevalidator } from './infrastructure/http-nextjs-revalidator';
+import { CleanupOrphanPhotosJob } from './infrastructure/jobs/cleanup-orphan-photos.job';
+import { PrismaAuthUserLegalNameReader } from './infrastructure/prisma-auth-user-legal-name-reader';
+import { PrismaEstProfilPublic } from './infrastructure/prisma-est-profil-public';
+import { PrismaPhotoHistoriqueRepository } from './infrastructure/prisma-photo-historique-repository';
+import { PrismaProfilConseillerRepository } from './infrastructure/prisma-profil-conseiller-repository';
+import { PrismaProfilModerationAuditReader } from './infrastructure/prisma-profil-moderation-audit-reader';
+import { PrismaProfilModerationAuditWriter } from './infrastructure/prisma-profil-moderation-audit-writer';
+import { PrismaProfilPublicReader } from './infrastructure/prisma-profil-public-reader';
+import { PrismaSlugReservationRepository } from './infrastructure/prisma-slug-reservation-repository';
+import { S3PhotoStorage } from './infrastructure/s3-photo-storage';
+import { ProfilAdminController } from './interface/profil-admin.controller';
+import { ProfilConseillerController } from './interface/profil-conseiller.controller';
+import { ProfilInternalController } from './interface/profil-internal.controller';
+import { ProfilPublicController } from './interface/profil-public.controller';
+
 @Module({
+  imports: [
+    // Cycle ConformiteModule ↔ IdentiteModule : conformité importe identité
+    // pour AuthGuard, et identité importe conformité (feature 007) pour
+    // CONFORMITE_QUERY_PORT. forwardRef() résout le cycle d'initialisation
+    // NestJS sans casser le DI.
+    forwardRef(() => ConformiteModule),
+    // BullMQ queue pour les relances onboarding (feature 007, T041).
+    BullModule.registerQueue({ name: 'identite.onboarding-reminders' }),
+  ],
   controllers: [
     // Auth (feature 006)
     AuthSignupController,
@@ -129,6 +185,14 @@ import { StepUpGuard } from './interface/step-up.guard';
     // Legal (feature 004 US3)
     LegalAcceptanceController,
     LegalPublicController,
+    // Profil conseiller (feature 007 US1)
+    ProfilConseillerController,
+    // Profil public (feature 007 US2)
+    ProfilPublicController,
+    // Profil admin modération (feature 007 US6)
+    ProfilAdminController,
+    // Profil interne (feature 007 US5 — orchestré par 023)
+    ProfilInternalController,
   ],
   providers: [
     // Env injecté (cf. NodeCryptoTotpSecretEncrypter qui en a besoin
@@ -216,6 +280,39 @@ import { StepUpGuard } from './interface/step-up.guard';
       useClass: PrismaLegalAcceptanceAnonymizationRepository,
     },
 
+    // --- Feature 007 (profil conseiller) — use cases ---
+    LireProfilPriveUseCase,
+    LirePageProfilPubliqueUseCase,
+    PrevisualiserProfilUseCase,
+    EditerProfilUseCase,
+    UploaderPhotoUseCase,
+    RetirerPhotoAdminUseCase,
+    MasquerProfilAdminUseCase,
+    RetablirProfilAdminUseCase,
+    LireProfilAdminUseCase,
+    ListerProfilsAdminUseCase,
+    AnonymiserProfilLoi25UseCase,
+    EnvoyerRelanceOnboardingUseCase,
+    CleanupOrphanPhotosJob,
+
+    // --- Feature 007 — listener cross-module (ConformiteStatusChanged) ---
+    ConformiteStatusChangedListener,
+
+    // --- Feature 007 — ports → adapters ---
+    { provide: PROFIL_CONSEILLER_REPOSITORY, useClass: PrismaProfilConseillerRepository },
+    { provide: PHOTO_HISTORIQUE_REPOSITORY, useClass: PrismaPhotoHistoriqueRepository },
+    { provide: SLUG_RESERVATION_REPOSITORY, useClass: PrismaSlugReservationRepository },
+    { provide: PHOTO_STORAGE, useClass: S3PhotoStorage },
+    { provide: CLOUDFRONT_CACHE_INVALIDATOR, useClass: AwsCloudFrontCacheInvalidator },
+    { provide: ONBOARDING_RELANCE_SCHEDULER, useClass: BullmqOnboardingRelanceScheduler },
+    { provide: NEXTJS_REVALIDATOR, useClass: HttpNextjsRevalidator },
+    ProfilCacheInvalidator,
+    { provide: PROFIL_MODERATION_AUDIT_WRITER, useClass: PrismaProfilModerationAuditWriter },
+    { provide: PROFIL_MODERATION_AUDIT_READER, useClass: PrismaProfilModerationAuditReader },
+    { provide: AUTH_USER_LEGAL_NAME_READER, useClass: PrismaAuthUserLegalNameReader },
+    { provide: PROFIL_PUBLIC_READER, useClass: PrismaProfilPublicReader },
+    { provide: EST_PROFIL_PUBLIC_PORT, useClass: PrismaEstProfilPublic },
+
     // Guards
     AuthGuard,
     RoleGuard,
@@ -242,6 +339,11 @@ import { StepUpGuard } from './interface/step-up.guard';
     LEGAL_DOCUMENT_REPOSITORY,
     LEGAL_ACCEPTANCE_ANONYMIZATION_WRITER,
     LegalAcceptanceFacade,
+    // Feature 007 (profil conseiller) — exports vers modules futurs.
+    // EST_PROFIL_PUBLIC_PORT est l'interface stable consommée par les
+    // modules matching (011) et SEO (016) via @cv/shared/profil-public.
+    EST_PROFIL_PUBLIC_PORT,
+    // Les autres ports profil sont internes au module — non exportés.
   ],
 })
 export class IdentiteModule {}

@@ -9,6 +9,8 @@ test.describe('@a11y Admin Reset MFA page', () => {
     page,
   }) => {
     await page.goto('/fr/admin/users/00000000-0000-4000-8000-aaaa00000001/reset-mfa');
+    // Next.js 15 stream le <title> APRÈS l'HTML initial (redirect chain) — attendre injection.
+    await page.waitForFunction(() => document.title.length > 0);
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();

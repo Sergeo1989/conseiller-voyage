@@ -11,6 +11,11 @@ import { EnrollForm } from '../../../../../components/mfa/EnrollForm';
 import { toUrlLocale } from '../../../../../i18n';
 import { startEnrollmentAction } from '../../../../../lib/mfa/server-actions';
 
+export const metadata = {
+  title: 'Activation MFA — Conseiller Voyage',
+  robots: { index: false, follow: false },
+};
+
 // Force le rendu dynamique : pas de pré-rendu (le secret ne doit pas être
 // mis en cache CDN ni dans le static cache Next).
 export const dynamic = 'force-dynamic';

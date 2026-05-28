@@ -15,6 +15,7 @@
 // par BullMQ repeatable ou @nestjs/schedule à mesure que d'autres
 // scheduled jobs s'ajoutent.
 
+import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
 import { BullModule } from '@nestjs/bullmq';
 import { Module, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { s3Client } from '../../../aws/clients';
@@ -109,6 +110,10 @@ const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
     // --- Public API facade (consommée par autres modules) ---
     ConformiteQueryFacade,
+    // Token DI partagé via @cv/shared/conformite — permet aux autres
+    // modules (identité feature 007) d'injecter par symbole sans coupler
+    // au type concret ConformiteQueryFacade.
+    { provide: CONFORMITE_QUERY_PORT, useExisting: ConformiteQueryFacade },
 
     // --- Common (Clock + UuidGenerator) ---
     { provide: CLOCK, useClass: SystemClock },
@@ -123,6 +128,12 @@ const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
   exports: [
     // Public API : ConformiteQueryFacade pour matching/SEO (US3).
     ConformiteQueryFacade,
+    // Token DI pour injection symbolique côté autres modules.
+    CONFORMITE_QUERY_PORT,
+    // Event publisher (Redis pub/sub) — consommé par le listener
+    // cross-module ConformiteStatusChangedListener du module identité
+    // (feature 007 T061).
+    CONFORMITE_EVENT_PUBLISHER,
   ],
 })
 export class ConformiteModule implements OnModuleInit, OnModuleDestroy {

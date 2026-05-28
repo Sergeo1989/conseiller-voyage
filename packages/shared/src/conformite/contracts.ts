@@ -13,6 +13,13 @@ export interface VerificationStatusDto {
   readonly lastVerifiedAt: string | null;
 }
 
+/**
+ * Token DI (NestJS) pour le port. Symbol global (Symbol.for) — la même
+ * valeur référencée depuis n'importe quel module donne la même identité.
+ * Utilisé pour `@Inject(CONFORMITE_QUERY_PORT)` côté apps/api.
+ */
+export const CONFORMITE_QUERY_PORT = Symbol.for('ConformiteQueryPort');
+
 export interface ConformiteQueryPort {
   /**
    * Lit le statut de vérification du conseiller (cache 60s).

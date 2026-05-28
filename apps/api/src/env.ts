@@ -27,6 +27,30 @@ const EnvSchema = z
     AWS_S3_ENDPOINT: z.string().url().optional(),
     AWS_S3_BUCKET_CONFORMITE: z.string().default('cv-conformite-dev'),
 
+    // Feature 007 — bucket photos profil + CloudFront OAC (cf. R2 / M7)
+    AWS_S3_BUCKET_PROFILES: z.string().default('cv-profiles-photos-dev'),
+    AWS_KMS_PROFILES_KEY_ID: z.string().optional(),
+    /** URL publique CloudFront pour servir les photos profil (cacheable browser/CDN long terme). */
+    CLOUDFRONT_PROFILES_PUBLIC_URL: z
+      .string()
+      .url()
+      .default('http://localhost:4566/cv-profiles-photos-dev'),
+    /** Distribution ID pour les invalidations CDN cross-cache (FR-014 + C2). */
+    CLOUDFRONT_PROFILES_DISTRIBUTION_ID: z.string().optional(),
+
+    // Feature 007 — cookie HMAC du `?suggested=` (FR-008a)
+    CV_SUGGESTED_COOKIE_SECRET: z
+      .string()
+      .min(32, 'CV_SUGGESTED_COOKIE_SECRET doit faire au moins 32 octets')
+      .default('dev-only-32-bytes-not-for-production-x'),
+    /** Bearer secret pour l'endpoint Next.js /api/revalidate. */
+    CV_REVALIDATE_SECRET: z
+      .string()
+      .min(16, 'CV_REVALIDATE_SECRET doit faire au moins 16 octets')
+      .default('dev-only-revalidate-secret-xxxx'),
+    /** URL publique Next.js — base pour les invalidations. */
+    NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
+
     // Idempotence (Principe X)
     IDEMPOTENCY_KEY_TTL_SECONDS: z.coerce.number().int().positive().default(604_800),
 

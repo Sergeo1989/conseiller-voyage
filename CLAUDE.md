@@ -106,27 +106,45 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/004-mentions-legales/plan.md`](specs/004-mentions-legales/plan.md)
-(Mentions légales, CGU B2B/B2C, politique Loi 25, page « Comment ça marche »
-— branche `004-mentions-legales`).
+**Plan courant** : [`specs/007-profil-conseiller/plan.md`](specs/007-profil-conseiller/plan.md)
+(Profil conseiller public + privé — feature 005 roadmap, Tier 1, premier
+sprint d'activation conseiller B2B ; branche `007-profil-conseiller`).
+Vue publique anti-marketplace (ADR-0002), dashboard conseiller, édition
+profil, aperçu public, modération admin via console conformité 001 étendue,
+relances onboarding J+3/J+7/J+14, slug `prenom-nom` immuable et réservé
+Loi 25 (SC-007), cookie `cv_suggested` HMAC pour boost soft ≤ +10% du
+scoring matching (futur 011).
 
 Pour le contexte technologique détaillé et la structure de répertoires de la
 feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
-`contracts/{legal-acceptance.port,http-endpoints,mdx-frontmatter}.md`, et
-`quickstart.md` du même répertoire `specs/004-mentions-legales/`.
+`contracts/{profil-public,profil-edition,profil-moderation,est-profil-public,conformite-nom-legal,http-endpoints,intake-suggested-middleware}.{port.md,md}`,
+et `quickstart.md` du même répertoire `specs/007-profil-conseiller/`.
 
-**Features précédentes mergées** :
+**Features précédentes mergées** (Tier 0 fermé) :
 - `001-conformite-module` (PR #1, squash `8592922`). Source de vérité pour
   le statut `verified` des conseillers ; consommée via `ConformiteQueryPort`
-  par les modules matching et SEO.
+  par les modules matching et SEO. **Étendu par 007** : nouveau port
+  `ConformiteNomLegalReader` pour lecture du nom légal vérifié (cf. R9 +
+  contracts/conformite-nom-legal.port.md).
 - `005-mfa-conseiller` (PR #13, MFA conseiller TOTP). Module `identite`
   étendu — `MfaSecret`, `BackupCode`, ports MFA.
 - `006-auth-conseiller-admin` (PR #14). Auth conseiller + admin + RBAC
   AuthGuard NestJS partagé Auth.js v5 (ADR-0004) ; 7 user stories
   (signup, login, verify, logout, reset/change password, admin bootstrap).
   Module `identite` enrichi de ~20 ports applicatifs.
+- `003-notifications-transactionnelles` (PR #15). AWS SES ca-central-1
+  (ADR-0006). Draine `mfa_outbox_emails` (002a) + `auth_outbox_emails`
+  (002) + outbox conformité (001). **Consommé par 007** pour les relances
+  onboarding J+3/J+7/J+14 et les notifications de modération admin (FR-024).
+- `004-mentions-legales` (PR #12). Mentions légales + CGU B2B/B2C +
+  politique Loi 25 + page « Comment ça marche ». **Consommé par 007** via
+  le middleware CGU déjà en place sur `/(conseiller)/**` (FR-019) et le
+  lien `/comment-ca-marche` dans la section pédagogique (FR-009).
+
+**Features en cours / à venir** :
 - `002-voyageur-intake` (en cours sur sa propre branche) : module intake /
   préqualification voyageur. Consommera `LegalAcceptanceFacade.acceptForBrief`
-  défini par cette feature 004 pour le double consentement Loi 25 au moment
-  du brief (US4 de 004 + dépendance documentée).
+  (feature 004) et le cookie `cv_suggested` posé par 007 (cf.
+  contracts/intake-suggested-middleware.md) pour passer la liste de boosts
+  au matching feature 011 future.
 <!-- SPECKIT END -->

@@ -2,6 +2,7 @@
 // Credentials via task role ECS en prod (cf. ADR-0005), via env vars
 // en dev local (LocalStack — voir docker-compose.dev.yml).
 
+import { CloudFrontClient } from '@aws-sdk/client-cloudfront';
 import { S3Client } from '@aws-sdk/client-s3';
 import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { SESv2Client } from '@aws-sdk/client-sesv2';
@@ -41,3 +42,16 @@ export const s3Client = new S3Client({
 
 export const sesClient = new SESv2Client(baseConfig);
 export const secretsManagerClient = new SecretsManagerClient(baseConfig);
+
+/**
+ * CloudFront — utilisé pour les invalidations CDN cross-cache (feature 007,
+ * FR-014 + C2). En dev local CloudFront n'existe pas ; l'adapter détecte
+ * l'absence de DISTRIBUTION_ID et no-op (la page Next.js ISR suffit pour le
+ * dev). En prod, region globale `us-east-1` exigée par AWS.
+ */
+export const cloudFrontClient = new CloudFrontClient({
+  ...baseConfig,
+  // CloudFront API est globale mais nécessite us-east-1 comme region pour
+  // l'authentification signature v4.
+  region: 'us-east-1',
+});

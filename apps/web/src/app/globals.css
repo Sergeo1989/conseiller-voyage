@@ -1,0 +1,75 @@
+/*
+ * Styles globaux d'accessibilité (Principe XI WCAG 2.1 AA).
+ *
+ *   - font-size body ≥ 16px (Safari/Linux livrent 13-14px par défaut,
+ *     FAIL WCAG 1.4.4)
+ *   - line-height ≥ 1.5x
+ *   - focus-visible visible (WCAG 2.4.7)
+ *   - touch targets ≥ 44px sur les boutons via min-height
+ *   - respect prefers-reduced-motion
+ *
+ * Importé par app/layout.tsx (root). Next.js l'inline dans le <head>
+ * auto-généré sans casser l'injection des metadata.title.
+ *
+ * Migration future : shadcn/ui + design tokens dans la feature
+ * design-system. Pour ce MVP, ces 6 règles suffisent à passer
+ * axe-core sur le commun dénominateur.
+ */
+
+html,
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #111827;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline-offset: 3px;
+}
+
+button {
+  min-height: 44px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:not(:disabled):hover {
+  filter: brightness(0.92);
+}
+
+a {
+  color: #2563eb;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
