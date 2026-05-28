@@ -1,12 +1,12 @@
 // T076 — Page "Soumettre mon dossier de conformité".
 // Server Component qui vérifie l'auth puis monte le client SubmitDossierForm.
 
+import { SubmitDossierForm } from '@/features/conformite/ui/SubmitDossierForm';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../auth';
 import { type Locale, toUrlLocale } from '../../../../../i18n';
-import { SubmitDossierForm } from './submit-dossier-form';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;

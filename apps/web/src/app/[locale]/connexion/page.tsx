@@ -2,9 +2,9 @@
 //
 // noindex (Principe XII SEO — page privée).
 
+import { LoginForm } from '@/features/auth/ui/LoginForm';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { LoginForm } from '../../../components/auth/LoginForm';
 
 export const metadata: Metadata = {
   title: 'Connexion — Conseiller Voyage',

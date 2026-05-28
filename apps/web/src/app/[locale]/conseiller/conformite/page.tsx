@@ -9,6 +9,8 @@
 //
 // Toutes les strings passent par getTranslations() — convention T074a.
 
+import { HistorySection } from '@/features/conformite/ui/HistorySection';
+import { apiClient } from '@/shared/lib/http';
 import { formatDate } from '@cv/shared/conformite';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -16,8 +18,6 @@ import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../auth';
 import { type Locale, toUrlLocale } from '../../../../i18n';
-import { apiClient } from '../../../_lib/api-client';
-import { HistorySection } from './history-section';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;

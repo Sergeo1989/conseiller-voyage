@@ -4,11 +4,11 @@
 //
 // SÉCURITÉ : 404 si NODE_ENV=production.
 
+import { devLoginAction } from '@/features/auth/actions/dev-login.action';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { getEnv } from '../../../env';
 import type { Locale } from '../../../i18n';
-import { devLoginAction } from './actions';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;

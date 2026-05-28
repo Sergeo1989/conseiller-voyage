@@ -4,12 +4,12 @@
 // props — il est embed dans le DOM HTML directement), puis rend
 // <EnrollForm> Client.
 
+import { startEnrollmentAction } from '@/features/mfa/actions/enrollment.actions';
+import { EnrollForm } from '@/features/mfa/ui/EnrollForm';
 import { redirect } from 'next/navigation';
 import QRCode from 'qrcode';
 import { auth } from '../../../../../auth';
-import { EnrollForm } from '../../../../../components/mfa/EnrollForm';
 import { toUrlLocale } from '../../../../../i18n';
-import { startEnrollmentAction } from '../../../../../lib/mfa/server-actions';
 
 export const metadata = {
   title: 'Activation MFA — Conseiller Voyage',

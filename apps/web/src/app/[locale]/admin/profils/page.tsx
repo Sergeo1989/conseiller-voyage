@@ -5,12 +5,12 @@
 //   2. Charge la liste via apiClient (GET /api/admin/profils).
 //   3. Affiche table 5 colonnes + filtres statut + pagination.
 
+import { apiClient } from '@/shared/lib/http';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../auth';
 import { type Locale, toUrlLocale } from '../../../../i18n';
-import { apiClient } from '../../../_lib/api-client';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;

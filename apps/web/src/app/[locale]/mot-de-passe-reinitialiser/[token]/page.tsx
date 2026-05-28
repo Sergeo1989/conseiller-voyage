@@ -1,8 +1,8 @@
 // Page /mot-de-passe-reinitialiser/[token] — Server Component US5.
 
+import { PasswordResetCompleteForm } from '@/features/auth/ui/PasswordResetCompleteForm';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { PasswordResetCompleteForm } from '../../../../components/auth/PasswordResetCompleteForm';
 
 export const metadata: Metadata = {
   title: 'Choisir un nouveau mot de passe — Conseiller Voyage',

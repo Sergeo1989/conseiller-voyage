@@ -4,13 +4,13 @@
 // (ProfilHero, ProfilSections, BadgeVerifie) avec un BandeauApercu si
 // le profil n'est pas en état d'être publié.
 
+import { lireProfilApercuAction } from '@/features/profil-conseiller/actions/profil.actions';
+import { BandeauApercu } from '@/features/profil-conseiller/ui/BandeauApercu';
+import { BadgeVerifie } from '@/features/profil-public/ui/BadgeVerifie';
+import { ProfilHero } from '@/features/profil-public/ui/ProfilHero';
 import { redirect } from 'next/navigation';
 import { auth } from '../../../../../auth';
-import { BadgeVerifie } from '../../../../../components/profil-public/BadgeVerifie';
-import { ProfilHero } from '../../../../../components/profil-public/ProfilHero';
-import { BandeauApercu } from '../../../../../components/profil/BandeauApercu';
 import { type Locale, toUrlLocale } from '../../../../../i18n';
-import { lireProfilApercuAction } from '../../../../../lib/profil/server-actions';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;

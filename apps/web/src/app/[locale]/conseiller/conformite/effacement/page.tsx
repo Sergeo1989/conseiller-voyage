@@ -2,12 +2,12 @@
 // Explication détaillée des conséquences (irréversible, conservation
 // audit 7 ans) + formulaire avec confirmation explicite par typage.
 
+import { ErasureForm } from '@/features/conformite/ui/ErasureForm';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../auth';
 import { type Locale, toUrlLocale } from '../../../../../i18n';
-import { ErasureForm } from './erasure-form';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;

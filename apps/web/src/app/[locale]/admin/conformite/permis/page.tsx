@@ -1,11 +1,11 @@
 // T100 — Page admin "Déclaration de retrait de permis" (US3 FR-015).
 
+import { PermitRevokeForm } from '@/features/conformite-admin/ui/PermitRevokeForm';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../auth';
 import { type Locale, toUrlLocale } from '../../../../../i18n';
-import { PermitRevokeForm } from './permit-revoke-form';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;

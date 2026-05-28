@@ -1,8 +1,8 @@
 // Page /admin/accepter-invitation/[token] — US7 acceptance.
 
+import { AcceptAdminInvitationForm } from '@/features/auth/ui/AcceptAdminInvitationForm';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { AcceptAdminInvitationForm } from '../../../../../components/auth/AcceptAdminInvitationForm';
 
 export const metadata: Metadata = {
   title: "Accepter l'invitation — Conseiller Voyage",

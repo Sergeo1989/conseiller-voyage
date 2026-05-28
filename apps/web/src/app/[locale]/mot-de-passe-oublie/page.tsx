@@ -1,8 +1,8 @@
 // Page /mot-de-passe-oublie — Server Component US5.
 
+import { PasswordResetRequestForm } from '@/features/auth/ui/PasswordResetRequestForm';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { PasswordResetRequestForm } from '../../../components/auth/PasswordResetRequestForm';
 
 export const metadata: Metadata = {
   title: 'Mot de passe oublié — Conseiller Voyage',

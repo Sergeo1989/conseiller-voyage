@@ -5,7 +5,7 @@
 // le changelog (depuis le frontmatter MDX) + un formulaire qui poste
 // vers POST /api/me/legal/accept.
 
-import { reacceptCguAction } from './_action';
+import { reacceptCguAction } from '@/features/legal/actions/reaccept-cgu.action';
 
 export const dynamic = 'force-dynamic';
 

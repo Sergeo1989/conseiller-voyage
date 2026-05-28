@@ -1,8 +1,8 @@
 // Server Component /mfa/recovery (US3 — code de récupération).
 
+import { VerifyBackupCodeForm } from '@/features/mfa/ui/VerifyBackupCodeForm';
 import { redirect } from 'next/navigation';
 import { auth } from '../../../../../auth';
-import { VerifyBackupCodeForm } from '../../../../../components/mfa/VerifyBackupCodeForm';
 import { toUrlLocale } from '../../../../../i18n';
 
 export const metadata = {

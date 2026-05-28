@@ -1,6 +1,6 @@
 # Conseiller Voyage — Guide projet pour agents IA
 
-> Source de vérité contraignante : `.specify/memory/constitution.md` (v2.2.0).
+> Source de vérité contraignante : `.specify/memory/constitution.md` (v2.3.0).
 > Ce fichier en est un résumé opérationnel pour orienter rapidement les agents IA.
 
 ## Règle d'or
@@ -53,6 +53,17 @@ interface  →  application  →  domaine  ←  infrastructure
   à un cas d'usage.
 
 SOLID appliqué concrètement : voir Principe VIII de la constitution.
+
+### Conventions front `apps/web` (Principe VIII.a, depuis v2.3.0)
+
+- **Feature slicing** : chaque domaine vit dans `apps/web/src/features/<f>/{domain,application,infrastructure,actions,hooks,ui,schemas,index.ts}`.
+- **Routing mince** : `src/app/` ne contient que layouts, pages et boundaries — zéro logique métier, zéro Prisma direct, zéro fetch direct.
+- **Server Actions** : un seul lieu, `features/<f>/actions/<verbe>.action.ts` (jamais `app/`, jamais `lib/`). Validation Zod, vérification autorisation, retour `ActionResult<T>` (discriminated union), pas de `throw` métier.
+- **State boundaries** : RSC + TanStack Query (serveur), `searchParams` (URL), react-hook-form + Zod (forms), `useState` (local), Zustand (global rare, justifié).
+- **Design system** : `packages/ui` ou `packages/shared/ui/` en trois calques — *primitives* (shadcn/Radix), *patterns*, *layouts*. Extraction physique obligatoire si une 2e app consomme.
+- **Inter-slice** : couplage uniquement via `packages/*-domain/`, `packages/shared/`, `packages/ui`, ou l'`index.ts` du slice. Pas d'import profond cross-feature.
+- **Autorisation graduée** : middleware → layout (`require-<role>`) → action / use case → DB (filtre `verified`).
+- **Migration progressive** : nouvelles features = convention immédiate ; existantes refactorisées au prochain `touch` fonctionnel, jamais en big bang.
 
 ## Portes NON-NÉGOCIABLES (rejet automatique à la revue)
 

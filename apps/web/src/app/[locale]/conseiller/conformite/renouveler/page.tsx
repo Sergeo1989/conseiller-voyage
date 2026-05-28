@@ -2,12 +2,12 @@
 // Réutilise le même client SubmitDossierForm que la page soumettre,
 // avec un intro différent pour contextualiser le renouvellement.
 
+import { SubmitDossierForm } from '@/features/conformite/ui/SubmitDossierForm';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../auth';
 import { type Locale, toUrlLocale } from '../../../../../i18n';
-import { SubmitDossierForm } from '../soumettre/submit-dossier-form';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;

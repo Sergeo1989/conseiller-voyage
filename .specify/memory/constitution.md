@@ -1,6 +1,43 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.2.0 → 2.3.0 (MINEUR)
+
+Justification du bump MINEUR :
+  - Extension matérielle du Principe VIII (Clean Architecture et SOLID)
+    par une sous-section VIII.a inscrivant les conventions structurelles
+    contraignantes côté `apps/web` : feature slicing vertical, routing
+    mince, normalisation des Server Actions, frontières d'état
+    explicites, isolation du design system, couches d'autorisation, et
+    politique de migration progressive (pas de big bang).
+  - Aucun principe NON-NÉGOCIABLE affaibli ; aucun retrait.
+  - Aligne formellement la traduction front du Principe VIII avec
+    l'application déjà conforme côté `apps/api` (modules en 4 couches
+    domain/application/infrastructure/interface).
+
+Principes — état :
+  I-XII.  inchangés (cf. trail v2.2.0 ci-dessous)
+  VIII.   matériellement étendu via sous-section VIII.a (conventions web)
+
+Sections modifiées :
+  - Principe VIII — ajout de la sous-section VIII.a (Conventions
+    structurelles côté apps/web).
+
+Templates et fichiers dépendants — état :
+  ✅ CLAUDE.md — référence v2.2.0 → v2.3.0 (mention de la convention
+       front à intégrer dans le résumé opérationnel).
+  ⚠  .specify/templates/plan-template.md — Constitution Check sous
+       Principe VIII : ajouter un sous-bullet "structure front (si
+       apps/web touchée) : feature slice + Server Actions normalisées
+       + ActionResult typé" au prochain passage.
+  ⚠  Features existantes (auth, profil, profil-public, mfa, legal,
+       dashboard, conformite, conformite-admin) : pas de migration
+       forcée. Refactor au prochain "touch" fonctionnel uniquement
+       (cf. clause de migration progressive de VIII.a).
+
+==================
+HISTORIQUE
+==================
 Version change: 2.1.0 → 2.2.0 (MINEUR)
 
 Justification du bump MINEUR :
@@ -334,6 +371,134 @@ interface  →  application  →  domaine  ←  infrastructure
 Toute violation (ex. import direct de Prisma dans un cas d'usage pour
 optimisation perf) **DOIT** être documentée dans le plan d'implémentation
 sous *Complexity Tracking* avec la raison et la dette acceptée.
+
+#### VIII.a — Conventions structurelles côté `apps/web` (Next.js)
+
+Le Principe VIII s'applique à toutes les apps du monorepo. Côté
+`apps/web`, sa traduction structurelle **DOIT** respecter les
+conventions suivantes. L'app `apps/api` (NestJS) suit déjà la même
+règle des 4 couches par module — `modules/<m>/{domain, application,
+infrastructure, interface}` — et n'est pas couverte ici car déjà
+conforme à VIII en l'état.
+
+**1. Feature slicing vertical.** Chaque domaine fonctionnel **DOIT**
+vivre dans son propre slice sous `apps/web/src/features/<domaine>/`,
+isolant rendu, logique et données. Un slice **DOIT** contenir, dans la
+mesure où la feature en a besoin :
+
+- `domain/` — entités, value objects, règles pures (ré-exports de
+  `packages/*-domain/` acceptés).
+- `application/` — cas d'usage côté client (orchestration de
+  formulaires multi-étapes, wizards) ; absent si trivial.
+- `infrastructure/` — adaptateurs api-client typés, lecteurs read-only
+  (Prisma via RSC).
+- `actions/` — Server Actions (`<verbe>.action.ts`).
+- `hooks/` — hooks client (TanStack Query, RHF).
+- `ui/` — composants spécifiques au feature (Server ou Client
+  Components).
+- `schemas/` — Zod (souvent ré-exports de `packages/shared/` ou d'un
+  futur `packages/contracts/`).
+- `index.ts` — **API publique** du slice ; seul point d'import autorisé
+  depuis un autre slice.
+
+**2. Routing mince.** `apps/web/src/app/` **NE DOIT CONTENIR QUE** la
+composition de routes : layouts, pages, et boundaries (`error.tsx`,
+`loading.tsx`, `not-found.tsx`, `opengraph-image.tsx`, `sitemap.ts`,
+`robots.ts`). Chaque `page.tsx` est un Server Component qui délègue à
+un cas d'usage ou à un composant d'un feature slice. **AUCUNE** logique
+métier, **AUCUN** accès Prisma direct, **AUCUN** fetch direct ne **DOIT**
+vivre dans `app/`. Les route groups (`(public)`, `(auth)`, `(conseiller)`,
+`(admin)`, `(legal)`) découpent les audiences sous `[locale]/`.
+
+**3. Server Actions normalisées.** Toute Server Action **DOIT** :
+
+- vivre dans `features/<f>/actions/<verbe>.action.ts` — **jamais** dans
+  `app/`, **jamais** dans `lib/` ;
+- débuter par la directive `'use server'` ;
+- valider l'entrée par Zod côté serveur (Principe IX) ;
+- vérifier autorisation (rôle + propriété de la ressource) avant
+  exécution (Principe IX) ;
+- retourner un `ActionResult<T>` typé en discriminated union
+  (`{ ok: true; data: T } | { ok: false; error: { code, message, field? } }`) ;
+- **NE JAMAIS** `throw` pour un échec métier prévu — un `throw` est
+  réservé aux invariants violés et aux erreurs infrastructure.
+
+**4. Frontières d'état explicites.** Tracer la frontière par le besoin,
+pas par habitude :
+
+| Type d'état | Outil | Localisation |
+|---|---|---|
+| Serveur — lecture | RSC `await` direct ; TanStack Query côté client si interactivité | `features/<f>/hooks/use<X>Query.ts` |
+| Serveur — écriture | Server Action + `revalidateTag`/`revalidatePath` | `features/<f>/actions/<v>.action.ts` |
+| URL (filtres, pagination, onglets) | `searchParams` | dans la page |
+| Formulaire | `react-hook-form` + `zodResolver` | dans le Client Component du formulaire |
+| Client local | `useState` / `useReducer` | dans le composant |
+| Client global | Zustand | `features/<f>/store/<x>.store.ts` — **réservé** aux cas réellement transversaux |
+
+Le store global Zustand n'est **PAS** la position par défaut. Toute
+introduction d'un store transverse **DOIT** être justifiée dans le plan
+d'implémentation (impossibilité d'utiliser RSC + searchParams +
+TanStack Query).
+
+**5. Design system isolé.** Les composants UI réutilisables transverses
+**DOIVENT** vivre dans un package dédié du workspace (par défaut
+`packages/ui`, ou intégré à `packages/shared/ui/` tant qu'aucune
+seconde app ne le consomme), structurés en trois calques :
+
+- *primitives* — atomes (Button, Input, Card) sur base shadcn/ui +
+  Radix UI ;
+- *patterns* — assemblages domaine-neutres (FormField, DataTable,
+  EmptyState, Toast) ;
+- *layouts* — shells de page (PageShell, AuthShell, AdminShell).
+
+L'extraction physique vers `packages/ui` devient **OBLIGATOIRE** dès
+qu'une seconde app du monorepo consomme ces composants. Tant qu'une
+seule app les consomme, la structuration en trois calques **DOIT**
+néanmoins être respectée.
+
+**6. Pas de couplage inter-slice direct.** Aucun composant, hook,
+action ou type d'un feature slice ne **DOIT** être importé depuis un
+autre slice par chemin interne. Le couplage entre features passe
+uniquement par :
+
+- `packages/*-domain/` (règles métier pures) ;
+- `packages/shared/` (DTOs Zod partagés) ;
+- `packages/ui` (composants transverses) ;
+- l'`index.ts` (API publique) du slice exportateur.
+
+Une règle Biome `no-restricted-imports` **DEVRAIT** être configurée
+pour bloquer les imports profonds cross-feature.
+
+**7. Couches d'autorisation graduées** (alignement Principes I et IX) :
+
+1. **`middleware.ts`** → coarse-grained : session présente, locale
+   résolue, CGU acceptée.
+2. **Layout de route group** (`require-conseiller.ts`,
+   `require-admin.ts`) → rôle requis pour la branche.
+3. **Server Action / cas d'usage** → vérification fine (propriété de la
+   ressource, scope d'opération).
+4. **DB (Prisma + filtre `verified`)** → garde-fou ultime (Principe I :
+   un conseiller non vérifié ne **DOIT** jamais être visible publiquement
+   même si une couche supérieure défaille).
+
+**8. Migration progressive — pas de big bang.** Les features livrées
+avant ratification de cette sous-section ne **DOIVENT PAS** être
+migrées en bloc vers `features/`. Elles sont refactorisées vers la
+convention **au moment où elles sont touchées** pour une autre raison
+fonctionnelle (ajout de fonctionnalité, correction de bug structurant,
+extension significative). Toute **nouvelle** feature issue de
+`/speckit.specify` créée après ratification **DOIT** en revanche être
+implémentée directement dans la convention — l'écart est un défaut de
+plan.
+
+**Raison.** Le front sans convention structurelle dérive vite vers
+trois maisons pour les Server Actions, des composants noyés dans
+`components/<domaine>/` sans frontière avec la logique, et un couplage
+implicite entre features qui rend toute évolution coûteuse. La
+discipline imposée ici (feature slice + actions normalisées + state
+boundaries + autorisation graduée) rend chaque feature lisible, testable
+et substituable indépendamment, sans imposer la migration coûteuse
+d'un existant qui fonctionne.
 
 ### IX. Sécurité applicative (NON-NÉGOCIABLE)
 
@@ -918,4 +1083,4 @@ courant dans `specs/<feature>/plan.md` et aux ADR dans `docs/adr/`. Le
 fichier `CLAUDE.md` à la racine du dépôt résume la stack et les portes
 non-négociables pour les agents IA.
 
-**Version**: 2.2.0 | **Ratified**: 2026-05-22 | **Last Amended**: 2026-05-23
+**Version**: 2.3.0 | **Ratified**: 2026-05-22 | **Last Amended**: 2026-05-27

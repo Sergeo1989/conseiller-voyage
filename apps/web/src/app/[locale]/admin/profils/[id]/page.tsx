@@ -6,13 +6,13 @@
 //   3. Affiche : identité + statut + champs + photo + audits + 3 actions
 //      (retirer photo / masquer / rétablir selon statut courant).
 
+import { AdminActionButtons } from '@/features/admin-users/ui/AdminActionButtons';
+import { apiClient } from '@/shared/lib/http';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../auth';
 import { type Locale, toUrlLocale } from '../../../../../i18n';
-import { apiClient } from '../../../../_lib/api-client';
-import { AdminActionButtons } from './_components/AdminActionButtons';
 
 interface PageProps {
   params: Promise<{ locale: Locale; id: string }>;

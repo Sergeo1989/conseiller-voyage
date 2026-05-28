@@ -9,12 +9,12 @@
 //
 // Libellés FR-CA via next-intl. Pas d'index moteur (route privée).
 
+import { lireProfilPriveAction } from '@/features/profil-conseiller/actions/profil.actions';
+import { ProfilForm } from '@/features/profil-conseiller/ui/ProfilForm';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { auth } from '../../../../auth';
-import { ProfilForm } from '../../../../components/profil/ProfilForm';
 import type { Locale } from '../../../../i18n';
-import { lireProfilPriveAction } from '../../../../lib/profil/server-actions';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;

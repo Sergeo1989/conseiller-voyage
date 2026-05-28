@@ -5,9 +5,9 @@
 //
 // noindex (page privée).
 
+import { ResendCountdownButton } from '@/features/auth/ui/ResendCountdownButton';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { ResendCountdownButton } from '../../../../components/auth/ResendCountdownButton';
 
 export const metadata: Metadata = {
   title: 'Vérifiez votre courriel — Conseiller Voyage',

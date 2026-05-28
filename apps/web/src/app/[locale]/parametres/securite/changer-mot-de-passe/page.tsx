@@ -1,10 +1,10 @@
 // Page /parametres/securite/changer-mot-de-passe — US6.
 
+import { ChangePasswordForm } from '@/features/auth/ui/ChangePasswordForm';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../auth';
-import { ChangePasswordForm } from '../../../../../components/auth/ChangePasswordForm';
 import { toUrlLocale } from '../../../../../i18n';
 
 export const metadata: Metadata = {

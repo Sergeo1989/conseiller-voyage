@@ -2,9 +2,9 @@
 // Exige une session authentifiée (post-mot-de-passe). Si mfaVerifiedAt
 // est déjà fresh, redirect direct vers la home.
 
+import { VerifyTotpForm } from '@/features/mfa/ui/VerifyTotpForm';
 import { redirect } from 'next/navigation';
 import { auth } from '../../../../../auth';
-import { VerifyTotpForm } from '../../../../../components/mfa/VerifyTotpForm';
 import { toUrlLocale } from '../../../../../i18n';
 
 export const metadata = {

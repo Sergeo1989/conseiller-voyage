@@ -2,7 +2,7 @@
 // Inclut un schéma JSON-LD `Organization` en plus du WebPage standard
 // pour aider les crawlers à identifier l'éditeur.
 
-import { buildLegalMetadata, renderLegalPage } from '@/lib/legal/page-helpers';
+import { buildLegalMetadata, renderLegalPage } from '@/features/legal/ui/page-helpers';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 

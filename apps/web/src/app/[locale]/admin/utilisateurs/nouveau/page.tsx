@@ -1,10 +1,10 @@
 // Page /admin/utilisateurs/nouveau — US7 invitation admin.
 
+import { InviteAdminForm } from '@/features/auth/ui/InviteAdminForm';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../auth';
-import { InviteAdminForm } from '../../../../../components/auth/InviteAdminForm';
 import { toUrlLocale } from '../../../../../i18n';
 
 export const metadata: Metadata = {

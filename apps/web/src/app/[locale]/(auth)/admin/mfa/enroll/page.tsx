@@ -6,13 +6,13 @@
 //   - Wording "console d'administration" plutôt que "tableau de bord"
 //   - Bouton finalisation redirige vers /admin (pas vers /)
 
+import { startEnrollmentAction } from '@/features/mfa/actions/enrollment.actions';
+import { EnrollForm } from '@/features/mfa/ui/EnrollForm';
 import { prisma } from '@cv/db';
 import { redirect } from 'next/navigation';
 import QRCode from 'qrcode';
 import { auth } from '../../../../../../auth';
-import { EnrollForm } from '../../../../../../components/mfa/EnrollForm';
 import { toUrlLocale } from '../../../../../../i18n';
-import { startEnrollmentAction } from '../../../../../../lib/mfa/server-actions';
 
 export const metadata = {
   title: 'Activation MFA admin — Conseiller Voyage',

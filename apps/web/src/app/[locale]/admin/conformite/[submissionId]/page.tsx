@@ -2,6 +2,8 @@
 // Server Component qui charge le détail (avec URLs S3 GET signées),
 // affiche certificats + affiliations + actions (panneau client).
 
+import { DecisionPanel } from '@/features/conformite-admin/ui/DecisionPanel';
+import { apiClient } from '@/shared/lib/http';
 import { formatDate } from '@cv/shared/conformite';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -9,8 +11,6 @@ import { notFound, redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../auth';
 import { type Locale, toUrlLocale } from '../../../../../i18n';
-import { apiClient } from '../../../../_lib/api-client';
-import { DecisionPanel } from './decision-panel';
 
 interface PageProps {
   params: Promise<{ locale: Locale; submissionId: string }>;

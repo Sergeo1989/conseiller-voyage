@@ -8,14 +8,14 @@
 //
 // Pas d'index moteur (route privée).
 
+import { WidgetConformite } from '@/features/dashboard/ui/WidgetConformite';
+import { WidgetPlaceholder } from '@/features/dashboard/ui/WidgetPlaceholder';
+import { WidgetProfil } from '@/features/dashboard/ui/WidgetProfil';
+import { lireProfilPriveAction } from '@/features/profil-conseiller/actions/profil.actions';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '../../../auth';
-import { WidgetConformite } from '../../../components/dashboard/WidgetConformite';
-import { WidgetPlaceholder } from '../../../components/dashboard/WidgetPlaceholder';
-import { WidgetProfil } from '../../../components/dashboard/WidgetProfil';
 import { type Locale, toUrlLocale } from '../../../i18n';
-import { lireProfilPriveAction } from '../../../lib/profil/server-actions';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;

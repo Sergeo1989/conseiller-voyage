@@ -2,7 +2,7 @@
 // Énonce explicitement que la plateforme n'est PAS une agence de voyages.
 // SSG force-static, contenu chargé depuis packages/legal-content/.
 
-import { buildLegalMetadata, renderLegalPage } from '@/lib/legal/page-helpers';
+import { buildLegalMetadata, renderLegalPage } from '@/features/legal/ui/page-helpers';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 

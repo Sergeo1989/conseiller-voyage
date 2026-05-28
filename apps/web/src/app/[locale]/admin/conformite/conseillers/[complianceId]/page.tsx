@@ -1,11 +1,11 @@
 // T105 — Page admin détail conseiller avec action Révoquer (US4 FR-010).
 
+import { RevokeModal } from '@/features/conformite-admin/ui/RevokeModal';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '../../../../../../auth';
 import { type Locale, toUrlLocale } from '../../../../../../i18n';
-import { RevokeModal } from './revoke-modal';
 
 interface PageProps {
   params: Promise<{ locale: Locale; complianceId: string }>;
