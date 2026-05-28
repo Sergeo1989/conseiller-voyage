@@ -6,7 +6,7 @@
 // + tiret auto). Submit → Server Action. Sur ok → redirect home, et
 // affiche un toast si warnLowCodes.
 
-import { verifyBackupCodeAction } from '@/features/mfa/actions/verify.actions';
+import { verifyBackupCodeAction } from '@/features/mfa';
 import { toUrlLocale } from '@/i18n';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';

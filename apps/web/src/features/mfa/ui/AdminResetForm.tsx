@@ -2,7 +2,7 @@
 
 // AdminResetForm — Client Component pour /admin/users/[id]/reset-mfa (US4).
 
-import { resetUserMfaAdminAction } from '@/features/mfa/actions/admin-reset.actions';
+import { resetUserMfaAdminAction } from '@/features/mfa';
 import { toUrlLocale } from '@/i18n';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';

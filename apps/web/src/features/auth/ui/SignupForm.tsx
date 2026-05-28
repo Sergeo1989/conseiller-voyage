@@ -7,7 +7,7 @@
 // via la Server Action signupAction. Messages d'erreur FR-CA exposés
 // via aria-describedby (Principe XI a11y).
 
-import { signupAction } from '@/features/auth/actions/auth.actions';
+import { signupAction } from '@/features/auth';
 import { type SignupDto, SignupDtoSchema } from '@cv/auth-domain/dtos';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';

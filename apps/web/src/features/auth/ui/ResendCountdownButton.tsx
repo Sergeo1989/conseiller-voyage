@@ -8,7 +8,7 @@
 //   - aria-describedby renvoie sur le texte de countdown
 // Au 2e renvoi infructueux, affiche un lien "contacter le support".
 
-import { resendVerificationEmailAction } from '@/features/auth/actions/auth.actions';
+import { resendVerificationEmailAction } from '@/features/auth';
 import { useCallback, useEffect, useState } from 'react';
 
 interface ResendCountdownButtonProps {

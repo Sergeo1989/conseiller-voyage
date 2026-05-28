@@ -1,6 +1,6 @@
 // T100 — Widget Profil (feature 007 US3 + FR-012a).
 
-import type { ProfilPriveDto } from '@/features/profil-conseiller/actions/profil.actions';
+import type { ProfilPriveDto } from '@/features/profil-conseiller';
 import Link from 'next/link';
 
 interface WidgetProfilProps {

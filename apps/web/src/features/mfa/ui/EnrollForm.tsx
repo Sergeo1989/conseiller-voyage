@@ -12,7 +12,7 @@
 //   5. Submit → confirmEnrollmentAction → redirect vers tableau de bord
 //      conseiller (qui pour 005 phase 3 = /[locale] page d'accueil).
 
-import { confirmEnrollmentAction } from '@/features/mfa/actions/enrollment.actions';
+import { confirmEnrollmentAction } from '@/features/mfa';
 import { toUrlLocale } from '@/i18n';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';

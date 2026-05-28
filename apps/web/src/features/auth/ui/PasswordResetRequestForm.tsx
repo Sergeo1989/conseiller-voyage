@@ -2,7 +2,7 @@
 
 // PasswordResetRequestForm — formulaire "Mot de passe oublié" (US5).
 
-import { requestPasswordResetAction } from '@/features/auth/actions/auth.actions';
+import { requestPasswordResetAction } from '@/features/auth';
 import { useState, useTransition } from 'react';
 
 export function PasswordResetRequestForm() {

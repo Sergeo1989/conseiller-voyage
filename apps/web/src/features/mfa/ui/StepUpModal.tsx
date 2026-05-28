@@ -18,7 +18,7 @@
 //   - Fermeture du modal : l'action sensible reste verrouillée
 //     (lecture seule).
 
-import { stepUpAction } from '@/features/mfa/actions/stepup.actions';
+import { stepUpAction } from '@/features/mfa';
 import type { IntendedAction } from '@cv/mfa';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useRouter } from 'next/navigation';

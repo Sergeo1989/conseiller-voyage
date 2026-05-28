@@ -12,7 +12,7 @@ import { auth } from '@/auth';
 import { WidgetConformite } from '@/features/dashboard/ui/WidgetConformite';
 import { WidgetPlaceholder } from '@/features/dashboard/ui/WidgetPlaceholder';
 import { WidgetProfil } from '@/features/dashboard/ui/WidgetProfil';
-import { lireProfilPriveAction } from '@/features/profil-conseiller/actions/profil.actions';
+import { lireProfilPriveAction } from '@/features/profil-conseiller';
 import { type Locale, toUrlLocale } from '@/i18n';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';

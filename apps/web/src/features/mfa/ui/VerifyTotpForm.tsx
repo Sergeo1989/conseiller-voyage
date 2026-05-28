@@ -5,7 +5,7 @@
 // Submit le code TOTP via Server Action. Sur succès → redirect home.
 // Sur invalid → message + retry. Sur locked → message avec unlockAt.
 
-import { verifyTotpAction } from '@/features/mfa/actions/verify.actions';
+import { verifyTotpAction } from '@/features/mfa';
 import { toUrlLocale } from '@/i18n';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';

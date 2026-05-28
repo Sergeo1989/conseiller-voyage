@@ -1,6 +1,6 @@
 'use client';
 
-import { acceptAdminInvitationAction } from '@/features/auth/actions/auth.actions';
+import { acceptAdminInvitationAction } from '@/features/auth';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 

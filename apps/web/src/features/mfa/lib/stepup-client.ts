@@ -14,7 +14,7 @@
 //   3. Sinon → ouvre le modal step-up ; action() exécutée au succès du
 //      step-up.
 
-import { checkSessionFreshnessAction } from '@/features/mfa/actions/stepup.actions';
+import { checkSessionFreshnessAction } from '@/features/mfa';
 import { StepUpModal } from '@/features/mfa/ui/StepUpModal';
 import type { IntendedAction } from '@cv/mfa';
 import { type ReactNode, useCallback, useState } from 'react';

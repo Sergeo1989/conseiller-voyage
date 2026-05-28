@@ -3,7 +3,7 @@
 // RegenerateCodesForm — Client Component qui déclenche la régénération
 // via Server Action puis affiche les 10 nouveaux codes (one-shot).
 
-import { regenerateBackupCodesAction } from '@/features/mfa/actions/device-change.actions';
+import { regenerateBackupCodesAction } from '@/features/mfa';
 import { useState, useTransition } from 'react';
 import { BackupCodesDisplay } from './BackupCodesDisplay';
 

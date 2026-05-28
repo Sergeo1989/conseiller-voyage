@@ -1,23 +1,18 @@
 // API publique de la feature profil-conseiller (édition profil privé,
 // upload photo, aperçu — feature 007).
-//
-// TODO Principe VIII.a §3 (convention <verbe>.action.ts) : le fichier
-// `actions/profil.actions.ts` regroupe encore 4 actions ; à splitter en
-// editer-profil / uploader-photo / lire-profil-prive / lire-profil-apercu
-// dans un PR de refactor séparé (extraire helpers partagés dans `lib/`).
+// Conforme à Principe VIII.a §3 : un verbe = un fichier <verbe>.action.ts.
 
-export {
-  editerProfilAction,
-  uploaderPhotoAction,
-  lireProfilApercuAction,
-  lireProfilPriveAction,
-} from './actions/profil.actions';
-export type {
-  EditerProfilResult,
-  UploaderPhotoResult,
-  ProfilPriveDto,
-  ProfilApercuDto,
-} from './actions/profil.actions';
+export { editerProfilAction } from './actions/editer-profil.action';
+export type { EditerProfilResult } from './actions/editer-profil.action';
+
+export { uploaderPhotoAction } from './actions/uploader-photo.action';
+export type { UploaderPhotoResult } from './actions/uploader-photo.action';
+
+export { lireProfilPriveAction } from './actions/lire-profil-prive.action';
+export type { ProfilPriveDto } from './actions/lire-profil-prive.action';
+
+export { lireProfilApercuAction } from './actions/lire-profil-apercu.action';
+export type { ProfilApercuDto } from './actions/lire-profil-apercu.action';
 
 export { ProfilForm } from './ui/ProfilForm';
 export { PhotoUpload } from './ui/PhotoUpload';

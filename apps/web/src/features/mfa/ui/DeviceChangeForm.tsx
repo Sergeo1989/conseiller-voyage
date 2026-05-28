@@ -3,7 +3,7 @@
 // DeviceChangeForm — Client Component pour /parametres/mfa/change-device (US6).
 // Saisie mot de passe + radio TOTP/backup code + input adaptatif.
 
-import { startDeviceChangeAction } from '@/features/mfa/actions/device-change.actions';
+import { startDeviceChangeAction } from '@/features/mfa';
 import { toUrlLocale } from '@/i18n';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';

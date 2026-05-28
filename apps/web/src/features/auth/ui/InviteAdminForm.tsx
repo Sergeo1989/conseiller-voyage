@@ -1,6 +1,6 @@
 'use client';
 
-import { inviteAdminAction } from '@/features/auth/actions/auth.actions';
+import { inviteAdminAction } from '@/features/auth';
 import { useState, useTransition } from 'react';
 
 export function InviteAdminForm() {

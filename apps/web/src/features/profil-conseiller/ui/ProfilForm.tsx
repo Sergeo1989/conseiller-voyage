@@ -13,11 +13,8 @@
 // Validation client-side : react-hook-form + zod resolver (DTO partagé).
 // Erreurs serveur : affichées par champ via aria-describedby.
 
-import type {
-  EditerProfilResult,
-  ProfilPriveDto,
-} from '@/features/profil-conseiller/actions/profil.actions';
-import { editerProfilAction } from '@/features/profil-conseiller/actions/profil.actions';
+import type { EditerProfilResult, ProfilPriveDto } from '@/features/profil-conseiller';
+import { editerProfilAction } from '@/features/profil-conseiller';
 import { EditerProfilDto } from '@cv/profil-domain/dtos';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';

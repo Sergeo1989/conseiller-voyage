@@ -1,6 +1,6 @@
 'use client';
 
-import { changePasswordAction } from '@/features/auth/actions/auth.actions';
+import { changePasswordAction } from '@/features/auth';
 import { useState, useTransition } from 'react';
 
 interface Props {

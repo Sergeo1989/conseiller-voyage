@@ -5,10 +5,7 @@
 // File picker JPEG/PNG/WebP ≤ 5 Mo, preview avant submit, gestion des erreurs
 // retournées par uploaderPhotoAction (taille, format, contenu, dimensions).
 
-import {
-  type UploaderPhotoResult,
-  uploaderPhotoAction,
-} from '@/features/profil-conseiller/actions/profil.actions';
+import { type UploaderPhotoResult, uploaderPhotoAction } from '@/features/profil-conseiller';
 import { useState, useTransition } from 'react';
 
 interface PhotoUploadProps {

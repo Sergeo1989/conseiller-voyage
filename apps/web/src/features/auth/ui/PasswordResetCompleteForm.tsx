@@ -3,7 +3,7 @@
 // PasswordResetCompleteForm — formulaire "choisir un nouveau mot de
 // passe" après clic sur le lien email (US5).
 
-import { completePasswordResetAction } from '@/features/auth/actions/auth.actions';
+import { completePasswordResetAction } from '@/features/auth';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
