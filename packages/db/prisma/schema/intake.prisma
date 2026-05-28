@@ -1,17 +1,221 @@
 // Schéma Prisma du module intake — préqualification voyageur.
-// Cf. specs/002-voyageur-intake/data-model.md
+// Cf. specs/002-voyageur-intake/data-model.md (5 entités + 6 enums)
 //
 // Conventions (héritées 001 + Principe V) :
 //   - UUID v4 partout en `@db.Uuid` (parité 001 + branded types
-//     packages/shared/intake/branded-ids.ts)
+//     packages/shared/intake/branded-ids.ts T018)
 //   - Tables préfixées `intake_*` pour matérialiser la frontière
 //     module (`tools/check-module-boundaries.ts`)
 //   - onDelete: Restrict par défaut — anonymisation Loi 25 nullifie les
 //     PII sans cascade silencieuse (cf. data-model §VoyageurContact)
 //   - Audit log append-only dans `intake_audit_entries` (table séparée
 //     R2 / ADR-0017 — Principe V) avec trigger SQL bloquant UPDATE/DELETE
-//   - Pattern outbox dans `intake_outbox_entries` drainé par
+//   - Pattern outbox dans `intake_outbox` drainé par
 //     `OutboxPublisherJob` (étendu depuis 001)
 //
-// T005 (Phase 1 Setup) : placeholder vide, modèles + enums seront ajoutés
-// en T011 + T012 (Phase 2 Foundational).
+// `ActorRole` enum est défini par feature 001 — réutilisé tel quel
+// (pas redéfini ici sinon CREATE TYPE échoue en migration).
+
+// =====================================================================
+// Enums (T011 — 6 nouveaux types Postgres scoped intake_*)
+// =====================================================================
+
+enum BriefStatus {
+  pending_verification
+  active
+  matched
+  expired_unverified
+  expired
+  deleted
+  anonymized
+}
+
+enum TravelBudget {
+  under_2k
+  between_2k_5k
+  between_5k_10k
+  between_10k_20k
+  above_20k
+}
+
+enum TravelSpeciality {
+  croisiere
+  aventure_outdoor
+  lune_de_miel
+  famille_avec_enfants
+  mobilite_reduite
+  multigenerationnel
+  culturel_historique
+  luxe
+  road_trip
+  voyage_affaires
+  autre
+}
+
+enum TravelFamiliarity {
+  first_big_trip
+  occasional_traveler
+  experienced_traveler
+}
+
+enum ConseillerLanguage {
+  fr
+  en
+  es
+  other
+}
+
+enum MagicLinkPurpose {
+  verify_email
+  view_brief_status
+}
+
+// =====================================================================
+// Modèles (T012 — 5 tables, mapping data-model.md)
+// =====================================================================
+
+/// Coordonnées du voyageur, isolées des données de voyage (PII séparée —
+/// Principe II + audit Loi 25 simplifié).
+model VoyageurContact {
+  id String @id @default(uuid()) @db.Uuid
+
+  email                  String  @unique @db.VarChar(254) // RFC 5321
+  emailHashAfterErasure  String? @db.Char(64) // SHA-256 hex post-anonymisation (N4 résolu)
+  firstName              String? @db.VarChar(100)
+  lastName               String? @db.VarChar(100)
+  phone                  String? @db.VarChar(20) // E.164 post-normalisation R6
+  postalCode             String? @db.VarChar(7) // format canadien `A1A 1A1`
+
+  // briefsCount24h / windowStart : compteur de SUPPORT à la rate-limit
+  // Redis (T051). Conservé en DB comme backup historique + diagnostic,
+  // pas comme source de vérité (cf. N5 résolu — la source = Redis).
+  briefsCount24h            Int       @default(0)
+  briefsCount24hWindowStart DateTime?
+
+  briefs    VoyageurBrief[]
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  anonymizedAt DateTime?
+
+  @@map("intake_voyageur_contacts")
+}
+
+/// Le brief structuré soumis par un voyageur. Immuable post-vérification
+/// email (anti-manipulation scoring matching feature 011).
+model VoyageurBrief {
+  id String @id @default(uuid()) @db.Uuid
+
+  voyageurContactId String          @db.Uuid
+  voyageurContact   VoyageurContact @relation(fields: [voyageurContactId], references: [id], onDelete: Restrict)
+
+  status               BriefStatus @default(pending_verification)
+  submittedAt          DateTime    @default(now())
+  verifiedAt           DateTime?
+  expiresAt            DateTime
+  consentGivenAt       DateTime
+  erasureRequestedAt   DateTime?
+  anonymizedAt         DateTime?
+
+  // Marqueur abus (FR-021 + SC-007 + N9 résolu) — set par scan manuel
+  // hebdo OU par signal automatique disposable/bot. Nullable = pas
+  // (encore) marqué abusif.
+  abuseMarkedAt DateTime?
+
+  // === Données du formulaire (FR-002 … FR-008) ===
+  destinations            Json // [{country: 'IT', region?: 'Toscane'}, …] multi-stop
+  departureDate           DateTime @db.Date
+  returnDate              DateTime @db.Date
+  datesFlexible           Boolean  @default(false)
+  datesFlexibilityDays    Int? // 1..30 si datesFlexible
+  adultsCount             Int
+  childrenAges            Json     @default("[]")
+  infantsCount            Int      @default(0)
+  budgetRange             TravelBudget
+  budgetNote              String?  @db.VarChar(500)
+  conseillerLanguage      ConseillerLanguage
+  conseillerLanguageOther String?  @db.Char(2) // ISO 639-1 si other
+  speciality              TravelSpeciality
+  specialityOther         String?  @db.VarChar(200)
+  familiarity             TravelFamiliarity
+
+  // Audit anti-spam (pas affiché)
+  clientIp  String? @db.VarChar(45) // IPv4 ou IPv6 masked /24
+  userAgent String? @db.VarChar(500)
+
+  // Idempotence (FR-018 multi-briefs sans duplication, anti-double-submit)
+  idempotencyKey String?
+
+  magicLinkTokens MagicLinkToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([idempotencyKey], map: "intake_voyageur_briefs_idempotency_key_unique")
+  @@index([voyageurContactId])
+  @@index([status, expiresAt])
+  @@index([verifiedAt, status])
+  @@map("intake_voyageur_briefs")
+}
+
+/// Token signé temporaire (J+7) pour vérifier l'email du voyageur ou
+/// consulter son brief. Random 32 bytes hex côté code, stocké en hash
+/// SHA-256 (le clear text n'est jamais persisté — R1 / ADR-0018).
+model MagicLinkToken {
+  id String @id @default(uuid()) @db.Uuid
+
+  briefId String        @db.Uuid
+  brief   VoyageurBrief @relation(fields: [briefId], references: [id], onDelete: Cascade)
+
+  tokenHash  String           @unique
+  purpose    MagicLinkPurpose
+  expiresAt  DateTime
+  consumedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([briefId, purpose, consumedAt])
+  @@index([expiresAt])
+  @@map("intake_magic_link_tokens")
+}
+
+/// Audit log append-only de toutes les actions sur les briefs (création,
+/// vérification, suppression, expiration, push admin manuel).
+/// Trigger SQL append-only posé par la migration intake_audit_append_only
+/// (T014). Privilèges INSERT-only pour app_intake.
+model IntakeAuditEntry {
+  id String @id @default(uuid()) @db.Uuid
+
+  voyageurBriefId   String? @db.Uuid // FK soft (pas formelle) — survit à l'anonymisation
+  voyageurContactId String? @db.Uuid
+
+  eventType String    @db.VarChar(100)
+  actorRole ActorRole // enum hérité du module conformite (001)
+  actorId   String?   @db.Uuid // FK soft vers auth_users
+  occurredAt DateTime @default(now())
+  payload    Json
+
+  idempotencyKey String? @unique
+  correlationId  String? @db.Uuid
+
+  @@index([voyageurBriefId, occurredAt(sort: Desc)])
+  @@index([eventType, occurredAt(sort: Desc)])
+  @@map("intake_audit_entries")
+}
+
+/// Pattern outbox pour publier les événements transactionnellement avec
+/// les mutations brief. Drainé par OutboxPublisherJob (étendu depuis 001).
+model IntakeOutboxEntry {
+  id String @id @default(uuid()) @db.Uuid
+
+  eventType     String
+  payload       Json
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime?
+  lastError     String?   @db.VarChar(1000)
+
+  @@index([publishedAt, nextAttemptAt])
+  @@map("intake_outbox")
+}
