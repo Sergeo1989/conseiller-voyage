@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "module intake / préqualification voyageur — feature 002 du projet Conseiller Voyage. Permet à un voyageur francophone (FR-CA prioritaire, EN supporté) de décrire son projet de voyage via un formulaire structuré qui produit un brief qualifié, prêt à être matché à des conseillers vérifiés CCV/TICO par la feature 003 (matching). Aucune transaction monétaire dans cette feature."
+**Input**: User description: "module intake / préqualification voyageur — feature 002 du projet Conseiller Voyage. Permet à un voyageur francophone (FR-CA prioritaire, EN supporté) de décrire son projet de voyage via un formulaire structuré qui produit un brief qualifié, prêt à être matché à des conseillers vérifiés CCV/TICO par la feature matching (future, ID roadmap 011). Aucune transaction monétaire dans cette feature."
 
 ---
 
@@ -19,7 +19,7 @@ formulaire en étapes. Le système produit un **brief structuré** capturant
 les 5 différenciateurs identifiés dans `docs/positioning.md` (langue,
 spécialité, budget fourchette, flexibilité dates, familiarité) — éléments
 absents chez Mon Voyage Mon Agence et autres acteurs québécois. Ce brief
-sera consommé par la feature 003 (matching) qui plafonnera à 3 conseillers
+sera consommé par la feature matching (future, ID roadmap 011) qui plafonnera à 3 conseillers
 notifiés par brief (Principe III).
 
 Aucune transaction monétaire dans cette feature. Pas de compte permanent
@@ -44,7 +44,7 @@ le squelette du MVP.
 **Independent Test** : Un voyageur fictif remplit le formulaire dans
 l'environnement de test, vérifie son email magic link, et le brief résultant
 est vérifiable en BD avec toutes les données structurées + le consentement
-Loi 25 horodaté. La feature 003 (matching) peut alors consommer ce brief.
+Loi 25 horodaté. La feature matching (future, ID roadmap 011) peut alors consommer ce brief.
 
 **Acceptance Scenarios** :
 
@@ -58,7 +58,7 @@ Loi 25 horodaté. La feature 003 (matching) peut alors consommer ce brief.
 2. **Given** le voyageur clique sur le magic link dans son courriel dans
    les 24 h, **When** le lien est valide et non expiré,
    **Then** le brief passe au statut *« actif »*, un évènement
-   `voyageur.brief.activated` est publié sur l'outbox pour la feature 003.
+   `voyageur.brief.activated` est publié sur l'outbox pour la feature matching (ID roadmap 011).
 
 3. **Given** le voyageur tente de soumettre un formulaire avec un champ
    obligatoire vide (ex : destination),
@@ -184,25 +184,25 @@ dans l'audit log (preuve de conformité Loi 25).
 ### User Story 5 - Admin traite manuellement un brief sans match (Priority: P3)
 
 Pierre (admin) consulte la file admin. Un brief soumis hier n'a pas pu être
-matché automatiquement par la feature 003 (par exemple : destination très
+matché automatiquement par la feature matching (ID roadmap 011) (par exemple : destination très
 niche, langue rare). Pierre voit le brief dans une file
 *« non-matchés automatiquement »*, l'examine, et le pousse manuellement à
 un conseiller du réseau qu'il sait compétent.
 
 **Why this priority** : Filet de sécurité pour ne perdre aucun lead. La
-feature 003 ne couvrira pas 100 % des cas dès J1. Ce flux admin permet de
+feature matching (ID roadmap 011) ne couvrira pas 100 % des cas dès J1. Ce flux admin permet de
 garder le service utile même en cas de match algorithmique impossible.
 
 **Independent Test** : Créer un brief avec des critères très restrictifs
 (ex : langue = japonais, spécialité = voyage extrême), vérifier qu'il
 apparaît dans la file admin avec un drapeau, et qu'un admin peut le
 ré-assigner manuellement (cette feature ne fait que la file et le drapeau,
-le push lui-même est partie de la feature 003).
+le push lui-même est partie de la feature matching (ID roadmap 011)).
 
 **Acceptance Scenarios** :
 
 1. **Given** un brief actif depuis > 4 h sans aucun conseiller contacté
-   (signal envoyé par la feature 003 future),
+   (signal envoyé par la feature matching future (ID roadmap 011)),
    **When** un admin consulte sa file de revue,
    **Then** ce brief apparaît avec un drapeau *« non-matché auto »* et
    les détails complets.
@@ -298,7 +298,7 @@ le push lui-même est partie de la feature 003).
   contenant un magic link unique signé, expirant à J+7.
 - **FR-014** : Le clic sur le magic link **DOIT** activer le brief
   (statut → *« actif »*) et publier un événement
-  `voyageur.brief.activated` consommable par la feature 003.
+  `voyageur.brief.activated` consommable par la feature matching (ID roadmap 011).
 - **FR-015** : Un magic link expiré ou déjà consommé **DOIT** afficher une
   page d'erreur claire avec un bouton *« Renvoyer un nouveau lien »* qui
   regénère un token et déclenche un nouvel envoi.
@@ -341,11 +341,11 @@ le push lui-même est partie de la feature 003).
 ### Functional Requirements — File admin et flux manuel (P3)
 
 - **FR-026** : Un brief actif depuis plus de 4 h sans aucun conseiller
-  notifié (signal de la feature 003) **DOIT** apparaître dans une file
+  notifié (signal de la feature matching (ID roadmap 011)) **DOIT** apparaître dans une file
   admin *« non-matchés auto »* avec drapeau visible.
 - **FR-027** : Un admin **DOIT** pouvoir consulter le détail complet d'un
   brief non-matché et déclencher un push manuel vers un conseiller
-  spécifique (le push lui-même est implémenté en feature 003 ; cette
+  spécifique (le push lui-même est implémenté en feature matching (ID roadmap 011) ; cette
   feature ne fait que rendre disponible la file et le détail).
 - **FR-028** : Toute action admin sur un brief **DOIT** être tracée en
   audit log (acteur admin, brief cible, motif texte 20-500 caractères).
@@ -419,17 +419,17 @@ le push lui-même est partie de la feature 003).
   référence conseiller) ou un canal payant ; cette feature ne gère pas
   l'acquisition, seulement la conversion une fois sur le site.
 - L'identité voyageur est gérée *light* : email + magic link, sans table
-  users complète. La feature 006 (identité) consolidera plus tard si un
+  users complète. La feature future identité voyageur permanente consolidera plus tard si un
   voyageur veut un vrai compte (multi-device, historique long, etc.).
 - La vérification email est **2-step** : le brief n'est actif et
   visible des conseillers qu'après que le voyageur ait cliqué le magic
   link. Raison : anti-spam (un bot ne peut pas valider un email réel) et
   garantie que la livraison du futur devis est possible.
 - La liste des spécialités v1 est **fermée** (11 valeurs canoniques)
-  pour permettre le scoring déterministe de la feature 003. Une valeur
+  pour permettre le scoring déterministe de la feature matching (ID roadmap 011). Une valeur
   *« autre + texte libre »* couvre les cas hors liste, et un admin peut
   promouvoir une valeur *« autre »* récurrente vers une nouvelle entrée
-  canonique en feature 003.
+  canonique en feature matching (ID roadmap 011).
 - Le brief expire à J+90 sans possibilité de prolongation directe par le
   voyageur (sinon manipulation du scoring matching). Le voyageur peut
   re-soumettre un brief similaire.
@@ -438,24 +438,24 @@ le push lui-même est partie de la feature 003).
   feature 001 (ADR-0006).
 - Les évènements outbox publiés par cette feature
   (`voyageur.brief.activated`, `voyageur.brief.deleted`,
-  `voyageur.brief.expired`) seront consommés par la feature 003
+  `voyageur.brief.expired`) seront consommés par la feature matching (ID roadmap 011)
   (matching) ; le contrat évènement est partagé via `packages/shared`.
 - La feature 001 (conformité) est mergée avant le démarrage du
   développement, donc le module identité (AuthGuard, AuthSession,
   prisma.authSession) et l'audit log append-only sont disponibles.
-- Le module matching (feature 003) n'est PAS un pré-requis : cette
+- Le module matching (feature matching (ID roadmap 011)) n'est PAS un pré-requis : cette
   feature livre une valeur autonome (collecte qualifiée + suivi voyageur),
   même si le matching n'est pas encore branché. Les évènements outbox
-  s'accumulent en attendant la feature 003.
+  s'accumulent en attendant la feature matching (ID roadmap 011).
 
 ## Dependencies
 
 - **Feature 001 (conformité)** mergée vers `main` : besoin de l'infra
   audit log append-only, AWS SES configuré, observabilité OTel + Sentry,
   schéma de migration Prisma testé.
-- **Module identité (feature 006)** PAS un pré-requis : authentification
+- **Module identité (feature identité voyageur permanente)** PAS un pré-requis : authentification
   voyageur reste sur magic link signé pour ce MVP.
-- **Module matching (feature 003)** PAS un pré-requis : les évènements
+- **Module matching (feature matching (ID roadmap 011))** PAS un pré-requis : les évènements
   outbox produits par cette feature seront consommés quand la 003 sera
   livrée. En attendant, le brief reste actif jusqu'à J+90 ou demande
   d'effacement.
@@ -464,13 +464,13 @@ le push lui-même est partie de la feature 003).
 
 - ❌ Création d'un compte permanent voyageur avec mot de passe (feature
   006).
-- ❌ Algorithme de matching brief ↔ conseiller (feature 003).
-- ❌ Notification des conseillers (feature 003).
-- ❌ Gestion des devis envoyés par les conseillers (feature 004 devis).
+- ❌ Algorithme de matching brief ↔ conseiller (feature matching (ID roadmap 011)).
+- ❌ Notification des conseillers (feature matching (ID roadmap 011)).
+- ❌ Gestion des devis envoyés par les conseillers (feature future devis).
 - ❌ Paiement, réservation, ou toute transaction (hors périmètre Principe I).
 - ❌ Application mobile native (web responsive uniquement pour v1).
 - ❌ Intégration calendrier (Google Calendar, Outlook) pour les dates.
 - ❌ Upload de pièces jointes au brief (passeport, demandes spéciales) —
   envisagé en v2 si besoin avéré.
-- ❌ Chat en direct voyageur ↔ conseiller (envisagé en feature 005
+- ❌ Chat en direct voyageur ↔ conseiller (envisagé en feature future chat
   messagerie).

@@ -19,9 +19,9 @@ Server Actions Next.js pour la soumission + validation Zod côté serveur,
 NestJS pour les endpoints `/api/intake/*` (validation 2e couche + outbox
 events), AWS SES pour le magic link transactionnel, Redis pour le
 rate-limit. Magic link signé HMAC (anti-spam 2-step), brief immuable
-post-vérification (intégrité scoring matching feature 003), expiration
+post-vérification (intégrité scoring matching feature matching (ID roadmap 011)), expiration
 J+90 via DataRetentionSweepJob existant. Aucune transaction monétaire,
-aucun compte permanent voyageur (feature 006 identité consolidera plus
+aucun compte permanent voyageur (feature identité voyageur permanente identité consolidera plus
 tard).
 
 Réutilise massivement l'infrastructure 001 : `@cv/db` PrismaClient
@@ -36,7 +36,7 @@ observabilité OTel + Sentry self-hosted, BullMQ pour les jobs background.
 **Primary Dependencies**:
 - **Frontend** : Next.js 15 App Router (RSC), next-intl 3.x, react-hook-form + Zod resolver, tailwindcss 4.x, shadcn/ui (à wirer en feature design-system)
 - **Backend** : NestJS 10 (upgrade 11 trackée issue #8), Fastify, Prisma 5.22, Zod
-- **Auth voyageur (light)** : magic link HMAC signé + cookie session court (pas Auth.js complet, feature 006 ultérieure)
+- **Auth voyageur (light)** : magic link HMAC signé + cookie session court (pas Auth.js complet, feature identité voyageur permanente ultérieure)
 
 **Storage**:
 - PostgreSQL 16 (ca-central-1 RDS prod, Postgres local docker compose dev)
@@ -60,7 +60,7 @@ observabilité OTel + Sentry self-hosted, BullMQ pour les jobs background.
 - **WCAG 2.1 AA** intégral (Principe XI NON-NÉGOCIABLE, axe-core CI bloquant)
 - **Loi 25** : effacement < 60s confirmation → nullification PII (déjà couvert par le pipeline 001 EraseConseillerDataUseCase, à adapter pour `VoyageurBrief`)
 - **Hors transaction** (Principe I) : la feature ne touche jamais à un paiement, une réservation, ou un versement
-- **Pas de compte permanent voyageur** : magic link J+7 suffit, feature 006 (identité) ajoutera passkey/email optionnel plus tard
+- **Pas de compte permanent voyageur** : magic link J+7 suffit, feature future identité voyageur permanente ajoutera passkey/email optionnel plus tard
 
 **Scale/Scope**:
 - 5 user stories (spec.md US1-US5), 30 functional requirements
@@ -86,7 +86,7 @@ fournisseur. Le brief est uniquement de la collecte qualifiée pour
 matching aval. La frontière transactionnelle est respectée par design.
 
 Le filtrage `verified` côté DB n'est **pas** une responsabilité de ce
-module : c'est la feature 003 (matching) qui appellera
+module : c'est la feature matching (future, ID roadmap 011) qui appellera
 `ConformiteQueryFacade.listVerifiedCompliances()` (port public 001) pour
 trouver les conseillers à notifier. Ce module ne consomme aucun
 conseiller — il produit uniquement des briefs.
@@ -99,7 +99,7 @@ code postal. Toutes les 5 PII passent la justification de minimisation :
 - Email : canal de retour obligatoire (devis, magic link)
 - Téléphone (optionnel) : préférence du voyageur, le conseiller peut
   ouvrir la conversation par téléphone si reçu
-- Code postal : pondère le scoring matching feature 003 (proximité
+- Code postal : pondère le scoring matching feature matching (ID roadmap 011) (proximité
   conseiller) — sans rue ni ville, donc PII faible
 
 Résidence canadienne **confirmée** : DB Postgres RDS ca-central-1 (ADR-0005),
@@ -137,7 +137,7 @@ Métriques de succès calibrées :
 - SC-004 ≥ 80% briefs langue conseiller renseignée (vs ~0% MVMA)
 - SC-007 ≤ 3% briefs spam/jetables (rate-limit + email jetables blocklist)
 
-Traçabilité lead → devis → réservation déclarée par feature 004 (devis)
+Traçabilité lead → devis → réservation déclarée par feature future devis
 qui consommera l'événement `voyageur.brief.activated` produit ici.
 
 ### IV. Français d'abord
@@ -263,12 +263,14 @@ Mais :
 - Aucune dégradation des budgets Lighthouse CI hérités
 
 La cible SEO long-tail (« conseiller voyage Pérou Montréal espagnol »)
-sera attaquée par la feature 004 (profils conseillers publics
+sera attaquée par la feature profil mergée (007 spec, 005 roadmap — pages SEO publiques
 indexables `/conseillers/<slug>`) — pas par intake.
 
 ---
 
-## Project Structure (alignée Principe V + VIII)
+## Project Structure (alignée Principe V + VIII.a — constitution v2.3.0)
+
+### Backend (`apps/api`) — 4 couches par module (Principe VIII)
 
 ```
 apps/api/src/modules/intake/
@@ -318,25 +320,65 @@ apps/api/src/modules/intake/
     │   ├── voyageur-intake.controller.ts   # /api/intake/briefs, /verify, /by-email
     │   └── admin-intake.controller.ts      # /api/intake/admin/unmatched
     └── public-api/
-        └── intake-query.facade.ts          # consommée par 003 matching
+        └── intake-query.facade.ts          # consommée par feature matching future
+```
 
-apps/web/src/app/[locale]/voyage/
-├── nouveau/
-│   ├── page.tsx                            # étape 1 (Server Component)
-│   ├── actions.ts                          # Server Actions submitBrief, verifyMagicLink
-│   └── brief-form.tsx                      # Client Component multi-étapes
-├── [token]/
-│   └── page.tsx                            # page récap brief (magic link)
-├── email-envoye/page.tsx                   # après soumission
-└── lien-expire/page.tsx                    # magic link expiré + bouton renvoi
+### Frontend (`apps/web`) — feature slicing vertical (Principe VIII.a)
 
-apps/web/src/app/[locale]/admin/intake/
-├── non-matche/page.tsx                     # file admin briefs sans match auto
-└── [briefId]/
-    ├── page.tsx                            # détail brief admin
-    ├── push-to-conseiller-form.tsx
-    └── actions.ts
+```
+apps/web/src/features/intake/
+├── domain/                                 # ré-exports packages/shared/intake si besoin
+├── application/                            # wizards multi-étapes côté client
+├── infrastructure/
+│   └── api-client.ts                       # wrapper typé /api/intake/*
+├── actions/                                # 1 verbe = 1 fichier <verbe>.action.ts
+│   ├── submit-brief.action.ts
+│   ├── verify-magic-link.action.ts
+│   ├── resend-magic-link.action.ts
+│   ├── request-brief-erasure.action.ts
+│   └── push-to-conseiller.action.ts        # admin
+├── hooks/                                  # useBriefDraft, useBriefStatus (TanStack Query)
+├── ui/
+│   ├── BriefFormWizard.tsx                 # Client Component multi-étapes (5)
+│   ├── BriefStep1Destination.tsx
+│   ├── BriefStep2Dates.tsx
+│   ├── BriefStep3Groupe.tsx
+│   ├── BriefStep4Preferences.tsx
+│   ├── BriefStep5ContactConsentement.tsx
+│   ├── BriefRecap.tsx                      # affichage récap (Server Component)
+│   ├── BriefStatusBadge.tsx
+│   ├── PushToConseillerForm.tsx            # admin
+│   └── EmailSentNotice.tsx
+├── lib/                                    # helpers internes (form state, FR-CA dates)
+├── schemas/                                # ré-exports Zod depuis packages/shared/intake
+└── index.ts                                # API publique du slice (barrel)
 
+apps/web/src/app/[locale]/
+├── (public)/                               # SEO indexable — page entrée intake
+│   └── voyage/
+│       └── nouveau/page.tsx                # Server Component → BriefFormWizard
+├── (voyageur)/                             # nouveau route group — magic link sessions
+│   ├── layout.tsx                          # noindex (sessions courtes voyageur)
+│   └── voyage/
+│       ├── [token]/page.tsx                # récap brief (magic link)
+│       ├── email-envoye/page.tsx
+│       └── lien-expire/page.tsx
+└── (admin)/                                # déjà existant
+    └── admin/
+        └── intake/
+            ├── non-matche/page.tsx         # file briefs admin
+            └── [briefId]/page.tsx          # détail + push admin
+```
+
+**Règles VIII.a respectées** :
+- Server Actions vivent UNIQUEMENT dans `features/intake/actions/<verbe>.action.ts` (jamais co-localisées dans `app/`).
+- Pages dans `app/` restent **minces** : Server Component qui `await` un use case et compose des composants du slice `features/intake/`.
+- Composants spécifiques à l'intake (BriefFormWizard, Steps 1-5) vivent dans `features/intake/ui/`.
+- Imports cross-feature passent UNIQUEMENT par le barrel `@/features/intake` — `tools/check-feature-boundaries.ts` valide.
+
+### Packages partagés
+
+```
 packages/shared/src/intake/
 ├── schemas.ts                              # Zod : SubmitBriefSchema, etc.
 ├── branded-ids.ts                          # VoyageurBriefId, MagicLinkTokenId
@@ -350,18 +392,18 @@ packages/shared/src/intake/
 
 packages/db/prisma/schema/
 └── intake.prisma                           # VoyageurBrief, VoyageurContact, MagicLinkToken
-                                            # (audit_entries réutilisée 001)
+                                            # (intake_audit_entries séparée — ADR-0018 du plan)
 ```
 
 ---
 
 ## Décisions architecturales référées
 
-- **ADR-0008** (à créer) : Magic link signé HMAC vs JWT vs token aléatoire
+- **ADR-0017** (à créer) : Magic link signé HMAC vs JWT vs token aléatoire
   → décision dans research.md R1
-- **ADR-0009** (à créer) : Audit log partagé `conformite_audit_entries` vs
+- **ADR-0018** (à créer) : Audit log partagé `conformite_audit_entries` vs
   table `intake_audit_entries` séparée → décision dans research.md R2
-- **ADR-0010** (à créer, optionnel) : Captcha / hCaptcha si rate-limit ne
+- **ADR-0019** (à créer, optionnel) : Captcha / hCaptcha si rate-limit ne
   suffit pas → à reporter après mesure premier mois
 
 ---
@@ -371,7 +413,7 @@ packages/db/prisma/schema/
 **Code dependencies** :
 - Feature 001 mergée vers `main` (FAIT 2026-05-25, PR #1)
 - Module `conformite/` : facade publique `ConformiteQueryFacade` (utilisée
-  par feature 003 matching, pas par intake directement)
+  par feature matching (ID roadmap 011) matching, pas par intake directement)
 - `@cv/db` : tables `auth_users`, `auth_sessions`, audit pipeline
 - `@cv/shared/conformite` : Zod error map FR-CA réutilisée
 - AWS SES ca-central-1 (ADR-0006) déjà provisionné
@@ -397,7 +439,7 @@ packages/db/prisma/schema/
 - R5 : Multi-step form state management — formData en RAM client vs server cache (SQLite ? Redis ? PostgreSQL temp ?) si user reprend le formulaire après 24h
 - R6 : Telephone format E.164 strict côté serveur ou libre côté client ?
 - R7 : Liste fermée des 11 spécialités voyage — source de vérité (enum Prisma vs table de référence DB) ?
-- R8 : Liste fermée des langues conseiller — FR/EN/ES/autre — comment gérer "autre" en scoring matching feature 003 ?
+- R8 : Liste fermée des langues conseiller — FR/EN/ES/autre — comment gérer "autre" en scoring matching feature matching (ID roadmap 011) ?
 
 ---
 
@@ -418,6 +460,6 @@ packages/db/prisma/schema/
   - Principe XII (SEO) : reste partiellement conforme (intake n'est pas
     page SEO cible, SSR + métadonnées + JSON-LD posés). Justifié.
   - **Nouveau** : R2 décide `intake_audit_entries` séparée → cohérent
-    avec Principe V (frontières modulaires). ADR-0008 à créer en
+    avec Principe V (frontières modulaires). ADR-0017 à créer en
     `/speckit-tasks` pour formaliser.
 - [ ] Prêt pour `/speckit-tasks`

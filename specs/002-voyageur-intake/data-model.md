@@ -23,7 +23,7 @@ Tous les IDs sont UUID v4 (`@db.Uuid`), cohérent avec la migration 001
 ## Entity: VoyageurBrief
 
 Le brief structuré soumis par un voyageur. **Immuable** post-vérification
-email (anti-manipulation scoring matching feature 003).
+email (anti-manipulation scoring matching feature matching (ID roadmap 011)).
 
 | Field | Type | Constraints | Description |
 |---|---|---|---|

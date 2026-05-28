@@ -73,7 +73,7 @@ GRANTS. Mineur (50 lignes SQL répétées).
   pour mélanger les types d'événements (impossible de réutiliser les
   enums Postgres distincts par module).
 
-**ADR** : ADR-0008 à créer pour documenter ce choix (impact > 1 module).
+**ADR** : ADR-0017 à créer pour documenter ce choix (impact > 1 module).
 
 ---
 
@@ -124,7 +124,7 @@ hors Canada — violation Principe II (résidence canadienne, ADR-0001).
 - hCaptcha (Europe) : éligible, en standby.
 - reCAPTCHA Google : rejeté pour résidence USA + tracking utilisateur.
 
-**ADR** : ADR-0010 à créer **uniquement si** le trigger est franchi.
+**ADR** : ADR-0019 à créer **uniquement si** le trigger est franchi.
 
 ---
 
@@ -216,7 +216,7 @@ strict) **+ normalisation E.164 côté serveur** via `libphonenumber-js`
 | Évolution (ajout valeur) | 🟡 migration Prisma | ✅ INSERT |
 | Cohérence avec scoring matching | ✅ enum match exact | 🟡 normalize requis |
 
-L'argument décisif : la feature 003 (matching) **doit** matcher exactement
+L'argument décisif : la feature matching (future, ID roadmap 011) **doit** matcher exactement
 sur la spécialité. Un enum garantit qu'on ne peut pas avoir 2 variantes
 (« lune de miel » vs « Lune-de-miel ») qui causent un mismatch silencieux.
 
@@ -243,7 +243,7 @@ avec champ `languageOther: string?` (ISO 639-1 code de 2 chars).
 **Rationale** :
 
 Spec.md FR-006 : langues conseiller `FR / EN / ES / autre`. Pour le
-scoring matching (feature 003) :
+scoring matching (feature matching (ID roadmap 011)) :
 - `fr/en/es` : match exact 1-pour-1
 - `other` + ISO code (ex: `pt` pour portugais) : le matching fera un
   lookup contre `ConseillerProfile.spokenLanguages` (table de la feature
@@ -259,7 +259,7 @@ si non-listée.
 
 **Alternatives considérées** :
 - **String libre** : rejetée pour incompatibilité matching.
-- **Multi-select multi-langues** : reporté à feature 003 si besoin avéré
+- **Multi-select multi-langues** : reporté à feature matching (ID roadmap 011) si besoin avéré
   (la majorité des voyageurs n'a qu'une langue préférée pour le conseiller).
 
 ---
@@ -269,7 +269,7 @@ si non-listée.
 | Item | Décision en 1 ligne |
 |---|---|
 | R1 — Magic link | Random token DB (cohérent AuthSession 001) |
-| R2 — Audit log | Table séparée `intake_audit_entries` avec trigger identique (ADR-0008) |
+| R2 — Audit log | Table séparée `intake_audit_entries` avec trigger identique (ADR-0017) |
 | R3 — Emails jetables | Liste GitHub publique + cron mensuel + fallback embedded |
 | R4 — Captcha | Pas en J1, trigger sur métrique abuse_blocked |
 | R5 — Form state | Client RAM + localStorage chiffré AES-GCM 24h |
@@ -277,7 +277,7 @@ si non-listée.
 | R7 — Spécialités | Enum Prisma 11 values + `specialityOther` texte libre |
 | R8 — Langues | Enum `fr/en/es/other` + code ISO 639-1 si other |
 
-Toutes les décisions sont cohérentes avec la constitution v2.2.0, ADR
+Toutes les décisions sont cohérentes avec la constitution v2.3.0, ADR
 existants (0001-0007), et l'architecture 001 mergée. Pas de
 NEEDS_CLARIFICATION restant.
 
