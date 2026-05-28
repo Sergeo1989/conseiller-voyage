@@ -14,6 +14,11 @@ import { EnrollForm } from '../../../../../../components/mfa/EnrollForm';
 import { toUrlLocale } from '../../../../../../i18n';
 import { startEnrollmentAction } from '../../../../../../lib/mfa/server-actions';
 
+export const metadata = {
+  title: 'Activation MFA admin — Conseiller Voyage',
+  robots: { index: false, follow: false },
+};
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 

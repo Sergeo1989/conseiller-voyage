@@ -7,6 +7,11 @@ import { auth } from '../../../../../auth';
 import { VerifyTotpForm } from '../../../../../components/mfa/VerifyTotpForm';
 import { toUrlLocale } from '../../../../../i18n';
 
+export const metadata = {
+  title: 'Vérification MFA — Conseiller Voyage',
+  robots: { index: false, follow: false },
+};
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 

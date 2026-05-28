@@ -10,6 +10,11 @@ import { auth } from '../../../../../../../auth';
 import { AdminResetForm } from '../../../../../../../components/mfa/AdminResetForm';
 import { toUrlLocale } from '../../../../../../../i18n';
 
+export const metadata = {
+  title: 'Réinitialisation MFA — Conseiller Voyage',
+  robots: { index: false, follow: false },
+};
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 

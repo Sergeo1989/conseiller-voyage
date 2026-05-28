@@ -11,6 +11,11 @@ import { redirect } from 'next/navigation';
 import { auth } from '../../../../../../auth';
 import { toUrlLocale } from '../../../../../../i18n';
 
+export const metadata = {
+  title: 'Paramètres MFA — Conseiller Voyage',
+  robots: { index: false, follow: false },
+};
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 

@@ -9,6 +9,11 @@ import { auth } from '../../../../../../../auth';
 import { RegenerateCodesForm } from '../../../../../../../components/mfa/RegenerateCodesForm';
 import { toUrlLocale } from '../../../../../../../i18n';
 
+export const metadata = {
+  title: 'Régénérer les codes de récupération — Conseiller Voyage',
+  robots: { index: false, follow: false },
+};
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
