@@ -25,6 +25,16 @@ notifiés par brief (Principe III).
 Aucune transaction monétaire dans cette feature. Pas de compte permanent
 exigé : un email vérifié via magic link suffit pour soumettre et suivre.
 
+## Clarifications
+
+### Session 2026-05-28
+
+- Q: Politique UX si AWS SES tombe au moment du submit ? → A: Brief créé `pending_verification` + BullMQ retry SES (5 tentatives, backoff exponentiel). Voyageur voit la page « email-envoyé » immédiatement ; le mail arrive quand SES rouvre. Bouton « renvoyer le lien » disponible après 2 min sans réception.
+- Q: Comment différencier les réponses rate-limit email vs IP (FR-019/020) côté API + UI ? → A: Même status `429`, discriminator dans le champ `code` du body. Email-limit → `code: 'EMAIL_RATE_LIMIT_EXCEEDED'` + `retryAfter` → frontend affiche un message FR-CA précis (3 briefs en 24h, alternatives proposées). IP-limit → `code: 'RATE_LIMIT_EXCEEDED'` neutre → frontend affiche un message générique anti-énumération. Ordre d'évaluation : email-limit d'abord (favorise utilisateur légitime), IP-limit ensuite.
+- Q: Quel scope pour la reprise de formulaire localStorage 24h (PII comprise ou non) ? → A: 5 étapes intégrales (PII comprise) en localStorage du device voyageur, TTL 24h, clear post-submit OK et clear sur logout magic link. Loi 25 couvre la donnée détenue par l'entreprise (serveur) — le localStorage sur le device du voyageur lui appartient. À mentionner dans la politique de confidentialité (clause « stockage local côté client »).
+- Q: Granularité effacement Loi 25 : brief seul, cascade contact, ou hybride ? → A: Hybride. **Par défaut**, l'effacement d'un brief ne touche QUE ce brief (status `deleted`, audit) — le contact partagé et les autres briefs persistent. Un **flow séparé explicite** `/voyage/mes-donnees/effacer-tout` permet au voyageur d'effacer le contact + tous ses briefs en une opération (FR-022a). Cohérent avec le pattern 001 (effacement conseiller = acte explicite global) et la séparation Contact/Brief du data model.
+- Q: Durée du cookie session voyageur post-vérification magic link ? → A: 7 jours **rolling renewal** — chaque visite à la page récap étend le cookie de 7 jours depuis cette visite. Voyageur actif 1x / semaine reste connecté sans friction ; 7 jours d'inactivité → cookie expire → nouveau magic link nécessaire. Limite le blast radius en cas de vol device après période d'inactivité.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Voyageur soumet un brief de voyage qualifié (Priority: P1)
@@ -226,9 +236,16 @@ le push lui-même est partie de la feature matching (ID roadmap 011)).
   durable pour vous mettre en relation avec un conseiller. »*
 - **Soumission depuis IP avec proxy / VPN suspect** : Pas de blocage
   systématique, mais marqueur dans le brief pour audit ultérieur.
-- **Navigateur ferme à mi-formulaire** : Sauvegarde locale (état dans
-  storage navigateur) pour reprise dans 24 h sur le même device. Pas de
-  persistence serveur tant que l'email n'est pas vérifié (anti-PII).
+- **Navigateur ferme à mi-formulaire** : Sauvegarde locale (état complet
+  des 5 étapes — PII étape 5 comprise — dans `localStorage` du device
+  voyageur) pour reprise dans 24 h sur le même device. TTL 24 h appliqué
+  via timestamp dans le payload ; auto-clear après soumission réussie
+  ET après logout magic link. **Aucune** persistence serveur tant que
+  l'email n'est pas vérifié (anti-PII serveur). Le stockage local sur
+  le device propre du voyageur n'est pas couvert par Loi 25 (donnée non
+  détenue par l'entreprise), mais cette pratique **DOIT** être
+  mentionnée explicitement dans la politique de confidentialité
+  (clause « stockage local côté client »).
 - **Date de retour avant la date de départ** : Validation client + serveur,
   message *« La date de retour doit être après la date de départ. »*
 - **Voyage dans le passé** : Refusé avec message contextuel *« Cette date
@@ -245,6 +262,13 @@ le push lui-même est partie de la feature matching (ID roadmap 011)).
 - **Tentative de soumission concurrente** (le voyageur clique deux fois
   rapidement sur *« Soumettre »*) : Idempotence garantie par clé client
   envoyée à chaque soumission, le serveur dédoublonne.
+- **AWS SES indisponible au submit** : Le brief est créé en statut
+  *« en attente de vérification »* et l'envoi du magic link est mis en
+  file BullMQ (retry exponentiel jusqu'à 5 tentatives, backoff base 30s
+  → max 30 min). Le voyageur voit immédiatement la page *« vérifie ton
+  courriel »* avec un sous-titre discret *« il peut y avoir un léger
+  délai »*. Un bouton *« Je n'ai rien reçu — renvoyer un lien »*
+  apparaît après 120 s sans réception (FR-013a).
 
 ## Requirements *(mandatory)*
 
@@ -296,9 +320,25 @@ le push lui-même est partie de la feature matching (ID roadmap 011)).
 - **FR-013** : Après soumission, le système **DOIT** envoyer dans la minute
   un courriel transactionnel FR-CA (ou EN selon le locale du voyageur)
   contenant un magic link unique signé, expirant à J+7.
+- **FR-013a** : Si l'envoi via AWS SES échoue (5xx, throttle, timeout),
+  le système **DOIT** créer le brief en statut *« en attente de
+  vérification »* malgré l'échec et placer la tentative d'envoi dans
+  une file BullMQ avec retry exponentiel (max 5 tentatives, backoff
+  30 s → 30 min). La page *« vérifie ton courriel »* **DOIT** s'afficher
+  immédiatement avec mention discrète d'un délai possible. Un bouton
+  *« Je n'ai rien reçu — renvoyer un lien »* **DOIT** être révélé après
+  120 s sans réception (compteur visible côté client).
 - **FR-014** : Le clic sur le magic link **DOIT** activer le brief
   (statut → *« actif »*) et publier un événement
   `voyageur.brief.activated` consommable par la feature matching (ID roadmap 011).
+- **FR-014a** : À la vérification réussie du magic link, le système
+  **DOIT** poser un cookie de session voyageur (`__Host-cv.intake.token`
+  en prod HTTPS, `cv.intake.session` en dev HTTP) avec
+  `Max-Age=604800` (7 jours), `HttpOnly`, `Secure`, `SameSite=Lax`,
+  `Path=/`. Chaque visite ultérieure à la page récap (`/voyage/<token>`
+  ou `/voyage/mes-briefs`) **DOIT** **renouveler** le cookie pour 7
+  jours à partir de cette visite (**rolling renewal**). 7 jours
+  d'inactivité → cookie expire → nouveau magic link nécessaire.
 - **FR-015** : Un magic link expiré ou déjà consommé **DOIT** afficher une
   page d'erreur claire avec un bouton *« Renvoyer un nouveau lien »* qui
   regénère un token et déclenche un nouvel envoi.
@@ -315,22 +355,47 @@ le push lui-même est partie de la feature matching (ID roadmap 011)).
   identifiant et magic link.
 - **FR-019** : Le système **DOIT** plafonner à **3 briefs / 24 h / adresse
   courriel** ; la 4e tentative dans cette fenêtre est refusée avec un
-  message FR-CA explicite.
+  status HTTP `429` et un body `{ code: 'EMAIL_RATE_LIMIT_EXCEEDED',
+  retryAfter: <secondes> }`. Le frontend **DOIT** afficher un message
+  FR-CA explicite (« Vous avez soumis 3 briefs sur cette adresse en
+  24 h — attendez X heures ou utilisez une autre adresse »).
 - **FR-020** : Le système **DOIT** plafonner à **5 briefs / 24 h / adresse
-  IP** ; les soumissions au-delà sont refusées avec un message neutre
-  (anti-bot, ne pas révéler la limite).
+  IP** ; les soumissions au-delà sont refusées avec un status HTTP
+  `429` et un body neutre `{ code: 'RATE_LIMIT_EXCEEDED' }` (sans
+  retryAfter ni mention de l'IP). Le frontend **DOIT** afficher un
+  message générique (« Votre demande ne peut être traitée actuellement,
+  veuillez réessayer plus tard ») afin de ne pas révéler la limite à
+  un bot.
+- **FR-020a** : L'**ordre d'évaluation** des deux limites **DOIT** être :
+  email-limit d'abord (favorise la signalisation utile à l'utilisateur
+  légitime), IP-limit ensuite. Conséquence : si Marie hit les deux
+  limites simultanément, elle reçoit le message email-limit (utile)
+  plutôt que le message neutre (déroutant pour elle).
 - **FR-021** : Le système **DOIT** détecter et bloquer les adresses
   courriel jetables via une liste publique mise à jour mensuellement.
 
 ### Functional Requirements — Loi 25 et rétention (P3)
 
-- **FR-022** : Le voyageur **DOIT** pouvoir demander l'effacement de son
-  brief depuis la page de suivi, via une confirmation par typage exact
-  d'une phrase imposée (anti-erreur, modèle US5 feature 001).
-- **FR-023** : Sur effacement, les champs PII (prénom, nom, courriel,
-  téléphone, code postal) **DOIVENT** être nullifiés ; le statut du brief
-  passe à *« supprimé »* ; une entrée d'audit log conservant uniquement
-  l'identifiant et le timestamp est créée.
+- **FR-022** : Le voyageur **DOIT** pouvoir demander l'effacement **d'un
+  brief précis** depuis la page de suivi de ce brief, via une
+  confirmation par typage exact d'une phrase imposée (anti-erreur,
+  modèle US5 feature 001). L'effacement d'un brief ne touche **que ce
+  brief** ; le contact partagé et les autres briefs du même voyageur
+  persistent inchangés.
+- **FR-022a** : Le voyageur **DOIT** pouvoir effacer **toutes ses
+  données** (contact + tous ses briefs) en une opération via un flow
+  séparé accessible depuis la page « Voir mes autres briefs » (FR-017),
+  sous le chemin `/[locale]/voyage/mes-donnees/effacer-tout`.
+  Confirmation par typage exact d'une phrase distincte (« JE_CONFIRME_
+  LA_SUPPRESSION_DE_TOUTES_MES_DONNEES »), avec rappel explicite du
+  nombre de briefs concernés.
+- **FR-023** : Sur effacement (FR-022 ou FR-022a), les champs PII
+  applicables (prénom, nom, courriel, téléphone, code postal de la table
+  `VoyageurContact` ; aucune PII directe dans `VoyageurBrief`) **DOIVENT**
+  être nullifiés selon la portée de la demande. Le statut des briefs
+  affectés passe à *« supprimé »* ; une entrée d'audit log conservant
+  uniquement l'identifiant brief/contact et le timestamp est créée par
+  ressource affectée.
 - **FR-024** : Tout brief actif **DOIT** expirer 90 jours après sa
   création s'il n'a pas été matché à un conseiller ayant émis un devis ;
   à expiration, les PII sont nullifiées et le statut passe à *« expiré »*.
