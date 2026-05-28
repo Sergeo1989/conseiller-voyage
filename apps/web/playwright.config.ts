@@ -15,6 +15,10 @@ const isCI = !!process.env.CI;
 
 export default defineConfig({
   testDir: './test',
+  // Seed les sessions E2E si E2E_SEED_ENABLED=true (cf. test/global-setup.ts).
+  // Sans seed, les tests `test.skip(!E2E_*_SESSION, ...)` restent dormants —
+  // couverture comportementale assurée par les tests d'intégration côté apps/api.
+  globalSetup: './test/global-setup.ts',
   fullyParallel: false,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
