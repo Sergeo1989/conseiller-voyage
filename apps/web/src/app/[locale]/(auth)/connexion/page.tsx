@@ -2,7 +2,7 @@
 //
 // noindex (Principe XII SEO — page privée).
 
-import { LoginForm } from '@/features/auth/ui/LoginForm';
+import { LoginForm } from '@/features/auth';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 

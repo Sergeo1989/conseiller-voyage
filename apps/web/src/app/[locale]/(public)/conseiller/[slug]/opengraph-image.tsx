@@ -4,7 +4,7 @@
 // à partir du JSX. Re-générée à chaque revalidatePath (ISR aligné sur la
 // page). Coût compute acceptable car cacheable CDN long terme.
 
-import { lireProfilPublicBySlug } from '@/features/profil-public/infrastructure/public-reader';
+import { lireProfilPublicBySlug } from '@/features/profil-public';
 import type { Locale } from '@/i18n';
 import { ImageResponse } from 'next/og';
 

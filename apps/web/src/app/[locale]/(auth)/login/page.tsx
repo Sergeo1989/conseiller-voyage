@@ -5,7 +5,7 @@
 // SÉCURITÉ : 404 si NODE_ENV=production.
 
 import { getEnv } from '@/env';
-import { devLoginAction } from '@/features/auth/actions/dev-login.action';
+import { devLoginAction } from '@/features/auth';
 import type { Locale } from '@/i18n';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';

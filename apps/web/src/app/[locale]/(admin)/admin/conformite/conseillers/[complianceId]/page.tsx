@@ -1,7 +1,7 @@
 // T105 — Page admin détail conseiller avec action Révoquer (US4 FR-010).
 
 import { auth } from '@/auth';
-import { RevokeModal } from '@/features/conformite-admin/ui/RevokeModal';
+import { RevokeModal } from '@/features/conformite-admin';
 import { type Locale, toUrlLocale } from '@/i18n';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';

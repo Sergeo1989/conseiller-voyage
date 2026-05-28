@@ -16,12 +16,14 @@
 // Anti-énumération SC-003 :
 //   - notFound() Next.js → app/[locale]/not-found.tsx unifié
 
-import { lireProfilPublicBySlug } from '@/features/profil-public/infrastructure/public-reader';
-import { BadgeVerifie } from '@/features/profil-public/ui/BadgeVerifie';
-import { CtaSuggested } from '@/features/profil-public/ui/CtaSuggested';
-import { ProfilHero } from '@/features/profil-public/ui/ProfilHero';
-import { ProfilSections } from '@/features/profil-public/ui/ProfilSections';
-import { SectionPourquoiPasContact } from '@/features/profil-public/ui/SectionPourquoiPasContact';
+import {
+  BadgeVerifie,
+  CtaSuggested,
+  ProfilHero,
+  ProfilSections,
+  SectionPourquoiPasContact,
+  lireProfilPublicBySlug,
+} from '@/features/profil-public';
 import { type Locale, toUrlLocale } from '@/i18n';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';

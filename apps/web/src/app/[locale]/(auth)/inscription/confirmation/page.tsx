@@ -5,7 +5,7 @@
 //
 // noindex (page privée).
 
-import { ResendCountdownButton } from '@/features/auth/ui/ResendCountdownButton';
+import { ResendCountdownButton } from '@/features/auth';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 

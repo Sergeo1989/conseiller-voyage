@@ -5,7 +5,7 @@
 // le compteur d'admins actifs pour le warning FR-026b.
 
 import { auth } from '@/auth';
-import { AdminResetForm } from '@/features/mfa/ui/AdminResetForm';
+import { AdminResetForm } from '@/features/mfa';
 import { toUrlLocale } from '@/i18n';
 import { prisma } from '@cv/db';
 import { redirect } from 'next/navigation';

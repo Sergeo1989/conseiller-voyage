@@ -3,7 +3,7 @@
 // est déjà fresh, redirect direct vers la home.
 
 import { auth } from '@/auth';
-import { VerifyTotpForm } from '@/features/mfa/ui/VerifyTotpForm';
+import { VerifyTotpForm } from '@/features/mfa';
 import { toUrlLocale } from '@/i18n';
 import { redirect } from 'next/navigation';
 

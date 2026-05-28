@@ -5,7 +5,7 @@
 // l'orchestrator step-up sera en place dans le layout privé.
 
 import { auth } from '@/auth';
-import { RegenerateCodesForm } from '@/features/mfa/ui/RegenerateCodesForm';
+import { RegenerateCodesForm } from '@/features/mfa';
 import { toUrlLocale } from '@/i18n';
 import { redirect } from 'next/navigation';
 

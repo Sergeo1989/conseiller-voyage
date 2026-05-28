@@ -3,7 +3,7 @@
 // audit 7 ans) + formulaire avec confirmation explicite par typage.
 
 import { auth } from '@/auth';
-import { ErasureForm } from '@/features/conformite/ui/ErasureForm';
+import { ErasureForm } from '@/features/conformite';
 import { type Locale, toUrlLocale } from '@/i18n';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';

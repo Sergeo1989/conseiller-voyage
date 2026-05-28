@@ -7,7 +7,7 @@
 //      (retirer photo / masquer / rétablir selon statut courant).
 
 import { auth } from '@/auth';
-import { AdminActionButtons } from '@/features/admin-users/ui/AdminActionButtons';
+import { AdminActionButtons } from '@/features/admin-users';
 import { type Locale, toUrlLocale } from '@/i18n';
 import { apiClient } from '@/shared/lib/http';
 import Link from 'next/link';

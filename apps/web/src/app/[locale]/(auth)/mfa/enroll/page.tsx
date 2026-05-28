@@ -5,8 +5,7 @@
 // <EnrollForm> Client.
 
 import { auth } from '@/auth';
-import { startEnrollmentAction } from '@/features/mfa';
-import { EnrollForm } from '@/features/mfa/ui/EnrollForm';
+import { EnrollForm, startEnrollmentAction } from '@/features/mfa';
 import { toUrlLocale } from '@/i18n';
 import { redirect } from 'next/navigation';
 import QRCode from 'qrcode';

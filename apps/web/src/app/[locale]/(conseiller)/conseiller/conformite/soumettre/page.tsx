@@ -2,7 +2,7 @@
 // Server Component qui vérifie l'auth puis monte le client SubmitDossierForm.
 
 import { auth } from '@/auth';
-import { SubmitDossierForm } from '@/features/conformite/ui/SubmitDossierForm';
+import { SubmitDossierForm } from '@/features/conformite';
 import { type Locale, toUrlLocale } from '@/i18n';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';

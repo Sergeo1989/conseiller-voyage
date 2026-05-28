@@ -3,7 +3,7 @@
 // affiche certificats + affiliations + actions (panneau client).
 
 import { auth } from '@/auth';
-import { DecisionPanel } from '@/features/conformite-admin/ui/DecisionPanel';
+import { DecisionPanel } from '@/features/conformite-admin';
 import { type Locale, toUrlLocale } from '@/i18n';
 import { apiClient } from '@/shared/lib/http';
 import { formatDate } from '@cv/shared/conformite';
