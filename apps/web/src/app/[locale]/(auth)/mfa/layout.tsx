@@ -6,6 +6,10 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
+  // Title par défaut pour les pages MFA — chaque page peut l'overrider via
+  // son propre metadata.title (Next.js merge). Sans cela, axe-core lève
+  // document-title violation (Principe XI WCAG 2.4.2).
+  title: 'Sécurité MFA — Conseiller Voyage',
   robots: {
     index: false,
     follow: false,

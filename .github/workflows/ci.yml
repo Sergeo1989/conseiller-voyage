@@ -91,6 +91,10 @@ jobs:
       # uniquement pour environnement CI/test. La validation au startup
       # d'apps/api refuse cette valeur si NODE_ENV=production.
       MFA_KEK_BASE64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      # Auth token secret (feature 006) — JoseTokenIssuer + tests intégration
+      # qui chargent env.ts (ex. PrismaProfilPublicReader via setup.ts dotenv).
+      # 32 octets zéro placeholder, refusé en NODE_ENV=production.
+      AUTH_TOKEN_SECRET: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     steps:
       - uses: actions/checkout@v4
       - name: Enable corepack (pnpm via packageManager field)
@@ -220,10 +224,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      # Mêmes variables que le job build pour permettre `next build`.
+      # Mêmes variables que le job build pour permettre `next build` + start.
       DATABASE_URL: postgresql://cv_dev:cv_dev@localhost:5432/cv_dev
       AUTH_SECRET: ci-time-placeholder-32-chars-min-required
       MFA_KEK_BASE64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      AUTH_TOKEN_SECRET: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
       NEXTAUTH_URL: http://localhost:3000
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
       E2E_BASE_URL: http://localhost:3000
@@ -284,6 +289,7 @@ jobs:
       DATABASE_URL: postgresql://cv_dev:cv_dev@localhost:5432/cv_dev
       AUTH_SECRET: ci-time-placeholder-32-chars-min-required
       MFA_KEK_BASE64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      AUTH_TOKEN_SECRET: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
       NEXTAUTH_URL: http://localhost:3000
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
     steps:
