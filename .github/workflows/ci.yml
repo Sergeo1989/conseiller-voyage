@@ -201,6 +201,128 @@ jobs:
             --excludePrivatePackages \
             --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;MPL-2.0;CC0-1.0;CC-BY-4.0;CC-BY-3.0;Unlicense;0BSD;Python-2.0;BlueOak-1.0.0"
 
-  # À activer plus tard :
-  # - a11y : axe-core (T120, après Playwright + apps/web/test/a11y)
-  # - lighthouse : Lighthouse CI (T121, après staging URL)
+  a11y:
+    name: A11y — Playwright + axe-core (Principe XI WCAG 2.1 AA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: cv_dev
+          POSTGRES_PASSWORD: cv_dev
+          POSTGRES_DB: cv_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cv_dev"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # Mêmes variables que le job build pour permettre `next build`.
+      DATABASE_URL: postgresql://cv_dev:cv_dev@localhost:5432/cv_dev
+      AUTH_SECRET: ci-time-placeholder-32-chars-min-required
+      MFA_KEK_BASE64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      E2E_BASE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable corepack
+        run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generate Prisma Client
+        run: pnpm --filter @cv/db generate
+      - name: Apply Prisma migrations
+        run: pnpm --filter @cv/db exec prisma migrate deploy --schema=./prisma/schema
+      - name: Build apps/web
+        run: pnpm --filter @cv/web build
+      - name: Install Playwright Chromium
+        run: pnpm --filter @cv/web exec playwright install --with-deps chromium
+      - name: Start Next.js production server
+        run: pnpm --filter @cv/web exec next start -p 3000 &
+        env:
+          NODE_ENV: production
+      - name: Wait until server ready
+        run: |
+          for i in {1..60}; do
+            if curl -sf -o /dev/null http://localhost:3000/fr/comment-ca-marche; then
+              echo "Server ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "Server did not become ready in 120s"
+          exit 1
+      - name: Run a11y tests (Playwright @a11y)
+        run: pnpm --filter @cv/web test:a11y
+
+  lighthouse:
+    name: Lighthouse CI (Principe XII Perf ≥ 90 / SEO ≥ 95 / A11y ≥ 95)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: cv_dev
+          POSTGRES_PASSWORD: cv_dev
+          POSTGRES_DB: cv_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cv_dev"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://cv_dev:cv_dev@localhost:5432/cv_dev
+      AUTH_SECRET: ci-time-placeholder-32-chars-min-required
+      MFA_KEK_BASE64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable corepack
+        run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generate Prisma Client
+        run: pnpm --filter @cv/db generate
+      - name: Apply Prisma migrations
+        run: pnpm --filter @cv/db exec prisma migrate deploy --schema=./prisma/schema
+      - name: Build apps/web
+        run: pnpm --filter @cv/web build
+      - name: Start Next.js production server
+        run: pnpm --filter @cv/web exec next start -p 3000 &
+        env:
+          NODE_ENV: production
+      - name: Wait until server ready
+        run: |
+          for i in {1..60}; do
+            if curl -sf -o /dev/null http://localhost:3000/fr/comment-ca-marche; then
+              echo "Server ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "Server did not become ready in 120s"
+          exit 1
+      - name: Lighthouse CI (autorun avec asserts bloquants)
+        # Utilise pnpm dlx (pattern license-check) — pas de devDep ajoutée.
+        # Asserts dans apps/web/lighthouserc.json :
+        #   - Perf  ≥ 0.9 (Principe XII)
+        #   - SEO   ≥ 0.95
+        #   - A11y  ≥ 0.95
+        #   - LCP   ≤ 2500ms
+        #   - CLS   ≤ 0.1
+        # Échec sur assertion = exit code non-zero → job rouge.
+        run: pnpm dlx @lhci/cli@0.14.x autorun --config=apps/web/lighthouserc.json

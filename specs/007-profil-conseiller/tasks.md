@@ -150,7 +150,7 @@ passe à `prêt`, slug `marie-dupont` généré, `publishedAt` set.
 - [X] T068 Composant MultiSelectField inline dans ProfilForm — chip buttons aria-pressed + max enforced + 12 spécialités + 6 langues + 12 zones FR-CA
 - [X] T069 Composant AfficherNomCompletSwitch — aperçu Marie D. ↔ Marie Dupont + alertdialog confirmation à l'activation avec avertissement FR-006b explicite Loi 25 + cache moteurs (logique initialeNom miroir du domaine pur)
 - [X] T070 [P] [US1] Tests Playwright `apps/web/e2e/profil-edition.spec.ts` couvrant tous les acceptance scenarios US1 (formulaire pré-rempli, sauvegarde valide, biographie effacée → erreur, photo > 5 Mo → erreur)
-- [ ] T071 [P] [US1] Test axe-core CI sur `/(conseiller)/conseiller/profil` (Principe XI — bloquant `serious`/`critical`)
+- [X] T071 [P] [US1] Test axe-core CI sur `/(conseiller)/conseiller/profil` (Principe XI — bloquant `serious`/`critical`)
 
 **Checkpoint US1** : un conseiller peut éditer son profil de bout en bout, sauvegarde persistée, slug généré au premier prêt, photo S3 OK, audit immutable. **Indépendamment testable** : US1 vert sans US2-US6.
 
@@ -174,7 +174,7 @@ redirection.
 - [X] T073 [P] [US2] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-public-page.spec.ts` couvrant les acceptance scenarios US2 (page complète, 404 unifié constant-body, encart pédagogique, CTA unique vers /intake)
 - [X] T074 [P] [US2] **[TDD RED]** Tests Playwright `apps/web/e2e/profil-suggested-middleware.spec.ts` couvrant : clic CTA → 302 /intake propre + cookie posé, 2 consultations FIFO, 11e éviction, cookie tampered ignoré, `suggested` non-UUID redirect propre sans set-cookie
 - [ ] T075 [P] [US2] **[TDD RED]** Test invariant `tools/check-anti-enum-profile.ts` (T050) lancé en mode test e2e — produit 5 cas 404 et vérifie taille corps identique à l'octet près
-- [ ] T076 [P] [US2] **[TDD RED]** Test Lighthouse CI `apps/web/test/lighthouse/profil-public.spec.ts` sur `/conseiller/<seed-slug>` exigeant Performance ≥ 90, SEO ≥ 95, Accessibility ≥ 95
+- [X] T076 [P] [US2] **[TDD RED]** Test Lighthouse CI `apps/web/test/lighthouse/profil-public.spec.ts` sur `/conseiller/<seed-slug>` exigeant Performance ≥ 90, SEO ≥ 95, Accessibility ≥ 95
 - [X] T077 [P] [US2] **[TDD RED]** Tests intégration `apps/api/test/integration/profil/est-profil-public.spec.ts` couvrant la table de tests dans contracts/est-profil-public.port.md (nominal + 5 cas négatifs + batch)
 
 ### Implémentation US2
@@ -196,8 +196,8 @@ redirection.
 - [X] T092 Route POST /api/revalidate — Bearer secret CV_REVALIDATE_SECRET + revalidatePath/revalidateTag
 - [X] T093 Listener ProfilCacheInvalidator + port NextjsRevalidator + HttpNextjsRevalidator adapter — double invalidation Next.js ISR + CloudFront pour SC-006 ≤ 10s
 - [ ] T093a [P] [US2] **[TDD RED + GREEN]** Tests intégration cross-cache `apps/api/test/integration/profil/cache-invalidation.spec.ts` couvrant : (a) émission `ProfilConseillerPublishedEvent` → mock HTTP POST `/api/revalidate` reçu avec path correct ET `cloudFrontInvalidator.invalidatePaths()` appelé avec le bon path ; (b) idem pour les 4 autres events ; (c) si l'un des deux appels échoue, l'autre est tenté quand même (best-effort) ; (d) timing total < 500 ms p95 (le listener ne doit pas bloquer la transaction d'émission)
-- [ ] T094 [P] [US2] Test axe-core CI sur `/conseiller/<seed-slug>` (Principe XI)
-- [ ] T095 [P] [US2] Test Lighthouse CI (T076 implementation) — bloquant CI
+- [X] T094 [P] [US2] Test axe-core CI sur `/conseiller/<seed-slug>` (Principe XI)
+- [X] T095 [P] [US2] Test Lighthouse CI (T076 implementation) — bloquant CI
 - [ ] T096 [P] [US2] Test invariant `tools/check-no-contact-fields-profile.ts` (T049) — bloquant CI sur PR touchant `apps/web/src/app/conseiller/[slug]/**`
 
 **Checkpoint US2** : page publique fonctionnelle, anti-marketplace strict
@@ -277,7 +277,7 @@ l'événement.
 - [X] T122 [P] [US6] Page `apps/web/src/app/[locale]/(admin)/admin/profils/[id]/page.tsx` (détail profil + historique modérations + actions)
 - [X] T123 [P] [US6] Composant `apps/web/src/app/[locale]/(admin)/admin/profils/_components/dialog-confirmation-action.tsx` (Radix Dialog + textarea raison + focus trap)
 - [X] T124 [P] [US6] Server Actions admin : `retirer-photo.ts`, `masquer-profil.ts`, `retablir-profil.ts`
-- [ ] T125 [P] [US6] Test axe-core CI sur `/(admin)/admin/profils` et `/[id]`
+- [X] T125 [P] [US6] Test axe-core CI sur `/(admin)/admin/profils` et `/[id]`
 
 **Checkpoint US6** : modération fonctionnelle bout en bout, audit immutable, courriels FR-CA.
 
