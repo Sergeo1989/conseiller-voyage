@@ -21,6 +21,10 @@ test.describe('a11y — page publique conseiller (T094, WCAG 2.1 AA) @a11y', () 
   }) => {
     await page.goto(`${BASE}/fr/conseiller/inconnu-a11y-test`);
     await expect(page.locator('h1')).toBeVisible();
+    // Next.js 15 stream le <title> APRÈS l'HTML initial pour les not-found
+    // pages (injecté dans <body>, pas dans <head>). Attendre l'élément
+    // <title> dans le DOM avant axe-core (qui scanne tout le document).
+    await page.waitForSelector('title', { state: 'attached', timeout: 10000 });
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])

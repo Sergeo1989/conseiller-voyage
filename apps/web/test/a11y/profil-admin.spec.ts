@@ -18,6 +18,8 @@ const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 test.describe('a11y — console admin profils (T125, US6) @a11y', () => {
   test('/fr/admin/profils sans auth — redirect ou erreur a11y compliant', async ({ page }) => {
     await page.goto(`${BASE}/fr/admin/profils`);
+    // Next.js 15 stream le <title> APRÈS l'HTML initial — attendre injection.
+    await page.waitForFunction(() => document.title.length > 0);
     const url = page.url();
     // Soit /connexion, soit /admin/profils avec erreur "session admin requise"
     expect(url).toMatch(/\/connexion|\/login|\/admin\/profils/);
@@ -37,6 +39,8 @@ test.describe('a11y — console admin profils (T125, US6) @a11y', () => {
 
   test("/fr/admin/profils/<id-inexistant> — page d'erreur a11y compliant", async ({ page }) => {
     await page.goto(`${BASE}/fr/admin/profils/00000000-0000-4000-8000-000000000000`);
+    // Next.js 15 stream le <title> APRÈS l'HTML initial — attendre injection.
+    await page.waitForFunction(() => document.title.length > 0);
     const url = page.url();
     expect(url).toMatch(/\/connexion|\/login|\/admin\/profils/);
 

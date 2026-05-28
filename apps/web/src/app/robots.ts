@@ -1,17 +1,20 @@
 // Next.js 15 — convention `app/robots.ts` génère /robots.txt dynamique.
 // Sert un robots.txt valide pour satisfaire l'audit SEO Lighthouse
-// (Principe XII). Autorise / par défaut sauf les routes privées
-// (admin, mfa, api, parametres, etc.).
+// (Principe XII). Autorise / par défaut sauf les routes privées.
 //
 // Anti-indexation staging : option BLOCK_INDEX=true (env var) force
 // `disallow /`. Sinon le bon robots.txt prod est servi (utilisé aussi
-// en CI Lighthouse pour que is-crawlable passe). Le filet supplémentaire
-// pour staging : meta robots noindex via les layouts (auth)/* déjà en
-// place, et CDN robots header peut surcharger.
+// en CI Lighthouse pour que is-crawlable passe).
+//
+// Note Lighthouse robots-txt audit : la directive `Sitemap:` exige une URL
+// ABSOLUE (RFC + Google docs). Next.js 15 MetadataRoute.Robots relativise
+// l'URL quand elle correspond à l'origin → 'Invalid sitemap URL' bloque
+// l'audit. On omet `sitemap:` ici — le sitemap est servi via
+// app/sitemap.ts et découvrable via les <link rel="alternate"> des
+// metadata. L'audit `robots-txt` valide la syntaxe sans exiger Sitemap.
 
 import type { MetadataRoute } from 'next';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 const BLOCK_INDEX = process.env.BLOCK_INDEX === 'true';
 
 export default function robots(): MetadataRoute.Robots {
@@ -21,9 +24,6 @@ export default function robots(): MetadataRoute.Robots {
     };
   }
 
-  // Note : pas de directive `host:` (Yandex-specific, Lighthouse la flag
-  // comme erreur de syntaxe → SEO 0.92). Le canonical est porté par les
-  // metadata des pages individuelles.
   return {
     rules: [
       {
@@ -44,6 +44,5 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

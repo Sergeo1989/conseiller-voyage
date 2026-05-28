@@ -6,7 +6,7 @@
 
 import { ImageResponse } from 'next/og';
 import type { Locale } from '../../../../i18n';
-import { lireProfilPublicBySlug } from '../../../../lib/profil/server-actions';
+import { lireProfilPublicBySlug } from '../../../../lib/profil/public-reader';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';

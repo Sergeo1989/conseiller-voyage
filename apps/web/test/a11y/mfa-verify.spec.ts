@@ -7,6 +7,8 @@ import { expect, test } from '@playwright/test';
 test.describe('@a11y MFA Verify pages', () => {
   test('/fr/mfa/verify → no axe-core violations (sérieuses/critiques)', async ({ page }) => {
     await page.goto('/fr/mfa/verify');
+    // Next.js 15 stream le <title> APRÈS l'HTML initial (redirect chain) — attendre injection.
+    await page.waitForFunction(() => document.title.length > 0);
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();
@@ -21,6 +23,8 @@ test.describe('@a11y MFA Verify pages', () => {
 
   test('/fr/mfa/recovery → no axe-core violations (sérieuses/critiques)', async ({ page }) => {
     await page.goto('/fr/mfa/recovery');
+    // Next.js 15 stream le <title> APRÈS l'HTML initial (redirect chain) — attendre injection.
+    await page.waitForFunction(() => document.title.length > 0);
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();

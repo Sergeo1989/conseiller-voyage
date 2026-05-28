@@ -28,6 +28,8 @@ test.describe('a11y — pages conseiller privées (T071) @a11y', () => {
       page,
     }) => {
       await page.goto(`${BASE}${path}`);
+      // Next.js 15 stream le <title> APRÈS l'HTML initial — attendre injection.
+      await page.waitForFunction(() => document.title.length > 0);
       // Soit on est redirigés vers /connexion, soit la page courante est
       // déjà la connexion. Dans les 2 cas on analyze l'URL courante.
       const currentUrl = page.url();

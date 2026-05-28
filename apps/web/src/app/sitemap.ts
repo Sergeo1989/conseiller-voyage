@@ -8,7 +8,7 @@
 
 import type { MetadataRoute } from 'next';
 import { locales, toUrlLocale } from '../i18n';
-import { lireSlugsPubliables } from '../lib/profil/server-actions';
+import { lireSlugsPubliables } from '../lib/profil/public-reader';
 
 export const revalidate = 3600;
 

@@ -24,20 +24,21 @@ import { ProfilHero } from '../../../../components/profil-public/ProfilHero';
 import { ProfilSections } from '../../../../components/profil-public/ProfilSections';
 import { SectionPourquoiPasContact } from '../../../../components/profil-public/SectionPourquoiPasContact';
 import { type Locale, toUrlLocale } from '../../../../i18n';
-import { lireProfilPublicBySlug } from '../../../../lib/profil/server-actions';
+import { lireProfilPublicBySlug } from '../../../../lib/profil/public-reader';
 
 interface PageProps {
   params: Promise<{ locale: Locale; slug: string }>;
 }
 
-// Pas de pre-build à la création — rendu à la demande puis cache ISR
-// (cf. research.md R4-bis : évite long build > 5 min à grande échelle).
-export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  return [];
-}
-
-export const dynamicParams = true;
-export const revalidate = 300;
+// Pas de pre-build à la création — rendu à la demande (cf. research.md
+// R4-bis : évite long build > 5 min à grande échelle).
+//
+// `dynamic = 'force-dynamic'` plutôt que ISR : next-intl utilise
+// `headers()` async via getRequestConfig — rend la page intrinsèquement
+// dynamique → conflit avec `revalidate = 300` (DYNAMIC_SERVER_USAGE
+// 500 error). Le cache est porté par les `next.revalidate: 300` dans
+// `fetch()` côté `public-reader.ts` + CloudFront s-maxage.
+export const dynamic = 'force-dynamic';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 

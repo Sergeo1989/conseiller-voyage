@@ -264,57 +264,12 @@ export interface ProfilPriveDto {
 // Page publique (US2) — pas d'auth, anti-énumération côté API
 // ---------------------------------------------------------------------
 
-export interface ProfilPublicPayloadDto {
-  readonly conseillerId: string;
-  readonly slug: string;
-  readonly nomAffiche: string;
-  readonly titre: string | null;
-  readonly biographie: string;
-  readonly photoUrlPublique: string;
-  readonly photoWidth: number;
-  readonly photoHeight: number;
-  readonly specialites: readonly { code: string; label: string }[];
-  readonly langues: readonly { code: string; label: string }[];
-  readonly zonesGeographiques: readonly { code: string; label: string }[];
-  readonly anneesExperience: number;
-  readonly verifieOPCTICO: boolean;
-  readonly publishedAt: string;
-}
-
-/**
- * Lit la page publique d'un conseiller par slug. Retourne null pour TOUS
- * les cas non-visibles (anti-énumération SC-003). Consommé en SSG/ISR.
- */
-export async function lireProfilPublicBySlug(slug: string): Promise<ProfilPublicPayloadDto | null> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/public/profil/${encodeURIComponent(slug)}`, {
-      method: 'GET',
-      cache: 'no-store',
-    });
-    if (res.status !== 200) return null;
-    const data = (await res.json().catch(() => null)) as ProfilPublicPayloadDto | null;
-    return data;
-  } catch {
-    // API HS / unreachable (CI a11y/lighthouse jobs ne lancent pas apps/api ;
-    // dégradation gracieuse en prod aussi) → traite comme profil inexistant.
-    // La page caller `notFound()` rendra la 404 unifiée (SC-003).
-    return null;
-  }
-}
-
-export async function lireSlugsPubliables(): Promise<readonly string[]> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/public/profil`, {
-      method: 'GET',
-      cache: 'no-store',
-    });
-    if (res.status !== 200) return [];
-    const data = (await res.json().catch(() => null)) as { slugs?: readonly string[] } | null;
-    return data?.slugs ?? [];
-  } catch {
-    return [];
-  }
-}
+// Note : `lireProfilPublicBySlug` + `lireSlugsPubliables` + le type
+// `ProfilPublicPayloadDto` ont été DÉPLACÉS vers lib/profil/public-reader.ts
+// pour éviter DYNAMIC_SERVER_USAGE (les Server Actions sont toujours
+// dynamiques, conflit avec `export const revalidate = 300` de la page slug).
+// Les caller (page.tsx, sitemap.ts, opengraph-image.tsx) importent depuis
+// public-reader.ts directement.
 
 // ---------------------------------------------------------------------
 // Aperçu (US4)
