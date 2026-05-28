@@ -2,10 +2,10 @@
 // Exige une session authentifiée (post-mot-de-passe). Si mfaVerifiedAt
 // est déjà fresh, redirect direct vers la home.
 
+import { auth } from '@/auth';
 import { VerifyTotpForm } from '@/features/mfa/ui/VerifyTotpForm';
+import { toUrlLocale } from '@/i18n';
 import { redirect } from 'next/navigation';
-import { auth } from '../../../../../auth';
-import { toUrlLocale } from '../../../../../i18n';
 
 export const metadata = {
   title: 'Vérification MFA — Conseiller Voyage',

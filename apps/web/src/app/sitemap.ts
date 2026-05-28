@@ -7,8 +7,8 @@
 // Référencé automatiquement par Next.js à `/sitemap.xml`. Revalidation 1h.
 
 import { lireSlugsPubliables } from '@/features/profil-public/infrastructure/public-reader';
+import { locales, toUrlLocale } from '@/i18n';
 import type { MetadataRoute } from 'next';
-import { locales, toUrlLocale } from '../i18n';
 
 export const revalidate = 3600;
 

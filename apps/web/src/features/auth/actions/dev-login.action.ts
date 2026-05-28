@@ -6,11 +6,11 @@
 'use server';
 
 import { randomBytes } from 'node:crypto';
+import { getEnv } from '@/env';
+import { toUrlLocale } from '@/i18n';
 import { prisma } from '@cv/db';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getEnv } from '../../../env';
-import { toUrlLocale } from '../../../i18n';
 
 const SESSION_TTL_DAYS = 30;
 const COOKIE_NAME = 'authjs.session-token'; // HTTP-compatible (vs __Host-* qui exige HTTPS)

@@ -5,11 +5,11 @@
 //   - Régénérer codes de récupération (route /regenerate-codes,
 //     step-up requis côté API)
 
+import { auth } from '@/auth';
+import { toUrlLocale } from '@/i18n';
 import { prisma } from '@cv/db';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { auth } from '../../../../../../auth';
-import { toUrlLocale } from '../../../../../../i18n';
 
 export const metadata = {
   title: 'Paramètres MFA — Conseiller Voyage',

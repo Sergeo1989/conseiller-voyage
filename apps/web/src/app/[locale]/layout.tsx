@@ -1,13 +1,13 @@
 // T030d + T030e — Layout racine avec NextIntlClientProvider, hreflang,
 // `<html lang>` dynamique.
 
+import { type Locale, locales } from '@/i18n';
 import { Footer } from '@/shared/ui/Footer';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { type Locale, locales } from '../../i18n';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 

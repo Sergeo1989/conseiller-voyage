@@ -9,10 +9,10 @@
 // avant ce fix — les pilotes arrivaient sur `/fr` et ne savaient pas
 // où aller.
 
+import { type Locale, toUrlLocale } from '@/i18n';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { type Locale, toUrlLocale } from '../../i18n';
 
 interface PageProps {
   params: Promise<{ locale: Locale }>;
