@@ -21,6 +21,9 @@ export default function robots(): MetadataRoute.Robots {
     };
   }
 
+  // Note : pas de directive `host:` (Yandex-specific, Lighthouse la flag
+  // comme erreur de syntaxe → SEO 0.92). Le canonical est porté par les
+  // metadata des pages individuelles.
   return {
     rules: [
       {
@@ -42,6 +45,5 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
-    host: SITE_URL,
   };
 }
