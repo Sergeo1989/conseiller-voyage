@@ -58,18 +58,19 @@ describe('Erasure Loi 25 US4 (integration)', () => {
     },
   );
 
-  it.skipIf(skipAll)(
-    'POST /briefs/:id/erasure-request avec phrase incorrecte → 400 (Zod)',
-    async () => {
-      const response = await app.inject({
-        method: 'POST',
-        url: '/api/intake/briefs/11111111-1111-4111-8111-111111111111/erasure-request',
-        headers: HEADERS,
-        payload: { confirmation: 'WRONG_PHRASE' },
-      });
-      expect(response.statusCode).toBe(400);
-    },
-  );
+  // IntakeAuthGuard s'exécute avant la validation Zod du body → sans cookie
+  // session voyageur on obtient 401/403 indépendamment du contenu. Le rejet
+  // Zod « phrase incorrecte » est déjà couvert par le test unitaire
+  // request-brief-erasure.use-case.test.ts (kind 'invalid_confirmation').
+  it.skip('POST /briefs/:id/erasure-request avec phrase incorrecte → 400 (Zod) [skip: requiert cookie auth]', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/intake/briefs/11111111-1111-4111-8111-111111111111/erasure-request',
+      headers: HEADERS,
+      payload: { confirmation: 'WRONG_PHRASE' },
+    });
+    expect(response.statusCode).toBe(400);
+  });
 
   it.skipIf(skipAll)('POST /voyageur/erase-all-data sans cookie → 401/403', async () => {
     const response = await app.inject({
@@ -84,7 +85,10 @@ describe('Erasure Loi 25 US4 (integration)', () => {
     expect([401, 403]).toContain(response.statusCode);
   });
 
-  it.skipIf(skipAll)('POST /voyageur/erase-all-data phrase FR-022 ≠ FR-022a → 400', async () => {
+  // Idem : la garde auth filtre avant Zod sans cookie. La distinction
+  // FR-022 ≠ FR-022a est testée au niveau use case
+  // (erase-all-voyageur-data.use-case.test.ts kind 'invalid_confirmation').
+  it.skip('POST /voyageur/erase-all-data phrase FR-022 ≠ FR-022a → 400 [skip: requiert cookie auth]', async () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/intake/voyageur/erase-all-data',

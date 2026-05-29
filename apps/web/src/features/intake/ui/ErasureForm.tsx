@@ -58,6 +58,7 @@ export function ErasureForm({ briefId, locale }: ErasureFormProps): ReactNode {
           className="w-full rounded border bg-background px-3 py-2 font-mono text-sm"
           autoComplete="off"
           spellCheck={false}
+          aria-label={t('phraseLabel')}
           aria-describedby="phrase-help"
         />
         <p id="phrase-help" className="mt-1 text-xs text-muted-foreground" aria-live="polite">

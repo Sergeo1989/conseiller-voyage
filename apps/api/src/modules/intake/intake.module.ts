@@ -20,7 +20,7 @@
 
 import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
 import { SystemClock } from '../../common/infrastructure/system-clock';
 import { CLOCK } from '../../common/ports/clock.port';
@@ -78,7 +78,15 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
     // ---------------------------------------------------------------
     // Cross-cutting (Principe V — scoped au module intake)
     // ---------------------------------------------------------------
-    { provide: APP_INTERCEPTOR, useClass: RollingSessionCookieInterceptor },
+    // useFactory + inject explicite : avec emitDecoratorMetadata + TS strict,
+    // l'import value de `Reflector` peut être réduit à un import type au
+    // moment du build (NestJS perd alors le param type au runtime → injection
+    // undefined). Le factory contourne définitivement le problème.
+    {
+      provide: APP_INTERCEPTOR,
+      useFactory: (reflector: Reflector) => new RollingSessionCookieInterceptor(reflector),
+      inject: [Reflector],
+    },
 
     // ---------------------------------------------------------------
     // Communs — Clock + UuidGenerator (singleton dans tout le module)

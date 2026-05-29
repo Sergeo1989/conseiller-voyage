@@ -6,6 +6,13 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
+  // Title par défaut hérité par toutes les pages (voyageur) qui ne déclarent
+  // pas leur propre `metadata.title`. WCAG 2.4.2 — un <title> non vide DOIT
+  // exister sur chaque document.
+  title: {
+    default: 'Mon brief de voyage — Conseiller Voyage',
+    template: '%s — Conseiller Voyage',
+  },
   robots: { index: false, follow: false },
 };
 
