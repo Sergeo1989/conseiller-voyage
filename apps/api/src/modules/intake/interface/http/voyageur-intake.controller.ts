@@ -98,6 +98,13 @@ export class VoyageurIntakeController {
 
   // ---------------------------------------------------------------------
   // POST /api/intake/briefs
+  //
+  // T100 — Rate-limit FR-019/020/020a appliqué via le port
+  // IntakeRateLimiter (Redis sliding window) DANS SubmitBriefUseCase.
+  // Pas de décorateur @Throttle / @IntakeRateLimit ici : ajouter une
+  // 2e couche Nest Throttler dupliquerait l'incrément et masquerait le
+  // discriminator email-first/IP-second (FR-020a Q2). Le ThrottlerGuard
+  // global (100 req/min/IP, AppModule) reste actif comme garde-fou ultime.
   // ---------------------------------------------------------------------
   @Post('briefs')
   @HttpCode(HttpStatus.CREATED)

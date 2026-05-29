@@ -44,6 +44,7 @@ import { SubmitBriefUseCase } from './application/use-cases/submit-brief.use-cas
 import { VerifyMagicLinkUseCase } from './application/use-cases/verify-magic-link.use-case';
 import { ViewBriefStatusUseCase } from './application/use-cases/view-brief-status.use-case';
 import { DisposableEmailCheckerImpl } from './infrastructure/disposable-email-checker';
+import { IntakeDisposableEmailsRefreshJob } from './infrastructure/jobs/intake-disposable-emails-refresh.job';
 import { PrismaIntakeAuditLogWriter } from './infrastructure/prisma-intake-audit-log-writer';
 import { PrismaIntakeOutboxWriter } from './infrastructure/prisma-intake-outbox-writer';
 import { PrismaMagicLinkTokenRepository } from './infrastructure/prisma-magic-link-token-repository';
@@ -216,6 +217,11 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
       }),
     },
     ResendMagicLinkUseCase,
+
+    // ---------------------------------------------------------------
+    // BullMQ jobs (Phase 5+)
+    // ---------------------------------------------------------------
+    IntakeDisposableEmailsRefreshJob,
   ],
   exports: [],
 })
