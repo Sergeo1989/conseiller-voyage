@@ -51,7 +51,10 @@ import { SubmitBriefUseCase } from './application/use-cases/submit-brief.use-cas
 import { VerifyMagicLinkUseCase } from './application/use-cases/verify-magic-link.use-case';
 import { ViewBriefStatusUseCase } from './application/use-cases/view-brief-status.use-case';
 import { DisposableEmailCheckerImpl } from './infrastructure/disposable-email-checker';
+import { IntakeBriefExpirationSweepJob } from './infrastructure/jobs/intake-brief-expiration-sweep.job';
 import { IntakeDisposableEmailsRefreshJob } from './infrastructure/jobs/intake-disposable-emails-refresh.job';
+import { IntakeExpirationReminderJob } from './infrastructure/jobs/intake-expiration-reminder.job';
+import { IntakeMagicLinkRetryJob } from './infrastructure/jobs/intake-magic-link-retry.job';
 import { PrismaIntakeAuditLogWriter } from './infrastructure/prisma-intake-audit-log-writer';
 import { PrismaIntakeOutboxWriter } from './infrastructure/prisma-intake-outbox-writer';
 import { PrismaMagicLinkTokenRepository } from './infrastructure/prisma-magic-link-token-repository';
@@ -321,6 +324,9 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
     // BullMQ jobs (Phase 5+)
     // ---------------------------------------------------------------
     IntakeDisposableEmailsRefreshJob,
+    IntakeBriefExpirationSweepJob,
+    IntakeExpirationReminderJob,
+    IntakeMagicLinkRetryJob,
   ],
   exports: [],
 })
