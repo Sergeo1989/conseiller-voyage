@@ -24,5 +24,11 @@ export {
 
 // UI components
 export { BriefFormWizard } from './ui/BriefFormWizard';
+export { BriefRecap } from './ui/BriefRecap';
+export { BriefStatusBadge } from './ui/BriefStatusBadge';
 export { EmailSentNotice } from './ui/EmailSentNotice';
 export { MagicLinkExpiredNotice } from './ui/MagicLinkExpiredNotice';
+export { OtherBriefsLink } from './ui/OtherBriefsLink';
+
+// Server-side data fetchers (US2)
+export { fetchBriefById, fetchBriefsByEmail } from './infrastructure/fetch-brief';
