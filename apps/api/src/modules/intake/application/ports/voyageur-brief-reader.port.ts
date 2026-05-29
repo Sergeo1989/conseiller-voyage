@@ -51,6 +51,13 @@ export interface VoyageurBriefReader {
   findById(id: VoyageurBriefId): Promise<VoyageurBriefRecord | null>;
   findByIdempotencyKey(key: string): Promise<VoyageurBriefRecord | null>;
   listActiveByContactId(contactId: VoyageurContactId): Promise<ReadonlyArray<VoyageurBriefRecord>>;
+  /**
+   * Trouve le dernier brief en `pending_verification` du contact, pour le
+   * resend-magic-link (T081c, N1). Renvoie null s'il n'y en a pas — la
+   * Server Action retourne quand même `sent_or_email_not_found` uniforme
+   * (anti-énumération).
+   */
+  findLatestPendingByContactId(contactId: VoyageurContactId): Promise<VoyageurBriefRecord | null>;
   /** Briefs actifs depuis > horsThreshold heures sans match (FR-026). */
   listUnmatchedSince(args: {
     readonly hoursThreshold: number;

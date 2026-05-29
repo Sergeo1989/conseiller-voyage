@@ -181,6 +181,13 @@ export class FakeVoyageurBriefStore implements VoyageurBriefReader, VoyageurBrie
       (b) => b.voyageurContactId === contactId && b.status === 'active',
     );
   }
+  async findLatestPendingByContactId(contactId: VoyageurContactId) {
+    const pending = Array.from(this.briefs.values()).filter(
+      (b) => b.voyageurContactId === contactId && b.status === 'pending_verification',
+    );
+    if (pending.length === 0) return null;
+    return pending.sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime())[0] ?? null;
+  }
   async listUnmatchedSince() {
     return { items: [], total: 0 };
   }

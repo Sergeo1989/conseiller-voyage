@@ -110,6 +110,16 @@ export class PrismaVoyageurBriefRepository implements VoyageurBriefReader, Voyag
     return rows.map((r) => toRecord(r as PrismaBriefRow));
   }
 
+  async findLatestPendingByContactId(
+    contactId: VoyageurContactId,
+  ): Promise<VoyageurBriefRecord | null> {
+    const row = await prisma.voyageurBrief.findFirst({
+      where: { voyageurContactId: contactId, status: 'pending_verification' },
+      orderBy: { submittedAt: 'desc' },
+    });
+    return row ? toRecord(row as PrismaBriefRow) : null;
+  }
+
   async listUnmatchedSince(args: {
     readonly hoursThreshold: number;
     readonly page: number;
