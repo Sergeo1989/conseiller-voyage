@@ -5,6 +5,12 @@
 // S'enrichit au fur et à mesure :
 //   T017 ajoute AUTH_SECRET, NEXTAUTH_URL
 //   T016 (apps/api) déclare les variables backend correspondantes.
+//
+// T007 (feature 002-voyageur-intake) : NOOP — toutes les vars intake
+// vivent côté API NestJS (rate-limit Redis, secret HMAC, durée expiration).
+// Le countdown 120s côté EmailSentNotice (FR-013a) est une constante UX,
+// pas une env var. Si un futur besoin se présente (ex: feature flag
+// d'override pour QA), l'ajouter ici en NEXT_PUBLIC_INTAKE_*.
 
 import { z } from 'zod';
 

@@ -8,6 +8,7 @@ import { ThrottlerModule } from './common/throttler.module';
 import { HealthModule } from './health/health.module';
 import { ConformiteModule } from './modules/conformite/interface/conformite.module';
 import { IdentiteModule } from './modules/identite/identite.module';
+import { IntakeModule } from './modules/intake/intake.module';
 import { BullMqModule } from './queue/bullmq.module';
 
 /**
@@ -42,6 +43,7 @@ import { BullMqModule } from './queue/bullmq.module';
     IdentiteModule,
     HealthModule,
     ConformiteModule,
+    IntakeModule,
   ],
   controllers: [],
   providers: [

@@ -5,6 +5,7 @@
 // Cf. specs/005-mfa-conseiller/plan.md § packages/email-templates (P1-3).
 
 export * from './auth';
+export * from './intake';
 export * from './mfa';
 
 export const EMAIL_TEMPLATES_PACKAGE_VERSION = '0.1.0';
