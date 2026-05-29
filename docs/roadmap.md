@@ -111,7 +111,7 @@ Reste pour merger 005 vers `main` :
 
 | ID | Feature | Module | Scope | État | Dépend de |
 |---|---|---|---|---|---|
-| 008 | Intake — brief structuré, validation déterministe, brouillon + magic-link voyageur + admin filet + Loi 25 | préqualification | M | 🟡 livré branche `002-voyageur-intake` (5 US, 360+ tests, attente revue + merge) | — (voyageur anonyme) |
+| 008 | Intake — brief structuré, validation déterministe, brouillon + magic-link voyageur + admin filet + Loi 25 | préqualification | M | ✅ livré PR #20 (squash `f3bff79`, 5 US, 360+ tests, /ultrareview 0 finding) | — (voyageur anonyme) |
 | 009 | Intake — enrichissement LLM (reformulation, extraction d'intentions) | préqualification | M | ⏳ | 008, ADR fournisseur LLM |
 | 010 | Intake — soumission + magic-link de suivi voyageur | préqualification × identité | S | ⏳ | 003, 008 |
 | 011 | Matching — scoring conseiller × brief (pur, TDD obligatoire) | matching | M | ⏳ | 001, 008 |
