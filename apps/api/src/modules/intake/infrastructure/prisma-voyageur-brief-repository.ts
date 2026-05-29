@@ -122,13 +122,14 @@ export class PrismaVoyageurBriefRepository implements VoyageurBriefReader, Voyag
 
   async listUnmatchedSince(args: {
     readonly hoursThreshold: number;
+    readonly nowMs: number;
     readonly page: number;
     readonly pageSize: number;
   }): Promise<{
     readonly items: ReadonlyArray<VoyageurBriefRecord>;
     readonly total: number;
   }> {
-    const cutoff = new Date(Date.now() - args.hoursThreshold * 60 * 60 * 1000);
+    const cutoff = new Date(args.nowMs - args.hoursThreshold * 60 * 60 * 1000);
     const where = {
       status: 'active' as BriefStatus,
       verifiedAt: { lte: cutoff },

@@ -18,6 +18,7 @@
 //
 // Pattern hérité de packages/api/src/modules/conformite/interface/conformite.module.ts.
 
+import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
@@ -26,6 +27,8 @@ import { CLOCK } from '../../common/ports/clock.port';
 import { UUID_GENERATOR } from '../../common/ports/uuid-generator.port';
 import { env } from '../../env';
 import { BullMqModule } from '../../queue/bullmq.module';
+import { ConformiteModule } from '../conformite/interface/conformite.module';
+import { IdentiteModule } from '../identite/identite.module';
 import {
   DISPOSABLE_EMAIL_CHECKER,
   INTAKE_AUDIT_LOG_WRITER,
@@ -40,6 +43,8 @@ import {
 } from './application/ports';
 import { EraseAllVoyageurDataUseCase } from './application/use-cases/erase-all-voyageur-data.use-case';
 import { ListBriefsByEmailUseCase } from './application/use-cases/list-briefs-by-email.use-case';
+import { ListUnmatchedBriefsUseCase } from './application/use-cases/list-unmatched-briefs.use-case';
+import { PushBriefToConseillerUseCase } from './application/use-cases/push-brief-to-conseiller.use-case';
 import { RequestBriefErasureUseCase } from './application/use-cases/request-brief-erasure.use-case';
 import { ResendMagicLinkUseCase } from './application/use-cases/resend-magic-link.use-case';
 import { SubmitBriefUseCase } from './application/use-cases/submit-brief.use-case';
@@ -54,6 +59,7 @@ import { PrismaVoyageurBriefRepository } from './infrastructure/prisma-voyageur-
 import { PrismaVoyageurContactRepository } from './infrastructure/prisma-voyageur-contact-repository';
 import { RedisIntakeRateLimiter } from './infrastructure/redis-intake-rate-limiter';
 import { SesMagicLinkMailer } from './infrastructure/ses-magic-link-mailer';
+import { AdminIntakeController } from './interface/http/admin-intake.controller';
 import { IntakeAuthGuard } from './interface/http/intake-auth.guard';
 import { RollingSessionCookieInterceptor } from './interface/http/rolling-session-cookie.interceptor';
 import { VoyageurIntakeController } from './interface/http/voyageur-intake.controller';
@@ -61,8 +67,10 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
 @Module({
   imports: [
     BullMqModule, // expose REDIS_CLIENT pour RedisIntakeRateLimiter + DisposableEmailCheckerImpl
+    IdentiteModule, // expose AuthGuard + AUTH_SESSION_READER pour admin endpoints US5
+    ConformiteModule, // expose CONFORMITE_QUERY_PORT pour push manuel US5 FR-027
   ],
-  controllers: [VoyageurIntakeController],
+  controllers: [VoyageurIntakeController, AdminIntakeController],
   providers: [
     // ---------------------------------------------------------------
     // Cross-cutting (Principe V — scoped au module intake)
@@ -277,6 +285,37 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
       }),
     },
     EraseAllVoyageurDataUseCase,
+
+    // ---------------------------------------------------------------
+    // Use cases US5 admin (Phase 7)
+    // ---------------------------------------------------------------
+    {
+      provide: ListUnmatchedBriefsUseCase.DEPS_TOKEN,
+      inject: [CLOCK, VOYAGEUR_BRIEF_READER],
+      useFactory: (clock, briefReader) => ({ clock, briefReader }),
+    },
+    ListUnmatchedBriefsUseCase,
+
+    {
+      provide: PushBriefToConseillerUseCase.DEPS_TOKEN,
+      inject: [
+        CLOCK,
+        UUID_GENERATOR,
+        VOYAGEUR_BRIEF_READER,
+        CONFORMITE_QUERY_PORT,
+        INTAKE_AUDIT_LOG_WRITER,
+        INTAKE_OUTBOX_WRITER,
+      ],
+      useFactory: (clock, uuid, briefReader, conformiteQuery, audit, outbox) => ({
+        clock,
+        uuid,
+        briefReader,
+        conformiteQuery,
+        audit,
+        outbox,
+      }),
+    },
+    PushBriefToConseillerUseCase,
 
     // ---------------------------------------------------------------
     // BullMQ jobs (Phase 5+)

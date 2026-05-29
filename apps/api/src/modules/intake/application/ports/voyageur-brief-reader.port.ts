@@ -58,9 +58,13 @@ export interface VoyageurBriefReader {
    * (anti-énumération).
    */
   findLatestPendingByContactId(contactId: VoyageurContactId): Promise<VoyageurBriefRecord | null>;
-  /** Briefs actifs depuis > horsThreshold heures sans match (FR-026). */
+  /**
+   * Briefs actifs depuis > hoursThreshold heures sans match (FR-026).
+   * `nowMs` permet la testabilité avec FakeClock.
+   */
   listUnmatchedSince(args: {
     readonly hoursThreshold: number;
+    readonly nowMs: number;
     readonly page: number;
     readonly pageSize: number;
   }): Promise<{

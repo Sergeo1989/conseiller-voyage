@@ -188,8 +188,21 @@ export class FakeVoyageurBriefStore implements VoyageurBriefReader, VoyageurBrie
     if (pending.length === 0) return null;
     return pending.sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime())[0] ?? null;
   }
-  async listUnmatchedSince() {
-    return { items: [], total: 0 };
+  async listUnmatchedSince(args: {
+    readonly hoursThreshold: number;
+    readonly nowMs: number;
+    readonly page: number;
+    readonly pageSize: number;
+  }) {
+    const cutoff = args.nowMs - args.hoursThreshold * 60 * 60 * 1000;
+    const filtered = Array.from(this.briefs.values()).filter(
+      (b) => b.status === 'active' && b.verifiedAt !== null && b.verifiedAt.getTime() <= cutoff,
+    );
+    const start = (args.page - 1) * args.pageSize;
+    return {
+      items: filtered.slice(start, start + args.pageSize),
+      total: filtered.length,
+    };
   }
 
   async create(input: CreateBriefInput): Promise<void> {
