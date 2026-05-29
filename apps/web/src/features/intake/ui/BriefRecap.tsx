@@ -10,6 +10,7 @@ import {
   formatSpeciality,
 } from '@cv/shared/intake';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { BriefStatusBadge } from './BriefStatusBadge';
 import { OtherBriefsLink } from './OtherBriefsLink';
@@ -95,8 +96,14 @@ export async function BriefRecap({ summary, locale }: BriefRecapProps): Promise<
         />
       </section>
 
-      <footer className="pt-4">
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
         <OtherBriefsLink locale={locale} />
+        <Link
+          href={`/${locale}/voyage/${summary.briefId}/effacement`}
+          className="text-sm font-medium text-destructive underline decoration-1 underline-offset-2 hover:text-destructive/80"
+        >
+          {t('eraseButton')}
+        </Link>
       </footer>
     </article>
   );

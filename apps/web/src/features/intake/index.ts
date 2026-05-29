@@ -21,12 +21,23 @@ export {
   resendMagicLinkAction,
   type ResendMagicLinkActionResult,
 } from './actions/resend-magic-link.action';
+export {
+  requestBriefErasureAction,
+  type RequestBriefErasureActionResult,
+} from './actions/request-brief-erasure.action';
+export {
+  eraseAllVoyageurDataAction,
+  type EraseAllVoyageurDataActionResult,
+} from './actions/erase-all-voyageur-data.action';
 
 // UI components
+export { BriefDeletedNotice } from './ui/BriefDeletedNotice';
 export { BriefFormWizard } from './ui/BriefFormWizard';
 export { BriefRecap } from './ui/BriefRecap';
 export { BriefStatusBadge } from './ui/BriefStatusBadge';
 export { EmailSentNotice } from './ui/EmailSentNotice';
+export { EraseAllDataForm } from './ui/EraseAllDataForm';
+export { ErasureForm } from './ui/ErasureForm';
 export { MagicLinkExpiredNotice } from './ui/MagicLinkExpiredNotice';
 export { OtherBriefsLink } from './ui/OtherBriefsLink';
 
