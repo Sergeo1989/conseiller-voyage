@@ -38,7 +38,9 @@ import {
   VOYAGEUR_CONTACT_READER,
   VOYAGEUR_CONTACT_WRITER,
 } from './application/ports';
+import { EraseAllVoyageurDataUseCase } from './application/use-cases/erase-all-voyageur-data.use-case';
 import { ListBriefsByEmailUseCase } from './application/use-cases/list-briefs-by-email.use-case';
+import { RequestBriefErasureUseCase } from './application/use-cases/request-brief-erasure.use-case';
 import { ResendMagicLinkUseCase } from './application/use-cases/resend-magic-link.use-case';
 import { SubmitBriefUseCase } from './application/use-cases/submit-brief.use-case';
 import { VerifyMagicLinkUseCase } from './application/use-cases/verify-magic-link.use-case';
@@ -217,6 +219,64 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
       }),
     },
     ResendMagicLinkUseCase,
+
+    // ---------------------------------------------------------------
+    // Use cases US4 erasure Loi 25 (Phase 6)
+    // ---------------------------------------------------------------
+    {
+      provide: RequestBriefErasureUseCase.DEPS_TOKEN,
+      inject: [
+        CLOCK,
+        UUID_GENERATOR,
+        VOYAGEUR_BRIEF_READER,
+        VOYAGEUR_BRIEF_WRITER,
+        INTAKE_AUDIT_LOG_WRITER,
+        INTAKE_OUTBOX_WRITER,
+      ],
+      useFactory: (clock, uuid, briefReader, briefWriter, audit, outbox) => ({
+        clock,
+        uuid,
+        briefReader,
+        briefWriter,
+        audit,
+        outbox,
+      }),
+    },
+    RequestBriefErasureUseCase,
+
+    {
+      provide: EraseAllVoyageurDataUseCase.DEPS_TOKEN,
+      inject: [
+        CLOCK,
+        UUID_GENERATOR,
+        VOYAGEUR_CONTACT_READER,
+        VOYAGEUR_CONTACT_WRITER,
+        VOYAGEUR_BRIEF_READER,
+        VOYAGEUR_BRIEF_WRITER,
+        INTAKE_AUDIT_LOG_WRITER,
+        INTAKE_OUTBOX_WRITER,
+      ],
+      useFactory: (
+        clock,
+        uuid,
+        contactReader,
+        contactWriter,
+        briefReader,
+        briefWriter,
+        audit,
+        outbox,
+      ) => ({
+        clock,
+        uuid,
+        contactReader,
+        contactWriter,
+        briefReader,
+        briefWriter,
+        audit,
+        outbox,
+      }),
+    },
+    EraseAllVoyageurDataUseCase,
 
     // ---------------------------------------------------------------
     // BullMQ jobs (Phase 5+)

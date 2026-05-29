@@ -16,6 +16,8 @@
 
 import {
   type BriefSummary,
+  ErasureRequestAllSchema,
+  ErasureRequestBriefSchema,
   ResendMagicLinkSchema,
   type SubmitBriefPayload,
   SubmitBriefSchema,
@@ -46,7 +48,9 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ZodValidationPipe } from '../../../../common/pipes/zod-validation.pipe';
+import { EraseAllVoyageurDataUseCase } from '../../application/use-cases/erase-all-voyageur-data.use-case';
 import { ListBriefsByEmailUseCase } from '../../application/use-cases/list-briefs-by-email.use-case';
+import { RequestBriefErasureUseCase } from '../../application/use-cases/request-brief-erasure.use-case';
 import { ResendMagicLinkUseCase } from '../../application/use-cases/resend-magic-link.use-case';
 import { SubmitBriefUseCase } from '../../application/use-cases/submit-brief.use-case';
 import { VerifyMagicLinkUseCase } from '../../application/use-cases/verify-magic-link.use-case';
@@ -94,6 +98,10 @@ export class VoyageurIntakeController {
     @Inject(ViewBriefStatusUseCase) private readonly viewBriefStatus: ViewBriefStatusUseCase,
     @Inject(ListBriefsByEmailUseCase) private readonly listBriefsByEmail: ListBriefsByEmailUseCase,
     @Inject(ResendMagicLinkUseCase) private readonly resendMagicLinkUseCase: ResendMagicLinkUseCase,
+    @Inject(RequestBriefErasureUseCase)
+    private readonly requestBriefErasure: RequestBriefErasureUseCase,
+    @Inject(EraseAllVoyageurDataUseCase)
+    private readonly eraseAllVoyageurData: EraseAllVoyageurDataUseCase,
   ) {}
 
   // ---------------------------------------------------------------------
@@ -268,6 +276,100 @@ export class VoyageurIntakeController {
     const locale: 'fr-CA' | 'en' = acceptLanguage?.startsWith('en') ? 'en' : 'fr-CA';
     const result = await this.resendMagicLinkUseCase.execute({ email: body.email, locale });
     return { status: result.kind };
+  }
+
+  // ---------------------------------------------------------------------
+  // POST /api/intake/briefs/:briefId/erasure-request (FR-022 US4, T106)
+  // ---------------------------------------------------------------------
+  @Post('briefs/:briefId/erasure-request')
+  @UseGuards(IntakeAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Demande effacement Loi 25 d un brief seul (FR-022)' })
+  @ApiResponse({ status: 200, description: 'Brief anonymisé immédiatement (SC-008)' })
+  @ApiResponse({ status: 400, description: 'Confirmation incorrecte' })
+  @ApiResponse({ status: 401, description: 'Cookie session absent/IDOR' })
+  @ApiResponse({ status: 404, description: 'Brief inexistant' })
+  @ApiResponse({ status: 409, description: 'Brief déjà supprimé' })
+  async requestErasure(
+    @Param('briefId') briefId: string,
+    @Body(new ZodValidationPipe(ErasureRequestBriefSchema)) body: { confirmation: string },
+    @Req() req: IntakeContextRequest,
+  ): Promise<{ status: 'pending'; estimatedCompletionSeconds: number }> {
+    if (!req.intakeContext) throw new UnauthorizedException();
+    const result = await this.requestBriefErasure.execute({
+      briefId: briefId as VoyageurBriefId,
+      contactId: req.intakeContext.contactId as VoyageurContactId,
+      confirmation: body.confirmation,
+    });
+    if (result.kind === 'invalid_confirmation') {
+      throw new HttpException({ message: 'Confirmation incorrecte.' }, HttpStatus.BAD_REQUEST);
+    }
+    if (result.kind === 'unauthorized') throw new UnauthorizedException();
+    if (result.kind === 'not_found') throw new NotFoundException();
+    if (result.kind === 'already_deleted') {
+      throw new HttpException({ message: 'Déjà supprimé.' }, HttpStatus.CONFLICT);
+    }
+    return { status: 'pending', estimatedCompletionSeconds: 0 };
+  }
+
+  // ---------------------------------------------------------------------
+  // POST /api/intake/voyageur/erase-all-data (FR-022a, C1, T115d)
+  // @SkipRollingRenewal : on révoque la session, pas la peine de renouveler.
+  // ---------------------------------------------------------------------
+  @Post('voyageur/erase-all-data')
+  @UseGuards(IntakeAuthGuard)
+  @SkipRollingRenewal()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Effacement global Loi 25 (contact + tous briefs, FR-022a)' })
+  @ApiResponse({ status: 200, description: 'Tout effacé, cookie révoqué' })
+  @ApiResponse({ status: 400, description: 'Phrase incorrecte ou stale_brief_count' })
+  @ApiResponse({ status: 401, description: 'Cookie absent' })
+  @ApiResponse({ status: 409, description: 'Déjà supprimé' })
+  async eraseAllData(
+    @Body(new ZodValidationPipe(ErasureRequestAllSchema))
+    body: { confirmation: string; acknowledgedBriefCount: number },
+    @Req() req: IntakeContextRequest,
+    @Res({ passthrough: true })
+    res: { clearCookie?(name: string, options: Record<string, unknown>): void },
+  ): Promise<{
+    status: 'pending';
+    briefsAffectedCount: number;
+    estimatedCompletionSeconds: number;
+  }> {
+    if (!req.intakeContext) throw new UnauthorizedException();
+    const result = await this.eraseAllVoyageurData.execute({
+      contactId: req.intakeContext.contactId as VoyageurContactId,
+      confirmation: body.confirmation,
+      acknowledgedBriefCount: body.acknowledgedBriefCount,
+    });
+    if (result.kind === 'invalid_confirmation') {
+      throw new HttpException({ message: 'Phrase incorrecte.' }, HttpStatus.BAD_REQUEST);
+    }
+    if (result.kind === 'stale_brief_count') {
+      throw new HttpException(
+        {
+          message: 'Le nombre de briefs a changé. Rechargez la page.',
+          actualCount: result.actualCount,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (result.kind === 'contact_not_found') throw new NotFoundException();
+    if (result.kind === 'already_deleted') {
+      throw new HttpException({ message: 'Déjà supprimé.' }, HttpStatus.CONFLICT);
+    }
+
+    // Révocation immédiate du cookie session voyageur (Loi 25 — la session
+    // ne doit plus pointer vers des données effacées). Côté navigateur,
+    // l'utilisateur sera déconnecté au prochain refresh.
+    res.clearCookie?.('__Host-cv.intake.token', { path: '/' });
+    res.clearCookie?.('cv.intake.session', { path: '/' });
+
+    return {
+      status: 'pending',
+      briefsAffectedCount: result.briefsAffectedCount,
+      estimatedCompletionSeconds: 0,
+    };
   }
 }
 
