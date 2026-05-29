@@ -15,14 +15,19 @@
 // Cf. specs/002-voyageur-intake/contracts/http-endpoints.md §1.
 
 import {
+  type BriefSummary,
+  ResendMagicLinkSchema,
   type SubmitBriefPayload,
   SubmitBriefSchema,
   type VerifyMagicLinkPayload,
   VerifyMagicLinkSchema,
+  type VoyageurBriefId,
+  type VoyageurContactId,
 } from '@cv/shared/intake';
 import {
   Body,
   Controller,
+  Get,
   GoneException,
   Headers,
   HttpCode,
@@ -31,16 +36,23 @@ import {
   Inject,
   Ip,
   NotFoundException,
+  Param,
   Post,
   Req,
   Res,
   UnauthorizedException,
   UnprocessableEntityException,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ZodValidationPipe } from '../../../../common/pipes/zod-validation.pipe';
+import { ListBriefsByEmailUseCase } from '../../application/use-cases/list-briefs-by-email.use-case';
+import { ResendMagicLinkUseCase } from '../../application/use-cases/resend-magic-link.use-case';
 import { SubmitBriefUseCase } from '../../application/use-cases/submit-brief.use-case';
 import { VerifyMagicLinkUseCase } from '../../application/use-cases/verify-magic-link.use-case';
+import { ViewBriefStatusUseCase } from '../../application/use-cases/view-brief-status.use-case';
+import { IntakeAuthGuard } from './intake-auth.guard';
+import { SkipRollingRenewal } from './skip-rolling-renewal.decorator';
 
 const PROD_COOKIE_NAME = '__Host-cv.intake.token';
 const DEV_COOKIE_NAME = 'cv.intake.session';
@@ -69,12 +81,19 @@ interface DisposableErrorBody {
   message: string;
 }
 
+interface IntakeContextRequest {
+  intakeContext?: { contactId: string; briefId: string };
+}
+
 @ApiTags('intake')
 @Controller('api/intake')
 export class VoyageurIntakeController {
   constructor(
     @Inject(SubmitBriefUseCase) private readonly submitBrief: SubmitBriefUseCase,
     @Inject(VerifyMagicLinkUseCase) private readonly verifyMagicLink: VerifyMagicLinkUseCase,
+    @Inject(ViewBriefStatusUseCase) private readonly viewBriefStatus: ViewBriefStatusUseCase,
+    @Inject(ListBriefsByEmailUseCase) private readonly listBriefsByEmail: ListBriefsByEmailUseCase,
+    @Inject(ResendMagicLinkUseCase) private readonly resendMagicLinkUseCase: ResendMagicLinkUseCase,
   ) {}
 
   // ---------------------------------------------------------------------
@@ -176,6 +195,72 @@ export class VoyageurIntakeController {
 
     const _exhaustive: never = result;
     return _exhaustive;
+  }
+
+  // ---------------------------------------------------------------------
+  // GET /api/intake/briefs/by-email (US2, FR-017)
+  // Doit être déclarée AVANT GET /:briefId pour ne pas être interceptée
+  // par le param routing.
+  // ---------------------------------------------------------------------
+  @Get('briefs/by-email')
+  @UseGuards(IntakeAuthGuard)
+  @ApiOperation({ summary: 'Liste briefs actifs du contact (FR-017)' })
+  @ApiResponse({ status: 200, description: 'Liste briefs (peut être vide)' })
+  @ApiResponse({ status: 401, description: 'Cookie session voyageur absent ou expiré' })
+  async listByEmail(@Req() req: IntakeContextRequest): Promise<{
+    briefs: ReadonlyArray<BriefSummary>;
+  }> {
+    if (!req.intakeContext) throw new UnauthorizedException();
+    const result = await this.listBriefsByEmail.execute({
+      contactId: req.intakeContext.contactId as VoyageurContactId,
+    });
+    if (result.kind === 'contact_not_found') throw new NotFoundException();
+    if (result.kind === 'contact_anonymised') throw new GoneException();
+    return { briefs: result.briefs };
+  }
+
+  // ---------------------------------------------------------------------
+  // GET /api/intake/briefs/:briefId (US2)
+  // ---------------------------------------------------------------------
+  @Get('briefs/:briefId')
+  @UseGuards(IntakeAuthGuard)
+  @ApiOperation({ summary: 'Récap du brief pour la page voyageur (US2)' })
+  @ApiResponse({ status: 200, description: 'BriefSummary' })
+  @ApiResponse({ status: 401, description: 'Cookie session absent/expiré' })
+  @ApiResponse({ status: 404, description: 'BriefId inexistant' })
+  @ApiResponse({ status: 410, description: 'Brief anonymisé' })
+  async viewBrief(
+    @Param('briefId') briefId: string,
+    @Req() req: IntakeContextRequest,
+  ): Promise<BriefSummary> {
+    if (!req.intakeContext) throw new UnauthorizedException();
+    const result = await this.viewBriefStatus.execute({
+      briefId: briefId as VoyageurBriefId,
+      contactId: req.intakeContext.contactId as VoyageurContactId,
+    });
+    if (result.kind === 'not_found') throw new NotFoundException();
+    if (result.kind === 'unauthorized') throw new UnauthorizedException();
+    if (result.kind === 'anonymised') throw new GoneException();
+    return result.summary;
+  }
+
+  // ---------------------------------------------------------------------
+  // POST /api/intake/briefs/resend-magic-link (N1, T082a)
+  // Pas de :briefId — le voyageur n'y a pas accès (il n'a que son email).
+  // @SkipRollingRenewal : pas de cookie en jeu (endpoint public anonyme).
+  // ---------------------------------------------------------------------
+  @Post('briefs/resend-magic-link')
+  @SkipRollingRenewal()
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({ summary: 'Renvoie un magic link (réponse uniforme anti-énumération)' })
+  @ApiResponse({ status: 202, description: 'Email envoyé OU email inexistant (uniforme)' })
+  async resendMagicLink(
+    @Body(new ZodValidationPipe(ResendMagicLinkSchema)) body: { email: string },
+    @Headers('accept-language') acceptLanguage: string | undefined,
+  ): Promise<{ status: 'sent_or_email_not_found' }> {
+    const locale: 'fr-CA' | 'en' = acceptLanguage?.startsWith('en') ? 'en' : 'fr-CA';
+    const result = await this.resendMagicLinkUseCase.execute({ email: body.email, locale });
+    return { status: result.kind };
   }
 }
 

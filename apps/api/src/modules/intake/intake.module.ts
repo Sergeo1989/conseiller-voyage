@@ -38,8 +38,11 @@ import {
   VOYAGEUR_CONTACT_READER,
   VOYAGEUR_CONTACT_WRITER,
 } from './application/ports';
+import { ListBriefsByEmailUseCase } from './application/use-cases/list-briefs-by-email.use-case';
+import { ResendMagicLinkUseCase } from './application/use-cases/resend-magic-link.use-case';
 import { SubmitBriefUseCase } from './application/use-cases/submit-brief.use-case';
 import { VerifyMagicLinkUseCase } from './application/use-cases/verify-magic-link.use-case';
+import { ViewBriefStatusUseCase } from './application/use-cases/view-brief-status.use-case';
 import { DisposableEmailCheckerImpl } from './infrastructure/disposable-email-checker';
 import { PrismaIntakeAuditLogWriter } from './infrastructure/prisma-intake-audit-log-writer';
 import { PrismaIntakeOutboxWriter } from './infrastructure/prisma-intake-outbox-writer';
@@ -48,6 +51,7 @@ import { PrismaVoyageurBriefRepository } from './infrastructure/prisma-voyageur-
 import { PrismaVoyageurContactRepository } from './infrastructure/prisma-voyageur-contact-repository';
 import { RedisIntakeRateLimiter } from './infrastructure/redis-intake-rate-limiter';
 import { SesMagicLinkMailer } from './infrastructure/ses-magic-link-mailer';
+import { IntakeAuthGuard } from './interface/http/intake-auth.guard';
 import { RollingSessionCookieInterceptor } from './interface/http/rolling-session-cookie.interceptor';
 import { VoyageurIntakeController } from './interface/http/voyageur-intake.controller';
 
@@ -172,6 +176,46 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
       }),
     },
     VerifyMagicLinkUseCase,
+
+    // ---------------------------------------------------------------
+    // Use cases US2 (Phase 4)
+    // ---------------------------------------------------------------
+    IntakeAuthGuard,
+    {
+      provide: ViewBriefStatusUseCase.DEPS_TOKEN,
+      inject: [VOYAGEUR_BRIEF_READER],
+      useFactory: (briefReader) => ({ briefReader }),
+    },
+    ViewBriefStatusUseCase,
+
+    {
+      provide: ListBriefsByEmailUseCase.DEPS_TOKEN,
+      inject: [VOYAGEUR_BRIEF_READER, VOYAGEUR_CONTACT_READER],
+      useFactory: (briefReader, contactReader) => ({ briefReader, contactReader }),
+    },
+    ListBriefsByEmailUseCase,
+
+    {
+      provide: ResendMagicLinkUseCase.DEPS_TOKEN,
+      inject: [
+        CLOCK,
+        UUID_GENERATOR,
+        VOYAGEUR_BRIEF_READER,
+        VOYAGEUR_CONTACT_READER,
+        MAGIC_LINK_TOKEN_WRITER,
+        MAGIC_LINK_MAILER,
+      ],
+      useFactory: (clock, uuid, briefReader, contactReader, tokenWriter, mailer) => ({
+        clock,
+        uuid,
+        briefReader,
+        contactReader,
+        tokenWriter,
+        mailer,
+        magicLinkTtlDays: 7,
+      }),
+    },
+    ResendMagicLinkUseCase,
   ],
   exports: [],
 })
