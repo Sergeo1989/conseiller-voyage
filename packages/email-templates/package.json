@@ -4,19 +4,27 @@
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./mfa": {
-      "types": "./src/mfa/index.ts",
+      "types": "./dist/mfa/index.d.ts",
       "default": "./dist/mfa/index.js"
     },
     "./mfa/*": {
-      "types": "./src/mfa/*.tsx",
+      "types": "./dist/mfa/*.d.ts",
       "default": "./dist/mfa/*.js"
+    },
+    "./intake": {
+      "types": "./dist/intake/index.d.ts",
+      "default": "./dist/intake/index.js"
+    },
+    "./intake/*": {
+      "types": "./dist/intake/*.d.ts",
+      "default": "./dist/intake/*.js"
     }
   },
   "scripts": {

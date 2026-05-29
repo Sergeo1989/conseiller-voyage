@@ -27,6 +27,110 @@
     "validationFailed": "Le formulaire contient des erreurs.",
     "networkError": "Le serveur ne répond pas. Réessayez dans un instant."
   },
+  "intake": {
+    "form": {
+      "title": "Décrivez votre projet de voyage",
+      "subtitle": "5 étapes, environ 6 minutes. Un conseiller vérifié vous contactera ensuite.",
+      "stepLabel": "Étape {current} sur {total}",
+      "nextStep": "Suivant",
+      "previousStep": "Précédent",
+      "submit": "Soumettre mon brief",
+      "step1": {
+        "title": "Où voulez-vous aller ?",
+        "destinationsLabel": "Destinations",
+        "destinationCountryLabel": "Pays",
+        "destinationRegionLabel": "Région (optionnel)",
+        "addDestination": "Ajouter une autre destination",
+        "removeDestination": "Retirer cette destination"
+      },
+      "step2": {
+        "title": "Quand partez-vous ?",
+        "departureLabel": "Date de départ",
+        "returnLabel": "Date de retour",
+        "flexibleLabel": "Mes dates sont flexibles",
+        "flexibilityDaysLabel": "Amplitude (± jours)",
+        "flexibilityDaysHint": "Entre 1 et 30 jours"
+      },
+      "step3": {
+        "title": "Qui voyage ?",
+        "adultsLabel": "Adultes",
+        "childrenLabel": "Enfants (3-17 ans)",
+        "childAgeLabel": "Âge de l'enfant {index}",
+        "infantsLabel": "Bébés (< 3 ans)"
+      },
+      "step4": {
+        "title": "Vos préférences",
+        "budgetLabel": "Budget global en CAD",
+        "budgetNoteLabel": "Précision (optionnel)",
+        "languageLabel": "Langue souhaitée du conseiller",
+        "languageOtherLabel": "Code ISO (ex: pt pour portugais)",
+        "specialityLabel": "Spécialité de voyage",
+        "specialityOtherLabel": "Précisez la spécialité",
+        "familiarityLabel": "Votre familiarité avec les voyages internationaux"
+      },
+      "step5": {
+        "title": "Vos coordonnées",
+        "subtitle": "Nécessaires pour que le conseiller puisse vous contacter.",
+        "firstNameLabel": "Prénom",
+        "lastNameLabel": "Nom de famille",
+        "emailLabel": "Courriel",
+        "emailHint": "Vous recevrez un lien de confirmation à cette adresse.",
+        "phoneLabel": "Téléphone (optionnel)",
+        "postalCodeLabel": "Code postal (optionnel)",
+        "consentLabel": "J'accepte que mes coordonnées soient transmises à un maximum de 3 conseillers vérifiés pour qu'ils me proposent un devis. Mes données sont conservées au Canada (Loi 25), je peux demander leur effacement à tout moment depuis la page de suivi de mon brief.",
+        "consentRequired": "Cette case doit être cochée pour soumettre."
+      }
+    },
+    "errors": {
+      "rateLimitEmail": "Vous avez soumis 3 briefs sur cette adresse en 24 h. Réessayez dans {hours} h ou utilisez une autre adresse courriel.",
+      "rateLimitGeneric": "Votre demande ne peut être traitée actuellement, veuillez réessayer plus tard.",
+      "disposableEmail": "Cette adresse semble temporaire. Nous avons besoin d'un courriel durable pour vous mettre en relation avec un conseiller.",
+      "validationFailed": "Le formulaire contient des erreurs — vérifiez les champs en rouge."
+    },
+    "emailSent": {
+      "title": "Vérifiez votre courriel",
+      "subtitle": "Nous avons envoyé un lien de confirmation à {email}.",
+      "delayHint": "Il peut y avoir un léger délai. Vérifiez aussi vos courriers indésirables.",
+      "resendDisabled": "Je n'ai rien reçu — disponible dans {seconds} s",
+      "resendEnabled": "Je n'ai rien reçu — renvoyer le lien",
+      "resendSuccess": "Si cette adresse existe, un nouveau lien vient d'être envoyé."
+    },
+    "linkExpired": {
+      "title": "Ce lien a expiré ou a déjà été utilisé",
+      "subtitle": "Demandez un nouveau lien en saisissant votre adresse courriel ci-dessous.",
+      "emailLabel": "Votre courriel",
+      "resendButton": "Renvoyer un nouveau lien",
+      "successMessage": "Si cette adresse correspond à un brief actif, un nouveau lien vient d'être envoyé."
+    },
+    "recap": {
+      "title": "Votre brief de voyage",
+      "statusActive": "Actif — en attente de conseillers",
+      "statusMatched": "Conseillers contactés",
+      "statusExpired": "Expiré",
+      "statusDeleted": "Supprimé",
+      "submittedOn": "Soumis le {date}",
+      "expiresOn": "Expire le {date}",
+      "noMatchYet": "Aucun conseiller ne vous a encore contacté.",
+      "otherBriefsLink": "Voir mes autres briefs",
+      "eraseButton": "Supprimer mes données"
+    },
+    "erase": {
+      "title": "Supprimer ce brief",
+      "subtitle": "Cette action est irréversible. Toutes vos données pour ce brief seront effacées.",
+      "phraseHint": "Pour confirmer, tapez exactement : {phrase}",
+      "phraseLabel": "Phrase de confirmation",
+      "submitButton": "Supprimer définitivement",
+      "successMessage": "Vos données ont été supprimées. Vous serez redirigé dans un instant."
+    },
+    "eraseAll": {
+      "title": "Effacer toutes mes données",
+      "subtitle": "Cette action supprime votre contact et vos {count} briefs en une opération. Irréversible.",
+      "phraseHint": "Pour confirmer, tapez exactement : {phrase}",
+      "phraseLabel": "Phrase de confirmation",
+      "submitButton": "Effacer toutes mes données",
+      "successMessage": "Toutes vos données ont été supprimées."
+    }
+  },
   "conformite": {
     "shared": {
       "statusPending": "En attente de revue",

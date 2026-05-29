@@ -27,6 +27,110 @@
     "validationFailed": "The form contains errors.",
     "networkError": "The server is not responding. Please try again shortly."
   },
+  "intake": {
+    "form": {
+      "title": "Describe your travel project",
+      "subtitle": "5 steps, about 6 minutes. A verified advisor will then contact you.",
+      "stepLabel": "Step {current} of {total}",
+      "nextStep": "Next",
+      "previousStep": "Previous",
+      "submit": "Submit my brief",
+      "step1": {
+        "title": "Where do you want to go?",
+        "destinationsLabel": "Destinations",
+        "destinationCountryLabel": "Country",
+        "destinationRegionLabel": "Region (optional)",
+        "addDestination": "Add another destination",
+        "removeDestination": "Remove this destination"
+      },
+      "step2": {
+        "title": "When are you leaving?",
+        "departureLabel": "Departure date",
+        "returnLabel": "Return date",
+        "flexibleLabel": "My dates are flexible",
+        "flexibilityDaysLabel": "Range (± days)",
+        "flexibilityDaysHint": "Between 1 and 30 days"
+      },
+      "step3": {
+        "title": "Who is traveling?",
+        "adultsLabel": "Adults",
+        "childrenLabel": "Children (3-17 years old)",
+        "childAgeLabel": "Age of child {index}",
+        "infantsLabel": "Infants (< 3 years old)"
+      },
+      "step4": {
+        "title": "Your preferences",
+        "budgetLabel": "Total budget in CAD",
+        "budgetNoteLabel": "Note (optional)",
+        "languageLabel": "Preferred advisor language",
+        "languageOtherLabel": "ISO code (e.g. pt for Portuguese)",
+        "specialityLabel": "Travel speciality",
+        "specialityOtherLabel": "Specify the speciality",
+        "familiarityLabel": "Your familiarity with international travel"
+      },
+      "step5": {
+        "title": "Your contact details",
+        "subtitle": "Needed so an advisor can reach you.",
+        "firstNameLabel": "First name",
+        "lastNameLabel": "Last name",
+        "emailLabel": "Email",
+        "emailHint": "You will receive a confirmation link at this address.",
+        "phoneLabel": "Phone (optional)",
+        "postalCodeLabel": "Postal code (optional)",
+        "consentLabel": "I consent to my contact details being shared with up to 3 verified advisors so they can send me a quote. My data is stored in Canada (Law 25); I can request its deletion at any time from the brief tracking page.",
+        "consentRequired": "This box must be checked to submit."
+      }
+    },
+    "errors": {
+      "rateLimitEmail": "You have submitted 3 briefs from this email in 24 h. Try again in {hours} h or use another email address.",
+      "rateLimitGeneric": "Your request cannot be processed right now, please try again later.",
+      "disposableEmail": "This email looks temporary. We need a durable email to connect you with an advisor.",
+      "validationFailed": "The form contains errors — check the highlighted fields."
+    },
+    "emailSent": {
+      "title": "Check your email",
+      "subtitle": "We sent a confirmation link to {email}.",
+      "delayHint": "There may be a slight delay. Also check your spam folder.",
+      "resendDisabled": "Didn't receive it — available in {seconds} s",
+      "resendEnabled": "Didn't receive it — resend the link",
+      "resendSuccess": "If this address exists, a new link has just been sent."
+    },
+    "linkExpired": {
+      "title": "This link has expired or has already been used",
+      "subtitle": "Request a new link by entering your email below.",
+      "emailLabel": "Your email",
+      "resendButton": "Send me a new link",
+      "successMessage": "If this address matches an active brief, a new link has just been sent."
+    },
+    "recap": {
+      "title": "Your travel brief",
+      "statusActive": "Active — waiting for advisors",
+      "statusMatched": "Advisors contacted",
+      "statusExpired": "Expired",
+      "statusDeleted": "Deleted",
+      "submittedOn": "Submitted on {date}",
+      "expiresOn": "Expires on {date}",
+      "noMatchYet": "No advisor has contacted you yet.",
+      "otherBriefsLink": "See my other briefs",
+      "eraseButton": "Delete my data"
+    },
+    "erase": {
+      "title": "Delete this brief",
+      "subtitle": "This action is irreversible. All data for this brief will be erased.",
+      "phraseHint": "To confirm, type exactly: {phrase}",
+      "phraseLabel": "Confirmation phrase",
+      "submitButton": "Delete permanently",
+      "successMessage": "Your data has been deleted. You will be redirected shortly."
+    },
+    "eraseAll": {
+      "title": "Delete all my data",
+      "subtitle": "This action deletes your contact and your {count} briefs in one operation. Irreversible.",
+      "phraseHint": "To confirm, type exactly: {phrase}",
+      "phraseLabel": "Confirmation phrase",
+      "submitButton": "Delete all my data",
+      "successMessage": "All your data has been deleted."
+    }
+  },
   "conformite": {
     "shared": {
       "statusPending": "Pending review",
