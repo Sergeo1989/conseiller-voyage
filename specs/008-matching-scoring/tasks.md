@@ -134,18 +134,18 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 ### 3f — Infrastructure adapters
 
-- [ ] T055 [P] [US1] Créer `apps/api/src/modules/matching/infrastructure/prisma-matching-result-repository.ts` — implémente `MatchingResultWriter` + `MatchingResultReader`. Transaction Prisma : insert `matching_results` + N × `matching_result_entries`, contrainte UNIQUE partielle protège l'idempotence.
-- [ ] T056 [P] [US1] Créer `apps/api/src/modules/matching/infrastructure/prisma-matching-audit-writer.ts`.
-- [ ] T057 [P] [US1] Créer `apps/api/src/modules/matching/infrastructure/prisma-matching-outbox-writer.ts`.
-- [ ] T058 [P] [US1] Créer `apps/api/src/modules/matching/infrastructure/prisma-brief-snapshot-reader.ts` — lit `voyageur_briefs` + extrait FSA depuis `VoyageurContact.postalCode` via `FsaCode.parseFromPostalCode`.
-- [ ] T059 [US1] Créer `apps/api/src/modules/matching/infrastructure/prisma-conseiller-snapshot-reader.ts` — lit `ConseillerProfile` + `ConformiteCompliance`, **filtre verified via `ConformiteQueryPort.getVerificationStatus`** (cross-module via interface publique), applique **filtre dur langue** (Q3) sur `profile.languages`, résout FSA via hiérarchie `profile.address.postalCode` → `compliance.siegeSocialPostalCode` (R5), retourne `ConseillerSnapshot[]`.
-- [ ] T060 [P] [US1] Créer `apps/api/src/modules/matching/infrastructure/embedded-fsa-centroid-reader.ts` — implémente `FsaCentroidReaderPort`, charge le JSON statique `@cv/shared/matching/fsa-centroids.json` au boot (singleton DI), validation Zod du fichier au boot (defense-in-depth).
-- [ ] T061 [US1] Créer `apps/api/src/modules/matching/infrastructure/redis-rematch-lock.ts` — implémente `RedisLockPort` via SETNX EX 30s sur clé `matching:rematch:${briefId}`.
+- [X] T055 [P] [US1] Créer `apps/api/src/modules/matching/infrastructure/prisma-matching-result-repository.ts` — implémente `MatchingResultWriter` + `MatchingResultReader`. Transaction Prisma : insert `matching_results` + N × `matching_result_entries`, contrainte UNIQUE partielle protège l'idempotence.
+- [X] T056 [P] [US1] Créer `apps/api/src/modules/matching/infrastructure/prisma-matching-audit-writer.ts`.
+- [X] T057 [P] [US1] Créer `apps/api/src/modules/matching/infrastructure/prisma-matching-outbox-writer.ts`.
+- [X] T058 [P] [US1] Créer `apps/api/src/modules/matching/infrastructure/prisma-brief-snapshot-reader.ts` — lit `voyageur_briefs` + extrait FSA depuis `VoyageurContact.postalCode` via `FsaCode.parseFromPostalCode`.
+- [X] T059 [US1] Créer `apps/api/src/modules/matching/infrastructure/prisma-conseiller-snapshot-reader.ts` — lit `ConseillerProfile` + `ConformiteCompliance`, **filtre verified via `ConformiteQueryPort.getVerificationStatus`** (cross-module via interface publique), applique **filtre dur langue** (Q3) sur `profile.languages`, résout FSA via hiérarchie `profile.address.postalCode` → `compliance.siegeSocialPostalCode` (R5), retourne `ConseillerSnapshot[]`.
+- [X] T060 [P] [US1] Créer `apps/api/src/modules/matching/infrastructure/embedded-fsa-centroid-reader.ts` — implémente `FsaCentroidReaderPort`, charge le JSON statique `@cv/shared/matching/fsa-centroids.json` au boot (singleton DI), validation Zod du fichier au boot (defense-in-depth).
+- [X] T061 [US1] Créer `apps/api/src/modules/matching/infrastructure/redis-rematch-lock.ts` — implémente `RedisLockPort` via SETNX EX 30s sur clé `matching:rematch:${briefId}`.
 
 ### 3g — BullMQ consumer + wiring
 
-- [ ] T062 [US1] Créer `apps/api/src/modules/matching/infrastructure/jobs/brief-activated.consumer.ts` — BullMQ consumer qui écoute le topic `voyageur.brief.activated` (publié par 003 OutboxPublisher draining `intake_outbox_entries`). À chaque event, appelle `PerformMatchingUseCase.execute({briefId})`. Retry avec backoff exponentiel max 5, dead-letter après échec.
-- [ ] T063 [US1] Compléter le wiring DI dans `apps/api/src/modules/matching/matching.module.ts` — 8 ports → adapters + use case + consumer + Clock + UuidGenerator + WeightsConfig depuis env. Pattern hérité de `intake.module.ts` (useFactory + inject explicite).
+- [X] T062 [US1] Créer `apps/api/src/modules/matching/infrastructure/jobs/brief-activated.consumer.ts` — BullMQ consumer qui écoute le topic `voyageur.brief.activated` (publié par 003 OutboxPublisher draining `intake_outbox_entries`). À chaque event, appelle `PerformMatchingUseCase.execute({briefId})`. Retry avec backoff exponentiel max 5, dead-letter après échec.
+- [X] T063 [US1] Compléter le wiring DI dans `apps/api/src/modules/matching/matching.module.ts` — 8 ports → adapters + use case + consumer + Clock + UuidGenerator + WeightsConfig depuis env. Pattern hérité de `intake.module.ts` (useFactory + inject explicite).
 
 ### 3h — Test d'intégration end-to-end
 

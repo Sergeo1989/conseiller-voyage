@@ -34,6 +34,7 @@
       "types": "./src/matching/*.ts",
       "default": "./dist/matching/*.js"
     },
+    "./matching/fsa-centroids.json": "./src/matching/fsa-centroids.json",
     "./profil-public": {
       "types": "./src/profil-public/index.ts",
       "default": "./dist/profil-public/index.js"
