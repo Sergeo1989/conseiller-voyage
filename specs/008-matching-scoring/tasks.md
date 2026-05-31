@@ -149,7 +149,7 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 ### 3h — Test d'intégration end-to-end
 
-- [ ] T064 [US1] Créer `apps/api/test/integration/matching/perform-matching.integration.test.ts` (Testcontainers Postgres + Redis, `skipIf docker !running`) — golden path quickstart scénario 1 + partial scénario 3 + idempotence scénario 4.
+- [X] T064 [US1] Créer `apps/api/test/integration/matching/perform-matching.integration.test.ts` (Testcontainers Postgres + Redis, `skipIf docker !running`) — golden path quickstart scénario 1 + partial scénario 3 + idempotence scénario 4.
 
 **Checkpoint US1** : un brief activé en local produit un `MatchingResult` complet en base + 1 event outbox. MVP livrable même sans US2 + US3.
 
