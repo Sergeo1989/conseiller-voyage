@@ -92,31 +92,31 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 ### 3a — Domain Value Objects (TDD strict, RED → GREEN séparés)
 
-- [ ] T032 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/score.vo.test.ts` — decimal immutable [0, 1.1], helpers `Score.fromNumber`, `Score.zero`, comparison, multiplyByFactor (cap 1.1).
-- [ ] T033 [US1] GREEN : `apps/api/src/modules/matching/domain/value-objects/score.vo.ts`
-- [ ] T034 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/score-components.vo.test.ts` — record {destination, geo, speciality, familiarity}, méthode `toScoreBrut(weights): Score`, validation sum normalisée.
-- [ ] T035 [US1] GREEN : `apps/api/src/modules/matching/domain/value-objects/score-components.vo.ts`
-- [ ] T036 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/fsa-code.vo.test.ts` — regex `^[A-Z]\d[A-Z]$` (3 chars), normalisation case, equality, parse depuis postal code complet `H7N 1A1` → `H7N`.
-- [ ] T037 [US1] GREEN : `apps/api/src/modules/matching/domain/value-objects/fsa-code.vo.ts`
-- [ ] T038 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/matching-status.vo.test.ts` — guards `isOk`, `isPartial`, `isEmpty`, dérivation depuis `matchedCount`.
-- [ ] T039 [US1] GREEN : `apps/api/src/modules/matching/domain/value-objects/matching-status.vo.ts`
-- [ ] T040 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/weights-config.vo.test.ts` — invariant sum = 1.0 ± 10⁻⁶, rejet si != 1.
-- [ ] T041 [US1] GREEN : `apps/api/src/modules/matching/domain/value-objects/weights-config.vo.ts` (factory `fromEnv(env): WeightsConfig` qui lit les 4 `MATCHING_WEIGHT_*`).
+- [X] T032 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/score.vo.test.ts` — decimal immutable [0, 1.1], helpers `Score.fromNumber`, `Score.zero`, comparison, multiplyByFactor (cap 1.1).
+- [X] T033 [US1] GREEN : `apps/api/src/modules/matching/domain/value-objects/score.vo.ts`
+- [X] T034 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/score-components.vo.test.ts` — record {destination, geo, speciality, familiarity}, méthode `toScoreBrut(weights): Score`, validation sum normalisée.
+- [X] T035 [US1] GREEN : `apps/api/src/modules/matching/domain/value-objects/score-components.vo.ts`
+- [X] T036 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/fsa-code.vo.test.ts` — regex `^[A-Z]\d[A-Z]$` (3 chars), normalisation case, equality, parse depuis postal code complet `H7N 1A1` → `H7N`.
+- [X] T037 [US1] GREEN : `apps/api/src/modules/matching/domain/value-objects/fsa-code.vo.ts`
+- [X] T038 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/matching-status.vo.test.ts` — guards `isOk`, `isPartial`, `isEmpty`, dérivation depuis `matchedCount`.
+- [X] T039 [US1] GREEN : `apps/api/src/modules/matching/domain/value-objects/matching-status.vo.ts`
+- [X] T040 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/weights-config.vo.test.ts` — invariant sum = 1.0 ± 10⁻⁶, rejet si != 1.
+- [X] T041 [US1] GREEN : `apps/api/src/modules/matching/domain/value-objects/weights-config.vo.ts` (factory `fromEnv(env): WeightsConfig` qui lit les 4 `MATCHING_WEIGHT_*`).
 
 ### 3b — Domain services (TDD strict)
 
-- [ ] T042 [P] [US1] RED : `apps/api/src/modules/matching/domain/services/__tests__/compute-fsa-distance.test.ts` — Haversine, FSA identiques → 0, FSA voisins → ~5 km, FSA opposés Canada → ~5 000 km, FSA inconnu dans table → null. 5 paliers de score géo (data-model + research R2).
-- [ ] T043 [US1] GREEN : `apps/api/src/modules/matching/domain/services/compute-fsa-distance.ts` (fonction pure `computeFsaDistance(a, b, centroids) → number | null` + `distanceToGeoScore(km) → number`).
-- [ ] T044 [P] [US1] RED : `apps/api/src/modules/matching/domain/services/__tests__/calculate-score.test.ts` — 4 axes scorés individuellement, intégration : destination match parfait + géo proche + spécialité exacte + familiarité alignée → score brut élevé. Edge cases nommés : destination unknown → 0, **FR-009b explicite** : FSA voyageur null / code postal invalide / hors Canada → score géo neutre médian (0,5) sans rejeter le conseiller, familiarité mismatch → score réduit. Couvre **finding L2**.
-- [ ] T045 [US1] GREEN : `apps/api/src/modules/matching/domain/services/calculate-score.ts` (signature : `(brief, conseiller, weights, fsaCentroids) → ScoreComponents`, fonction pure 100 %).
-- [ ] T046 [P] [US1] RED : `apps/api/src/modules/matching/domain/services/__tests__/select-top-three.test.ts` — tri décroissant scoreFinal, plafond 3 strict (10 conseillers in → 3 out), partial (2 conseillers → 2 out + status partial), empty (0 conseillers → empty), ties broken par position alphabétique de conseillerId (déterminisme SC-002).
-- [ ] T047 [US1] GREEN : `apps/api/src/modules/matching/domain/services/select-top-three.ts` (fonction pure `(scoredConseillers[]) → TopThreeResult`).
+- [X] T042 [P] [US1] RED : `apps/api/src/modules/matching/domain/services/__tests__/compute-fsa-distance.test.ts` — Haversine, FSA identiques → 0, FSA voisins → ~5 km, FSA opposés Canada → ~5 000 km, FSA inconnu dans table → null. 5 paliers de score géo (data-model + research R2).
+- [X] T043 [US1] GREEN : `apps/api/src/modules/matching/domain/services/compute-fsa-distance.ts` (fonction pure `computeFsaDistance(a, b, centroids) → number | null` + `distanceToGeoScore(km) → number`).
+- [X] T044 [P] [US1] RED : `apps/api/src/modules/matching/domain/services/__tests__/calculate-score.test.ts` — 4 axes scorés individuellement, intégration : destination match parfait + géo proche + spécialité exacte + familiarité alignée → score brut élevé. Edge cases nommés : destination unknown → 0, **FR-009b explicite** : FSA voyageur null / code postal invalide / hors Canada → score géo neutre médian (0,5) sans rejeter le conseiller, familiarité mismatch → score réduit. Couvre **finding L2**.
+- [X] T045 [US1] GREEN : `apps/api/src/modules/matching/domain/services/calculate-score.ts` (signature : `(brief, conseiller, weights, fsaCentroids) → ScoreComponents`, fonction pure 100 %).
+- [X] T046 [P] [US1] RED : `apps/api/src/modules/matching/domain/services/__tests__/select-top-three.test.ts` — tri décroissant scoreFinal, plafond 3 strict (10 conseillers in → 3 out), partial (2 conseillers → 2 out + status partial), empty (0 conseillers → empty), ties broken par position alphabétique de conseillerId (déterminisme SC-002).
+- [X] T047 [US1] GREEN : `apps/api/src/modules/matching/domain/services/select-top-three.ts` (fonction pure `(scoredConseillers[]) → TopThreeResult`).
 
 ### 3c — Domain entities + events
 
-- [ ] T048 [P] [US1] Créer `apps/api/src/modules/matching/domain/entities/matching-result.entity.ts` + tests d'invariant (briefId valide ou null post-anonymisation, status cohérent avec matchedCount).
-- [ ] T049 [P] [US1] Créer `apps/api/src/modules/matching/domain/entities/matching-result-entry.entity.ts` + tests d'invariant (position ∈ {1,2,3}, scoreFinal ≤ scoreBrut × 1.10).
-- [ ] T050 [P] [US1] Créer `apps/api/src/modules/matching/domain/events/matching-events.ts` — 4 types domain `BriefMatchedEvent`, `BriefPartiallyMatchedEvent`, `BriefUnmatchedEvent` (US1) + stub `AllMatchesRevokedEvent` (utilisé par US3).
+- [X] T048 [P] [US1] Créer `apps/api/src/modules/matching/domain/entities/matching-result.entity.ts` + tests d'invariant (briefId valide ou null post-anonymisation, status cohérent avec matchedCount).
+- [X] T049 [P] [US1] Créer `apps/api/src/modules/matching/domain/entities/matching-result-entry.entity.ts` + tests d'invariant (position ∈ {1,2,3}, scoreFinal ≤ scoreBrut × 1.10).
+- [X] T050 [P] [US1] Créer `apps/api/src/modules/matching/domain/events/matching-events.ts` — 4 types domain `BriefMatchedEvent`, `BriefPartiallyMatchedEvent`, `BriefUnmatchedEvent` (US1) + stub `AllMatchesRevokedEvent` (utilisé par US3).
 
 ### 3d — Application use case (TDD)
 

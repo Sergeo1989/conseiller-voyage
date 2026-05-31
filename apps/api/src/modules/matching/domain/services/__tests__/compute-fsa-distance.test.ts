@@ -23,22 +23,25 @@ describe('computeFsaDistance', () => {
   it('retourne ~15 km entre H7N (Laval) et H2X (Plateau) — voisins proches', () => {
     const d = computeFsaDistance(asFsaCode('H7N'), asFsaCode('H2X'), TEST_CENTROIDS);
     expect(d).not.toBeNull();
-    expect(d!).toBeGreaterThan(10);
-    expect(d!).toBeLessThan(25);
+    if (d === null) throw new Error('unreachable — assert above');
+    expect(d).toBeGreaterThan(10);
+    expect(d).toBeLessThan(25);
   });
 
   it('retourne ~500 km entre H2X (MTL) et M5V (TO)', () => {
     const d = computeFsaDistance(asFsaCode('H2X'), asFsaCode('M5V'), TEST_CENTROIDS);
     expect(d).not.toBeNull();
-    expect(d!).toBeGreaterThan(450);
-    expect(d!).toBeLessThan(600);
+    if (d === null) throw new Error('unreachable — assert above');
+    expect(d).toBeGreaterThan(450);
+    expect(d).toBeLessThan(600);
   });
 
   it('retourne ~3700 km entre H2X (MTL) et V6B (Vancouver)', () => {
     const d = computeFsaDistance(asFsaCode('H2X'), asFsaCode('V6B'), TEST_CENTROIDS);
     expect(d).not.toBeNull();
-    expect(d!).toBeGreaterThan(3500);
-    expect(d!).toBeLessThan(4000);
+    if (d === null) throw new Error('unreachable — assert above');
+    expect(d).toBeGreaterThan(3500);
+    expect(d).toBeLessThan(4000);
   });
 
   it('retourne null si FSA absent de la table (fixture incomplet ou inconnu)', () => {
