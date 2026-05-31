@@ -1,0 +1,21 @@
+// Schéma Prisma du module matching — scoring conseiller × brief (top 3).
+// Cf. specs/008-matching-scoring/data-model.md (4 tables + 3 enums)
+//
+// Phase 1 T002 : placeholder vide — sera enrichi en Phase 2 T011 avec :
+//   - 4 modèles : MatchingResult, MatchingResultEntry, MatchingAuditEntry,
+//     MatchingOutboxEntry
+//   - 3 enums : MatchingStatus, MatchingAuditEventType, MatchingOutboxEventType
+//   - Indexes + UNIQUE INDEX partiel idempotence briefId
+//   - Contraintes CHECK (matchedCount BETWEEN 0 AND 3, position IN (1,2,3),
+//     scoreFinal ≤ scoreBrut × 1.10, etc.)
+//
+// Migrations (Phase 2 T012-T014) :
+//   - 2026XXXX_init_matching                          : 4 tables + enums + indexes
+//   - 2026XXXX_matching_audit_append_only             : trigger Postgres + rôle app_matching
+//   - 2026XXXX_matching_anonymisation_cascade         : trigger Postgres cascade brief → matching (ADR-0023)
+//
+// Conventions (héritées 001 / 008 / Principe V) :
+//   - UUID v4 partout en `@db.Uuid`
+//   - Tables préfixées `matching_*` pour matérialiser la frontière module
+//   - onDelete: Restrict par défaut — anonymisation Loi 25 nullifie les
+//     PII via trigger cascade sans cascade silencieuse

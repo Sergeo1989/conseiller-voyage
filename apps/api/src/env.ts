@@ -130,6 +130,35 @@ const EnvSchema = z
 
     /** Durée de vie d'un brief actif (FR-024). À J+N : anonymisation Loi 25. */
     INTAKE_BRIEF_EXPIRATION_DAYS: z.coerce.number().int().positive().default(90),
+
+    // ── Matching (feature 008-matching-scoring / roadmap 011) ────────
+    // T003 — env vars du module matching. Pondération des 4 axes scorés
+    // (la langue est un filtre dur AVANT scoring, cf. Q3 clarify).
+    // Cf. ADR-0020 pour la justification chiffrée.
+
+    /** Version d'algorithme de matching — bumpée à chaque changement de pondération (ADR-0020). */
+    MATCHING_ALGORITHM_VERSION: z
+      .string()
+      .regex(
+        /^v\d+\.\d+$/,
+        'MATCHING_ALGORITHM_VERSION doit suivre le format vMAJOR.MINOR (ex. v1.0)',
+      )
+      .default('v1.0'),
+
+    /** Poids axe destination match dans le scoring brut [0, 1] (ADR-0020). */
+    MATCHING_WEIGHT_DESTINATION: z.coerce.number().min(0).max(1).default(0.35),
+
+    /** Poids axe proximité géographique (Haversine FSA) dans le scoring brut [0, 1] (ADR-0020). */
+    MATCHING_WEIGHT_GEO: z.coerce.number().min(0).max(1).default(0.25),
+
+    /** Poids axe spécialité dans le scoring brut [0, 1] (ADR-0020). */
+    MATCHING_WEIGHT_SPECIALITY: z.coerce.number().min(0).max(1).default(0.25),
+
+    /** Poids axe familiarité voyageur ↔ expérience conseiller dans le scoring brut [0, 1] (ADR-0020). */
+    MATCHING_WEIGHT_FAMILIARITY: z.coerce.number().min(0).max(1).default(0.15),
+
+    /** Plafond du facteur multiplicatif de boost cookie cv_suggested (FR-011). Strictement ≤ 1.10. */
+    MATCHING_BOOST_FACTOR_MAX: z.coerce.number().min(1).max(1.1).default(1.1),
   })
   .superRefine((env, ctx) => {
     // T006 — refus de la KEK de test (32 octets de zéro) en production.
@@ -174,6 +203,23 @@ const EnvSchema = z
             'Provision a real 32+ byte secret via AWS Secrets Manager (cv-intake-magic-link-secret).',
         });
       }
+    }
+
+    // T003 (feature 008-matching-scoring) — invariant sum poids = 1.0.
+    // La fonction pure de scoring suppose une normalisation propre ; un
+    // re-pondérage par .env qui ne somme pas à 1 produirait des scores
+    // > 1 ou non comparables entre versions d'algorithme.
+    const weightSum =
+      env.MATCHING_WEIGHT_DESTINATION +
+      env.MATCHING_WEIGHT_GEO +
+      env.MATCHING_WEIGHT_SPECIALITY +
+      env.MATCHING_WEIGHT_FAMILIARITY;
+    if (Math.abs(weightSum - 1) > 1e-6) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['MATCHING_WEIGHT_DESTINATION'],
+        message: `MATCHING_WEIGHT_* must sum to exactly 1.0 (± 1e-6) — current sum = ${weightSum}. Adjust MATCHING_WEIGHT_DESTINATION/GEO/SPECIALITY/FAMILIARITY in environment. Defaults are 0.35 / 0.25 / 0.25 / 0.15 (cf. ADR-0020).`,
+      });
     }
   });
 

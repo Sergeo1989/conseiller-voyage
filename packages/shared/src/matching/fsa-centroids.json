@@ -1,0 +1,260 @@
+{
+  "meta": {
+    "source": "Statistique Canada — Forward Sortation Area Boundary File",
+    "sourceUrl": "https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/files-fichiers/lfsa000a21a_e.zip",
+    "sourceVersion": "2021",
+    "license": "Open Government Licence – Canada",
+    "generatedAt": "2026-05-31T07:01:24.379Z",
+    "generatedBy": "tools/build-fsa-centroids.ts",
+    "fsaCount": 41,
+    "isBootstrap": true
+  },
+  "entries": [
+    {
+      "fsa": "H1A",
+      "lat": 45.6515,
+      "lng": -73.5108,
+      "province": "QC"
+    },
+    {
+      "fsa": "H2X",
+      "lat": 45.5125,
+      "lng": -73.5658,
+      "province": "QC"
+    },
+    {
+      "fsa": "H2Y",
+      "lat": 45.5076,
+      "lng": -73.5577,
+      "province": "QC"
+    },
+    {
+      "fsa": "H3A",
+      "lat": 45.5048,
+      "lng": -73.5746,
+      "province": "QC"
+    },
+    {
+      "fsa": "H3B",
+      "lat": 45.5017,
+      "lng": -73.5673,
+      "province": "QC"
+    },
+    {
+      "fsa": "H3Z",
+      "lat": 45.4869,
+      "lng": -73.5841,
+      "province": "QC"
+    },
+    {
+      "fsa": "H4A",
+      "lat": 45.4685,
+      "lng": -73.6053,
+      "province": "QC"
+    },
+    {
+      "fsa": "H7N",
+      "lat": 45.5736,
+      "lng": -73.7239,
+      "province": "QC"
+    },
+    {
+      "fsa": "H7P",
+      "lat": 45.5495,
+      "lng": -73.7591,
+      "province": "QC"
+    },
+    {
+      "fsa": "H7T",
+      "lat": 45.5402,
+      "lng": -73.7341,
+      "province": "QC"
+    },
+    {
+      "fsa": "H7X",
+      "lat": 45.4977,
+      "lng": -73.8329,
+      "province": "QC"
+    },
+    {
+      "fsa": "G1A",
+      "lat": 46.7891,
+      "lng": -71.3179,
+      "province": "QC"
+    },
+    {
+      "fsa": "G1J",
+      "lat": 46.8233,
+      "lng": -71.2289,
+      "province": "QC"
+    },
+    {
+      "fsa": "G1V",
+      "lat": 46.7728,
+      "lng": -71.2756,
+      "province": "QC"
+    },
+    {
+      "fsa": "G2B",
+      "lat": 46.8631,
+      "lng": -71.3422,
+      "province": "QC"
+    },
+    {
+      "fsa": "M5V",
+      "lat": 43.6435,
+      "lng": -79.3954,
+      "province": "ON"
+    },
+    {
+      "fsa": "M4Y",
+      "lat": 43.6664,
+      "lng": -79.3833,
+      "province": "ON"
+    },
+    {
+      "fsa": "M5J",
+      "lat": 43.6435,
+      "lng": -79.3812,
+      "province": "ON"
+    },
+    {
+      "fsa": "M6P",
+      "lat": 43.6555,
+      "lng": -79.4564,
+      "province": "ON"
+    },
+    {
+      "fsa": "M1B",
+      "lat": 43.8067,
+      "lng": -79.1944,
+      "province": "ON"
+    },
+    {
+      "fsa": "K1A",
+      "lat": 45.4215,
+      "lng": -75.6972,
+      "province": "ON"
+    },
+    {
+      "fsa": "K1P",
+      "lat": 45.4231,
+      "lng": -75.6877,
+      "province": "ON"
+    },
+    {
+      "fsa": "K2P",
+      "lat": 45.4087,
+      "lng": -75.6909,
+      "province": "ON"
+    },
+    {
+      "fsa": "V5K",
+      "lat": 49.2827,
+      "lng": -123.0476,
+      "province": "BC"
+    },
+    {
+      "fsa": "V6B",
+      "lat": 49.2812,
+      "lng": -123.1207,
+      "province": "BC"
+    },
+    {
+      "fsa": "V6Z",
+      "lat": 49.2769,
+      "lng": -123.1303,
+      "province": "BC"
+    },
+    {
+      "fsa": "V7Y",
+      "lat": 49.2916,
+      "lng": -123.1153,
+      "province": "BC"
+    },
+    {
+      "fsa": "T2P",
+      "lat": 51.0481,
+      "lng": -114.0708,
+      "province": "AB"
+    },
+    {
+      "fsa": "T3A",
+      "lat": 51.097,
+      "lng": -114.1408,
+      "province": "AB"
+    },
+    {
+      "fsa": "T5J",
+      "lat": 53.5444,
+      "lng": -113.4909,
+      "province": "AB"
+    },
+    {
+      "fsa": "T6E",
+      "lat": 53.5232,
+      "lng": -113.4884,
+      "province": "AB"
+    },
+    {
+      "fsa": "R3C",
+      "lat": 49.8951,
+      "lng": -97.1384,
+      "province": "MB"
+    },
+    {
+      "fsa": "R2M",
+      "lat": 49.8629,
+      "lng": -97.1186,
+      "province": "MB"
+    },
+    {
+      "fsa": "S7N",
+      "lat": 52.1332,
+      "lng": -106.67,
+      "province": "SK"
+    },
+    {
+      "fsa": "S4P",
+      "lat": 50.4452,
+      "lng": -104.6189,
+      "province": "SK"
+    },
+    {
+      "fsa": "B3J",
+      "lat": 44.6488,
+      "lng": -63.5752,
+      "province": "NS"
+    },
+    {
+      "fsa": "B3K",
+      "lat": 44.6594,
+      "lng": -63.5919,
+      "province": "NS"
+    },
+    {
+      "fsa": "E3B",
+      "lat": 45.9636,
+      "lng": -66.6431,
+      "province": "NB"
+    },
+    {
+      "fsa": "E1C",
+      "lat": 46.0878,
+      "lng": -64.7782,
+      "province": "NB"
+    },
+    {
+      "fsa": "A1C",
+      "lat": 47.5615,
+      "lng": -52.7126,
+      "province": "NL"
+    },
+    {
+      "fsa": "C1A",
+      "lat": 46.2382,
+      "lng": -63.1311,
+      "province": "PE"
+    }
+  ]
+}

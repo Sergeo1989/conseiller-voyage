@@ -26,6 +26,14 @@
       "types": "./src/intake/*.ts",
       "default": "./dist/intake/*.js"
     },
+    "./matching": {
+      "types": "./src/matching/index.ts",
+      "default": "./dist/matching/index.js"
+    },
+    "./matching/*": {
+      "types": "./src/matching/*.ts",
+      "default": "./dist/matching/*.js"
+    },
     "./profil-public": {
       "types": "./src/profil-public/index.ts",
       "default": "./dist/profil-public/index.js"
