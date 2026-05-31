@@ -120,9 +120,9 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 ### 3d — Application use case (TDD)
 
-- [ ] T051 [US1] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/perform-matching.use-case.test.ts` avec fakes en mémoire — golden path 3 conseillers verified Cuba+FR → status=ok 3 entries + audit + outbox `voyageur_brief_matched`. Edge : 0 conseiller éligible → empty + audit + outbox `voyageur_brief_unmatched`. Edge : 2 conseillers → partial. Idempotence : replay même briefId → audit `matching.replay_ignored`, aucune nouvelle ligne.
-- [ ] T052 [US1] Créer `apps/api/src/modules/matching/application/__tests__/_fakes.ts` — fakes en mémoire pour les 8 ports + Clock + UuidGenerator + FsaCentroidTable de test (10 FSA Quebec couvrant les tests).
-- [ ] T053 [US1] GREEN : `apps/api/src/modules/matching/application/use-cases/perform-matching.use-case.ts` (orchestration : lit brief snapshot + candidate set verified + filtre langue + boucle scoring + select top 3 + persistance atomique + outbox dans la même transaction).
+- [X] T051 [US1] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/perform-matching.use-case.test.ts` avec fakes en mémoire — golden path 3 conseillers verified Cuba+FR → status=ok 3 entries + audit + outbox `voyageur_brief_matched`. Edge : 0 conseiller éligible → empty + audit + outbox `voyageur_brief_unmatched`. Edge : 2 conseillers → partial. Idempotence : replay même briefId → audit `matching.replay_ignored`, aucune nouvelle ligne.
+- [X] T052 [US1] Créer `apps/api/src/modules/matching/application/__tests__/_fakes.ts` — fakes en mémoire pour les 8 ports + Clock + UuidGenerator + FsaCentroidTable de test (10 FSA Quebec couvrant les tests).
+- [X] T053 [US1] GREEN : `apps/api/src/modules/matching/application/use-cases/perform-matching.use-case.ts` (orchestration : lit brief snapshot + candidate set verified + filtre langue + boucle scoring + select top 3 + persistance atomique + outbox dans la même transaction).
 
 ### 3e — Tests d'invariant property-based (SC-002/003/005)
 
