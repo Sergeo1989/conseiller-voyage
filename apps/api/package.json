@@ -27,7 +27,6 @@
     "@cv/mfa": "workspace:*",
     "@cv/profil-domain": "workspace:*",
     "@cv/shared": "workspace:*",
-    "sharp": "^0.33.0",
     "@fastify/helmet": "^11.1.1",
     "@fastify/static": "^7",
     "@nest-lab/throttler-storage-redis": "^1.1.0",
@@ -38,7 +37,6 @@
     "@nestjs/swagger": "^8.0.0",
     "@nestjs/throttler": "^6.2.1",
     "@opentelemetry/api": "^1.9.0",
-    "@react-email/render": "^1.0.4",
     "@opentelemetry/auto-instrumentations-node": "^0.51.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.55.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.55.0",
@@ -46,6 +44,7 @@
     "@opentelemetry/sdk-metrics": "^1.28.0",
     "@opentelemetry/sdk-node": "^0.55.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
+    "@react-email/render": "^1.0.4",
     "@sentry/nestjs": "^8.40.0",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.28.0",
@@ -61,6 +60,7 @@
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",
+    "sharp": "^0.33.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
@@ -71,6 +71,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.0.0",
     "@types/qrcode": "^1.5.5",
+    "fast-check": "^4.8.0",
     "otplib": "^12.0.1",
     "typescript": "^5.6.3",
     "vitest": "^2.1.0"

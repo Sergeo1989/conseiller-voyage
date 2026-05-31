@@ -126,7 +126,7 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 ### 3e — Tests d'invariant property-based (SC-002/003/005)
 
-- [ ] T054 [P] [US1] RED + GREEN dans un commit : `apps/api/src/modules/matching/application/__tests__/perform-matching.property.test.ts` — fast-check ou équivalent. Propriétés :
+- [X] T054 [P] [US1] RED + GREEN dans un commit : `apps/api/src/modules/matching/application/__tests__/perform-matching.property.test.ts` — fast-check ou équivalent. Propriétés :
   - **SC-002 déterminisme** : 1 000 tirages aléatoires de briefs × conseillers, 2 exécutions consécutives produisent le même score brut à 10⁻⁶ près.
   - **SC-003 plafond 3** : sur 1 000 tirages, aucun résultat n'a `matchedCount > 3`.
   - **SC-005 verified 100 %** : sur 1 000 tirages avec mix verified/non-verified, aucun non-verified n'apparaît dans le résultat.
