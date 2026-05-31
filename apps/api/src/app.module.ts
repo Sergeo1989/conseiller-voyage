@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module';
 import { ConformiteModule } from './modules/conformite/interface/conformite.module';
 import { IdentiteModule } from './modules/identite/identite.module';
 import { IntakeModule } from './modules/intake/intake.module';
+import { MatchingModule } from './modules/matching/matching.module';
 import { BullMqModule } from './queue/bullmq.module';
 
 /**
@@ -44,6 +45,7 @@ import { BullMqModule } from './queue/bullmq.module';
     HealthModule,
     ConformiteModule,
     IntakeModule,
+    MatchingModule,
   ],
   controllers: [],
   providers: [

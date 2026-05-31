@@ -69,6 +69,13 @@ model ConseillerProfile {
   statut              StatutProfil @default(incomplet)
   raisonMasquageAdmin String?      @db.Text
 
+  // T015 (feature 008-matching-scoring) — code postal pour calcul Haversine
+  // FSA (ADR-0021). Nullable : les profils existants restent valides ; les
+  // conseillers sans codePostal sont exclus du matching avec audit
+  // `matching.conseiller_address_missing` (FR-009c). Format canadien
+  // strict `A1A 1A1` ou `A1A1A1` validé côté formulaire profil 007.
+  codePostal String?      @db.VarChar(7)
+
   // Timestamps
   publishedAt  DateTime?
   anonymizedAt DateTime?

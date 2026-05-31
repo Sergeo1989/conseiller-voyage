@@ -1,21 +1,138 @@
 // Schéma Prisma du module matching — scoring conseiller × brief (top 3).
 // Cf. specs/008-matching-scoring/data-model.md (4 tables + 3 enums)
 //
-// Phase 1 T002 : placeholder vide — sera enrichi en Phase 2 T011 avec :
-//   - 4 modèles : MatchingResult, MatchingResultEntry, MatchingAuditEntry,
-//     MatchingOutboxEntry
-//   - 3 enums : MatchingStatus, MatchingAuditEventType, MatchingOutboxEventType
-//   - Indexes + UNIQUE INDEX partiel idempotence briefId
-//   - Contraintes CHECK (matchedCount BETWEEN 0 AND 3, position IN (1,2,3),
-//     scoreFinal ≤ scoreBrut × 1.10, etc.)
-//
-// Migrations (Phase 2 T012-T014) :
-//   - 2026XXXX_init_matching                          : 4 tables + enums + indexes
-//   - 2026XXXX_matching_audit_append_only             : trigger Postgres + rôle app_matching
-//   - 2026XXXX_matching_anonymisation_cascade         : trigger Postgres cascade brief → matching (ADR-0023)
+// Phase 2 T011 : 4 modèles complets + 3 enums + indexes + contraintes CHECK
+// + UNIQUE INDEX partiel idempotence briefId. Sera complété T012-T014 par
+// les 3 migrations (init, audit append-only, anonymisation cascade).
 //
 // Conventions (héritées 001 / 008 / Principe V) :
 //   - UUID v4 partout en `@db.Uuid`
 //   - Tables préfixées `matching_*` pour matérialiser la frontière module
-//   - onDelete: Restrict par défaut — anonymisation Loi 25 nullifie les
-//     PII via trigger cascade sans cascade silencieuse
+//     (`tools/check-module-boundaries.ts`)
+//   - onDelete: Restrict par défaut — anonymisation Loi 25 nullifie les PII
+//     via trigger Postgres cascade (ADR-0023) sans cascade silencieuse
+//   - Audit log append-only dans `matching_audit_entries` (T013 trigger SQL)
+//   - Outbox dédié dans `matching_outbox_entries` consommé par worker 003
+//     étendu (T093, ADR-0024)
+
+// =====================================================================
+// Enums (3 nouveaux types Postgres scoped matching_*)
+// =====================================================================
+
+enum MatchingStatus {
+  ok      // top 3 complet
+  partial // 1 ou 2 entries
+  empty   // 0 entries
+}
+
+enum MatchingAuditEventType {
+  matching_computed
+  matching_empty
+  matching_partial
+  matching_replay_ignored
+  matching_recomputed
+  matching_all_matches_revoked_detected
+  matching_conseiller_address_missing
+}
+
+enum MatchingOutboxEventType {
+  voyageur_brief_matched
+  voyageur_brief_partially_matched
+  voyageur_brief_unmatched
+  voyageur_brief_all_matches_revoked
+}
+
+// =====================================================================
+// Modèles
+// =====================================================================
+
+/// MatchingResult — trace d'un calcul de matching pour un brief, à un
+/// instant donné. Une entrée active (supersededAt IS NULL) par briefId
+/// via UNIQUE INDEX partiel — garantit l'idempotence FR-004.
+model MatchingResult {
+  id String @id @default(uuid()) @db.Uuid
+
+  // briefId nullable post-anonymisation Loi 25 (trigger cascade ADR-0023).
+  briefId String? @db.Uuid
+  // FK uniquement INFORMATIVE — pas de FK Prisma car briefId peut être NULL
+  // post-anonymisation et la table voyageur_briefs est dans le module intake.
+  // L'invariant briefId présent ⇒ existe en intake est tenu par l'application.
+
+  status                       MatchingStatus
+  matchedCount                 Int            @db.SmallInt
+  algorithmVersion             String         @db.VarChar(16)
+  suggestedConseillerId        String?        @db.Uuid
+  boostApplied                 Boolean        @default(false)
+  computedAt                   DateTime
+  supersededAt                 DateTime?
+  supersededByMatchingResultId String?        @db.Uuid
+  createdAt                    DateTime       @default(now())
+
+  entries MatchingResultEntry[]
+
+  // Index de file admin US5 extension de 008 (alertes WARN partial/empty)
+  @@index([status, computedAt(sort: Desc)])
+  // Lookup admin reverse — par briefId pour superseded chain
+  @@index([briefId, createdAt(sort: Desc)])
+  // L'UNIQUE INDEX partiel `idx_matching_results_brief_active` est créé
+  // dans la migration (Prisma 5 supporte pas WHERE dans @@unique).
+  @@map("matching_results")
+}
+
+/// MatchingResultEntry — une entrée du top 3 pour un MatchingResult.
+/// 0 à 3 entries par MR (CHECK position IN (1,2,3) + UNIQUE
+/// (matchingResultId, position) garantissent le plafond 3 strict — SC-003).
+model MatchingResultEntry {
+  id               String         @id @default(uuid()) @db.Uuid
+  matchingResultId String         @db.Uuid
+  matchingResult   MatchingResult @relation(fields: [matchingResultId], references: [id], onDelete: Cascade)
+
+  position        Int      @db.SmallInt
+  conseillerId    String   @db.Uuid
+  scoreBrut       Decimal  @db.Decimal(5, 4)
+  scoreFinal      Decimal  @db.Decimal(5, 4)
+  scoreComponents Json     @db.JsonB
+  boosted         Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@unique([matchingResultId, position])
+  // Reverse lookup "mes affectations" côté feature 012 dashboard conseiller
+  @@index([conseillerId, createdAt(sort: Desc)])
+  @@map("matching_result_entries")
+}
+
+/// MatchingAuditEntry — trace append-only de chaque opération matching.
+/// Trigger Postgres BEFORE UPDATE OR DELETE OR TRUNCATE installé en T013
+/// (pattern hérité 001/008 `raise_append_only_error`).
+/// Rétention 7 ans (constitution Cycle de vie et rétention des données).
+model MatchingAuditEntry {
+  id               String                 @id @default(uuid()) @db.Uuid
+  briefId          String?                @db.Uuid
+  matchingResultId String?                @db.Uuid
+  eventType        MatchingAuditEventType
+  payload          Json                   @db.JsonB
+  idempotencyKey   String?                @db.VarChar(255)
+  correlationId    String?                @db.VarChar(64)
+  occurredAt       DateTime
+
+  @@index([briefId, occurredAt(sort: Desc)])
+  @@index([eventType, occurredAt(sort: Desc)])
+  @@map("matching_audit_entries")
+}
+
+/// MatchingOutboxEntry — table outbox dédiée matching (R7 research /
+/// ADR-0024). Consommée par OutboxPublisherJob (extension feature 003,
+/// T093). Le UPDATE de publishedAt NULL → NOT NULL est le SEUL UPDATE
+/// autorisé (trigger T013 conditionnel reject_unless_publishing).
+model MatchingOutboxEntry {
+  id             String                  @id @default(uuid()) @db.Uuid
+  eventType      MatchingOutboxEventType
+  payload        Json                    @db.JsonB
+  idempotencyKey String                  @unique @db.VarChar(255)
+  publishedAt    DateTime?
+  createdAt      DateTime                @default(now())
+
+  // Scan worker oldest-first
+  @@index([createdAt(sort: Asc)])
+  @@map("matching_outbox_entries")
+}
