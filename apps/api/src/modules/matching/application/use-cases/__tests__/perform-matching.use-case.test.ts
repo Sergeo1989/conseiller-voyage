@@ -214,4 +214,86 @@ describe('PerformMatchingUseCase', () => {
     expect(e1?.[0]?.scoreFinal).toBe(e2?.[0]?.scoreFinal);
     expect(e1?.[1]?.scoreFinal).toBe(e2?.[1]?.scoreFinal);
   });
+
+  // ===================================================================
+  // US2 P2 — Boost cookie cv_suggested (T067)
+  // ===================================================================
+
+  it('US2 : suggestedConseillerId valide pointant vers conseiller éligible → boost appliqué', async () => {
+    const env = buildUseCase();
+    const promotedId = '22222222-2222-4222-8222-000000000099';
+    env.briefReader.add(makeBrief({ suggestedConseillerId: promotedId }));
+    for (let i = 1; i <= 3; i += 1) {
+      env.conseillerReader.add(
+        makeConseiller(`22222222-2222-4222-8222-${String(i).padStart(12, '0')}`, {
+          specialities: ['aventure_outdoor'], // mismatch → score spécialité 0
+        }),
+      );
+    }
+    // Le conseiller suggéré a même profil (mismatch spécialité aussi)
+    // mais le boost +10% va le faire passer top 1 grâce à scoreFinal supérieur.
+    env.conseillerReader.add(makeConseiller(promotedId, { specialities: ['aventure_outdoor'] }));
+
+    const result = await env.useCase.execute({ briefId: BRIEF_ID });
+
+    expect(result.kind).toBe('ok');
+    if (result.kind !== 'ok') throw new Error('unreachable');
+    const entries = env.resultWriter.list()[0]?.entries ?? [];
+    expect(entries[0]?.conseillerId).toBe(promotedId);
+    expect(entries[0]?.boosted).toBe(true);
+    expect(entries[0]?.scoreFinal).toBeGreaterThan(entries[0]?.scoreBrut ?? 0);
+    expect(entries[1]?.boosted).toBe(false);
+    expect(entries[2]?.boosted).toBe(false);
+    expect(env.resultWriter.list()[0]?.result.boostApplied).toBe(true);
+  });
+
+  it('US2 : suggestedConseillerId pointant vers non-éligible → no-op', async () => {
+    const env = buildUseCase();
+    const nonEligibleId = '22222222-2222-4222-8222-000000000099';
+    env.briefReader.add(
+      makeBrief({ conseillerLanguage: 'fr' as const, suggestedConseillerId: nonEligibleId }),
+    );
+    // Le conseiller suggéré ne parle QUE l'anglais → exclu par filtre dur Q3
+    env.conseillerReader.add(makeConseiller(nonEligibleId, { languages: ['en' as const] }));
+    env.conseillerReader.add(makeConseiller('22222222-2222-4222-8222-000000000001'));
+
+    const result = await env.useCase.execute({ briefId: BRIEF_ID });
+
+    expect(result.kind).toBe('ok');
+    if (result.kind !== 'ok') throw new Error('unreachable');
+    const entries = env.resultWriter.list()[0]?.entries ?? [];
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.conseillerId).not.toBe(nonEligibleId);
+    expect(entries[0]?.boosted).toBe(false);
+    expect(env.resultWriter.list()[0]?.result.boostApplied).toBe(false);
+  });
+
+  it('US2 : suggestedConseillerId null → no-op global', async () => {
+    const env = buildUseCase();
+    env.briefReader.add(makeBrief({ suggestedConseillerId: null }));
+    env.conseillerReader.add(makeConseiller('22222222-2222-4222-8222-000000000001'));
+
+    await env.useCase.execute({ briefId: BRIEF_ID });
+
+    const entries = env.resultWriter.list()[0]?.entries ?? [];
+    expect(entries[0]?.boosted).toBe(false);
+    expect(entries[0]?.scoreFinal).toBe(entries[0]?.scoreBrut);
+    expect(env.resultWriter.list()[0]?.result.boostApplied).toBe(false);
+  });
+
+  it('US2 : SC-004 invariant scoreFinal ≤ scoreBrut × 1.10 strict', async () => {
+    const env = buildUseCase();
+    const promotedId = '22222222-2222-4222-8222-000000000099';
+    env.briefReader.add(makeBrief({ suggestedConseillerId: promotedId }));
+    env.conseillerReader.add(makeConseiller(promotedId));
+
+    await env.useCase.execute({ briefId: BRIEF_ID });
+
+    const entries = env.resultWriter.list()[0]?.entries ?? [];
+    for (const e of entries) {
+      if (e.boosted) {
+        expect(e.scoreFinal).toBeLessThanOrEqual(e.scoreBrut * 1.1 + 1e-6);
+      }
+    }
+  });
 });
