@@ -124,6 +124,14 @@ model VoyageurBrief {
   // (encore) marqué abusif.
   abuseMarkedAt DateTime?
 
+  // T069 (feature 008-matching-scoring / US2) — capture l'intent voyageur
+  // figée au moment de la soumission. Si le cookie cv_suggested HMAC posé
+  // par 007 valide, T070 persiste l'ID conseiller suggéré ici.
+  // Le matching (011) applique un boost ≤ +10 % (FR-011) à ce conseiller
+  // s'il est éligible (verified + langue + adresse) au moment du calcul.
+  // Cross-module Mode A ADR-0024 — extension intake pour 011.
+  suggestedConseillerId String? @db.Uuid
+
   // === Données du formulaire (FR-002 … FR-008) ===
   destinations            Json // [{country: 'IT', region?: 'Toscane'}, …] multi-stop
   departureDate           DateTime @db.Date

@@ -48,9 +48,9 @@ export class PrismaBriefSnapshotReader implements BriefSnapshotReader {
       speciality: brief.speciality as TravelSpeciality,
       familiarity: brief.familiarity as TravelFamiliarity,
       voyageurFsa: fsa,
-      // T070 (Phase 4 US2) : populer depuis brief.suggestedConseillerId
-      // une fois le champ ajouté à intake_voyageur_briefs.
-      suggestedConseillerId: null,
+      // US2 — capture intent voyageur figée au moment de la soumission par 008
+      // (T070 lit le cookie cv_suggested HMAC posé par 007 et persiste ici).
+      suggestedConseillerId: brief.suggestedConseillerId,
     };
   }
 }

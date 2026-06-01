@@ -36,6 +36,12 @@ export interface CreateBriefInput {
   readonly clientIp: string | null;
   readonly userAgent: string | null;
   readonly idempotencyKey: string | null;
+  /**
+   * Conseiller suggéré au moment de la soumission, validé HMAC depuis cookie
+   * `cv_suggested` (feature 007). Null si cookie absent/invalide. Le matching
+   * (011) applique un boost ≤ +10 % (FR-011) si conseiller éligible au calcul.
+   */
+  readonly suggestedConseillerId: string | null;
 }
 
 export interface VoyageurBriefWriter {

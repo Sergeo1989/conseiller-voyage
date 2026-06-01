@@ -5,6 +5,7 @@ import type {
 } from '@cv/shared/matching';
 import type { Clock } from '../../../../common/ports/clock.port';
 import type { UuidGenerator } from '../../../../common/ports/uuid-generator.port';
+import { applyBoost } from '../../domain/services/apply-boost';
 import { calculateScore } from '../../domain/services/calculate-score';
 import { type ScoredConseiller, selectTopThree } from '../../domain/services/select-top-three';
 import type { MatchingStatus } from '../../domain/value-objects/matching-status.vo';
@@ -34,6 +35,8 @@ export interface PerformMatchingDeps {
   readonly outboxWriter: MatchingOutboxWriter;
   readonly weights: WeightsConfig;
   readonly algorithmVersion: string;
+  /** Plafond facteur boost (FR-011 ≤ 1.10). Optionnel — défaut 1.10. */
+  readonly boostFactorMax?: number;
 }
 
 export type PerformMatchingResult =
@@ -67,13 +70,20 @@ export class PerformMatchingUseCase {
       await this.auditAddressMissing(c.conseillerId);
     }
 
-    // Score chaque candidat éligible (fonction pure)
+    // Score chaque candidat éligible (fonction pure) + applique le boost
+    // cookie cv_suggested (US2 — FR-011/FR-012). Le boost ne s'applique
+    // qu'aux conseillers éligibles (déjà filtrés verified + langue + FSA).
     const fsaCentroids = this.deps.fsaReader.getAll();
+    const factorMax = this.deps.boostFactorMax ?? 1.1;
     const scored: ScoredConseiller[] = eligible.map((c) => {
       const components = calculateScore(brief, c, fsaCentroids);
       const scoreBrut = components.toScoreBrut(this.deps.weights);
-      // US1 : pas de boost (suggestedConseillerId ignoré). US2 T067 étendra ici.
-      const scoreFinal = scoreBrut;
+      const { scoreFinal, boosted } = applyBoost({
+        scoreBrut,
+        conseillerId: c.conseillerId,
+        suggestedConseillerId: brief.suggestedConseillerId,
+        factorMax,
+      });
       return {
         conseillerId: c.conseillerId,
         scoreBrut,
@@ -84,13 +94,18 @@ export class PerformMatchingUseCase {
           speciality: components.speciality,
           familiarity: components.familiarity,
         },
-        boosted: false,
+        boosted,
       };
     });
 
     const topThree = selectTopThree(scored);
     const computedAt = this.deps.clock.now();
     const matchingResultId = this.deps.uuid.generate() as MatchingResultId;
+
+    // boostApplied = true si au moins une entrée du top 3 a effectivement
+    // bénéficié du boost. Faux si suggestedConseillerId pointe vers un
+    // conseiller non-éligible (filtré en amont) ou hors top 3.
+    const boostApplied = topThree.entries.some((e) => e.boosted);
 
     // Persist (idempotence via UNIQUE INDEX partiel)
     const writeResult = await this.deps.resultWriter.create(
@@ -101,7 +116,7 @@ export class PerformMatchingUseCase {
         matchedCount: topThree.matchedCount,
         algorithmVersion: this.deps.algorithmVersion,
         suggestedConseillerId: brief.suggestedConseillerId,
-        boostApplied: false, // US1 : toujours false
+        boostApplied,
         computedAt,
       },
       topThree.entries.map((e) => ({
@@ -127,8 +142,9 @@ export class PerformMatchingUseCase {
       candidates.length,
       eligible.length,
       durationMs,
+      boostApplied,
     );
-    await this.publishOutboxEvent(brief, matchingResultId, topThree, computedAt);
+    await this.publishOutboxEvent(brief, matchingResultId, topThree, computedAt, boostApplied);
 
     return {
       kind: 'ok',
@@ -171,6 +187,7 @@ export class PerformMatchingUseCase {
     candidatesCount: number,
     verifiedCount: number,
     durationMs: number,
+    boostApplied: boolean,
   ): Promise<void> {
     const eventType: MatchingAuditEventType =
       status === 'ok'
@@ -183,7 +200,7 @@ export class PerformMatchingUseCase {
       verifiedCount,
       durationMs,
       algorithmVersion: this.deps.algorithmVersion,
-      boostApplied: false,
+      boostApplied,
     };
     await this.deps.auditWriter.append({
       id: this.deps.uuid.generate() as MatchingAuditEntryId,
@@ -202,6 +219,7 @@ export class PerformMatchingUseCase {
     matchingResultId: MatchingResultId,
     topThree: ReturnType<typeof selectTopThree>,
     computedAt: Date,
+    boostApplied: boolean,
   ): Promise<void> {
     if (!brief) return;
     const outboxId = this.deps.uuid.generate() as MatchingOutboxEntryId;
@@ -231,7 +249,7 @@ export class PerformMatchingUseCase {
             scoreFinal: number;
             boosted: boolean;
           }>,
-          boostApplied: false,
+          boostApplied,
         },
       };
     } else if (topThree.status === 'partial') {
@@ -251,7 +269,7 @@ export class PerformMatchingUseCase {
             scoreFinal: number;
             boosted: boolean;
           }>,
-          boostApplied: false,
+          boostApplied,
           reason: 'insufficient_verified_conseillers',
         },
       };

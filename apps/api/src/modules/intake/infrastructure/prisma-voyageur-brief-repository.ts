@@ -172,6 +172,7 @@ export class PrismaVoyageurBriefRepository implements VoyageurBriefReader, Voyag
         clientIp: input.clientIp,
         userAgent: input.userAgent,
         idempotencyKey: input.idempotencyKey,
+        suggestedConseillerId: input.suggestedConseillerId,
       },
     });
   }

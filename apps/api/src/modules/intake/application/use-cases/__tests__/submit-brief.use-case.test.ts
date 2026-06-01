@@ -98,6 +98,7 @@ function validInput(): SubmitBriefInput {
     clientIp: '203.0.113.42',
     userAgent: 'Mozilla/5.0',
     idempotencyKey: null,
+    suggestedConseillerId: null,
   };
 }
 

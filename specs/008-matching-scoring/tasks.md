@@ -164,21 +164,21 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 ### 4a — Apply-boost service + tests
 
 - [ ] T065 [P] [US2] RED : `apps/api/src/modules/matching/domain/services/__tests__/apply-boost.test.ts` — boost appliqué si `suggestedConseillerId` correspond + conseiller verified, no-op si suggestedConseillerId absent, no-op si conseiller suggéré non-verified, plafond strict ×1.10. Test d'invariant : scoreFinal ≤ scoreBrut × 1.10.
-- [ ] T066 [US2] GREEN : `apps/api/src/modules/matching/domain/services/apply-boost.ts` (fonction pure `(scoreBrut, suggestedConseillerId | null, conseillerId, isVerified, factor) → ScoreFinal`).
+- [X] T066 [US2] GREEN : `apps/api/src/modules/matching/domain/services/apply-boost.ts` (fonction pure `(scoreBrut, suggestedConseillerId | null, conseillerId, isVerified, factor) → ScoreFinal`).
 
 ### 4b — Étendre PerformMatchingUseCase
 
-- [ ] T067 [US2] RED : étendre `perform-matching.use-case.test.ts` avec cas boost (cookie présent valide → boost appliqué + audit `boostApplied: true`, cookie absent → no-op, cookie pointant non-verified → no-op).
-- [ ] T068 [US2] GREEN : modifier `apps/api/src/modules/matching/application/use-cases/perform-matching.use-case.ts` — après calcul ScoreComponents par conseiller, appliquer `applyBoost` si `brief.suggestedConseillerId` est présent et le conseiller match. Persister `MatchingResult.boostApplied` + `MatchingResultEntry.boosted`.
+- [X] T067 [US2] RED : étendre `perform-matching.use-case.test.ts` avec cas boost (cookie présent valide → boost appliqué + audit `boostApplied: true`, cookie absent → no-op, cookie pointant non-verified → no-op).
+- [X] T068 [US2] GREEN : modifier `apps/api/src/modules/matching/application/use-cases/perform-matching.use-case.ts` — après calcul ScoreComponents par conseiller, appliquer `applyBoost` si `brief.suggestedConseillerId` est présent et le conseiller match. Persister `MatchingResult.boostApplied` + `MatchingResultEntry.boosted`.
 
 ### 4c — Brief snapshot capture suggestedConseillerId
 
-- [ ] T069 [US2] Étendre `prisma-brief-snapshot-reader.ts` (T058) — lire `voyageur_briefs.suggested_conseiller_id` (champ à ajouter feature 008 si absent — vérifier via lecture schema `intake.prisma`). Si le champ est absent : créer migration mineure `2026XXXX_voyageur_briefs_add_suggested_conseiller_id` (extension feature 008 acceptable via ADR ou tâche follow-up à coordonner).
-- [ ] T070 [US2] Étendre 008 `submit-brief.use-case.ts` (feature intake) — lire le cookie `cv_suggested` HMAC posé par 007, valider la signature avec `PROFIL_SUGGESTED_COOKIE_SECRET` (déjà géré par 007), si valide persister `suggestedConseillerId` sur le brief créé. **Pré-requis** : confirmer que cette logique n'est pas déjà présente dans 008 (relire R2 du intake research).
+- [X] T069 [US2] Étendre `prisma-brief-snapshot-reader.ts` (T058) — lire `voyageur_briefs.suggested_conseiller_id` (champ à ajouter feature 008 si absent — vérifier via lecture schema `intake.prisma`). Si le champ est absent : créer migration mineure `2026XXXX_voyageur_briefs_add_suggested_conseiller_id` (extension feature 008 acceptable via ADR ou tâche follow-up à coordonner).
+- [X] T070 [US2] Étendre 008 `submit-brief.use-case.ts` (feature intake) — lire le cookie `cv_suggested` HMAC posé par 007, valider la signature avec `PROFIL_SUGGESTED_COOKIE_SECRET` (déjà géré par 007), si valide persister `suggestedConseillerId` sur le brief créé. **Pré-requis** : confirmer que cette logique n'est pas déjà présente dans 008 (relire R2 du intake research).
 
 ### 4d — Test d'intégration boost
 
-- [ ] T071 [US2] Créer `apps/api/test/integration/matching/boost.integration.test.ts` — scénario 2 quickstart, vérifie promotion du 4e en top 3 + invariant scoreFinal ≤ scoreBrut × 1.10.
+- [X] T071 [US2] Créer `apps/api/test/integration/matching/boost.integration.test.ts` — scénario 2 quickstart, vérifie promotion du 4e en top 3 + invariant scoreFinal ≤ scoreBrut × 1.10.
 
 **Checkpoint US2** : le boost est testable indépendamment de US3. Combiné avec US1, le matching MVP est complet pour la majorité des voyageurs.
 
