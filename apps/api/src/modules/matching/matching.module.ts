@@ -10,6 +10,8 @@
 //   - useFactory + inject pour PerformMatchingUseCase.DEPS_TOKEN
 //   - useClass pour les adapters (injection directe DI)
 
+import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
+import { MATCHING_QUERY_PORT } from '@cv/shared/matching';
 import { Module } from '@nestjs/common';
 import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
 import { SystemClock } from '../../common/infrastructure/system-clock';
@@ -29,22 +31,26 @@ import {
   MATCHING_RESULT_WRITER,
   REDIS_REMATCH_LOCK,
 } from './application/ports';
+import { DetectAllMatchesRevokedUseCase } from './application/use-cases/detect-all-matches-revoked.use-case';
 import { PerformMatchingUseCase } from './application/use-cases/perform-matching.use-case';
+import { QueryMatchingResultUseCase } from './application/use-cases/query-matching-result.use-case';
+import { TriggerRematchUseCase } from './application/use-cases/trigger-rematch.use-case';
 import { WeightsConfig } from './domain/value-objects/weights-config.vo';
 import { EmbeddedFsaCentroidReader } from './infrastructure/embedded-fsa-centroid-reader';
+import { AllMatchesRevokedScheduler } from './infrastructure/jobs/all-matches-revoked.scheduler';
 import { BriefActivatedConsumer } from './infrastructure/jobs/brief-activated.consumer';
 import { PrismaBriefSnapshotReader } from './infrastructure/prisma-brief-snapshot-reader';
 import { PrismaConseillerSnapshotReader } from './infrastructure/prisma-conseiller-snapshot-reader';
 import { PrismaMatchingAuditWriter } from './infrastructure/prisma-matching-audit-writer';
 import { PrismaMatchingOutboxWriter } from './infrastructure/prisma-matching-outbox-writer';
+import { PrismaMatchingQueryAdapter } from './infrastructure/prisma-matching-query-adapter';
 import { PrismaMatchingResultRepository } from './infrastructure/prisma-matching-result-repository';
 import { RedisRematchLockAdapter } from './infrastructure/redis-rematch-lock';
+import { AdminMatchingController } from './interface/http/admin-matching.controller';
 
 @Module({
   imports: [BullMqModule, IdentiteModule, ConformiteModule],
-  controllers: [
-    // Phase 5 T081 : AdminMatchingController (re-trigger endpoint)
-  ],
+  controllers: [AdminMatchingController],
   providers: [
     // ---------------------------------------------------------------
     // Communs — Clock + UuidGenerator (singleton dans tout le module)
@@ -139,12 +145,89 @@ import { RedisRematchLockAdapter } from './infrastructure/redis-rematch-lock';
     },
 
     // ---------------------------------------------------------------
-    // Consumer — Phase 3g T062
+    // Consumer — Phase 3g T062 + scheduler Phase 5 T078
     // ---------------------------------------------------------------
     BriefActivatedConsumer,
+    AllMatchesRevokedScheduler,
+
+    // ---------------------------------------------------------------
+    // Use cases US3 — Phase 5
+    // ---------------------------------------------------------------
+    {
+      provide: QueryMatchingResultUseCase.DEPS_TOKEN,
+      inject: [MATCHING_RESULT_READER, CONFORMITE_QUERY_PORT],
+      useFactory: (reader, conformiteQuery) => ({ reader, conformiteQuery }),
+    },
+    {
+      provide: QueryMatchingResultUseCase,
+      inject: [QueryMatchingResultUseCase.DEPS_TOKEN],
+      useFactory: (deps) => new QueryMatchingResultUseCase(deps),
+    },
+    {
+      provide: TriggerRematchUseCase.DEPS_TOKEN,
+      inject: [
+        CLOCK,
+        UUID_GENERATOR,
+        PerformMatchingUseCase,
+        MATCHING_RESULT_READER,
+        MATCHING_RESULT_WRITER,
+        MATCHING_AUDIT_WRITER,
+        REDIS_REMATCH_LOCK,
+      ],
+      useFactory: (
+        clock,
+        uuid,
+        performMatching,
+        resultReader,
+        resultWriter,
+        auditWriter,
+        lock,
+      ) => ({
+        clock,
+        uuid,
+        performMatching,
+        resultReader,
+        resultWriter,
+        auditWriter,
+        lock,
+      }),
+    },
+    {
+      provide: TriggerRematchUseCase,
+      inject: [TriggerRematchUseCase.DEPS_TOKEN],
+      useFactory: (deps) => new TriggerRematchUseCase(deps),
+    },
+    {
+      provide: DetectAllMatchesRevokedUseCase.DEPS_TOKEN,
+      inject: [
+        CLOCK,
+        UUID_GENERATOR,
+        MATCHING_RESULT_READER,
+        CONFORMITE_QUERY_PORT,
+        MATCHING_AUDIT_WRITER,
+        MATCHING_OUTBOX_WRITER,
+      ],
+      useFactory: (clock, uuid, reader, conformiteQuery, auditWriter, outboxWriter) => ({
+        clock,
+        uuid,
+        reader,
+        conformiteQuery,
+        auditWriter,
+        outboxWriter,
+      }),
+    },
+    {
+      provide: DetectAllMatchesRevokedUseCase,
+      inject: [DetectAllMatchesRevokedUseCase.DEPS_TOKEN],
+      useFactory: (deps) => new DetectAllMatchesRevokedUseCase(deps),
+    },
+
+    // ---------------------------------------------------------------
+    // Public port — exporté pour 012/015/admin US5 (Principe V)
+    // ---------------------------------------------------------------
+    PrismaMatchingQueryAdapter,
+    { provide: MATCHING_QUERY_PORT, useExisting: PrismaMatchingQueryAdapter },
   ],
-  exports: [
-    // Phase 5 T080 : MATCHING_QUERY_PORT (consommé par 012 + 015 + extension US5 admin 008)
-  ],
+  exports: [MATCHING_QUERY_PORT],
 })
 export class MatchingModule {}

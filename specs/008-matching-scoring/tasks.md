@@ -192,35 +192,35 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 ### 5a — QueryMatchingResultUseCase (lecture filtrée + admin)
 
-- [ ] T072 [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/query-matching-result.use-case.test.ts` — `getByBriefIdForVoyageur` exclut un conseiller révoqué après calcul, retourne null si brief anonymisé. `getByBriefIdForAdmin` retourne tout l'état historique + `currentVerifiedStatus` par entry.
-- [ ] T073 [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/query-matching-result.use-case.ts`.
+- [X] T0- [ ] T072 XX [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/query-matching-result.use-case.test.ts` — `getByBriefIdForVoyageur` exclut un conseiller révoqué après calcul, retourne null si brief anonymisé. `getByBriefIdForAdmin` retourne tout l'état historique + `currentVerifiedStatus` par entry.
+- [X] T0- [ ] T073 XX [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/query-matching-result.use-case.ts`.
 
 ### 5b — TriggerRematchUseCase (admin re-matching FR-016)
 
-- [ ] T074 [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/trigger-rematch.use-case.test.ts` — verrou Redis SETNX (concurrent rematch → 409), supersede ancien MR + chaînage `supersededByMatchingResultId`, audit `matching.recomputed` avec actor + reason, nouvel event outbox publié selon nouveau statut.
-- [ ] T075 [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/trigger-rematch.use-case.ts`.
+- [X] T0- [ ] T074 XX [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/trigger-rematch.use-case.test.ts` — verrou Redis SETNX (concurrent rematch → 409), supersede ancien MR + chaînage `supersededByMatchingResultId`, audit `matching.recomputed` avec actor + reason, nouvel event outbox publié selon nouveau statut.
+- [X] T0- [ ] T075 XX [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/trigger-rematch.use-case.ts`.
 
 ### 5c — DetectAllMatchesRevokedScheduler
 
-- [ ] T076 [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/detect-all-matches-revoked.use-case.test.ts` — scan MR actifs, pour chaque MR top 3 : check verified status courant des 3 conseillers, si tous 3 révoqués → émet event `voyageur.brief.all_matches_revoked` + audit `matching.all_matches_revoked_detected`. Idempotence : ne ré-émet pas le même event (UNIQUE sur idempotency key).
-- [ ] T077 [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/detect-all-matches-revoked.use-case.ts`.
-- [ ] T078 [US3] Créer `apps/api/src/modules/matching/infrastructure/jobs/all-matches-revoked.scheduler.ts` — BullMQ repeatable daily cron 02:00 ca-central-1 (pattern hérité de jobs 008 expiration sweep).
+- [X] T0- [ ] T076 XX [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/detect-all-matches-revoked.use-case.test.ts` — scan MR actifs, pour chaque MR top 3 : check verified status courant des 3 conseillers, si tous 3 révoqués → émet event `voyageur.brief.all_matches_revoked` + audit `matching.all_matches_revoked_detected`. Idempotence : ne ré-émet pas le même event (UNIQUE sur idempotency key).
+- [X] T0- [ ] T077 XX [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/detect-all-matches-revoked.use-case.ts`.
+- [X] T0- [ ] T078 XX [US3] Créer `apps/api/src/modules/matching/infrastructure/jobs/all-matches-revoked.scheduler.ts` — BullMQ repeatable daily cron 02:00 ca-central-1 (pattern hérité de jobs 008 expiration sweep).
 
 ### 5d — Infrastructure MatchingQueryPort
 
-- [ ] T079 [US3] Créer `apps/api/src/modules/matching/infrastructure/prisma-matching-query-adapter.ts` — implémente `MatchingQueryPort` (interface publique exportée depuis `@cv/shared/matching`). Filtre dynamique via `ConformiteQueryPort.getVerificationStatus`. **Cette classe est le point d'intégration public pour 012 + 015 + admin US5 extension de 008**.
-- [ ] T080 [US3] Exporter `MatchingQueryPort` depuis `MatchingModule.exports` + token DI → consommable par les modules clients qui importeront `MatchingModule`.
+- [X] T0- [ ] T079 XX [US3] Créer `apps/api/src/modules/matching/infrastructure/prisma-matching-query-adapter.ts` — implémente `MatchingQueryPort` (interface publique exportée depuis `@cv/shared/matching`). Filtre dynamique via `ConformiteQueryPort.getVerificationStatus`. **Cette classe est le point d'intégration public pour 012 + 015 + admin US5 extension de 008**.
+- [X] T080 [US3] Exporter `MatchingQueryPort` depuis `MatchingModule.exports` + token DI → consommable par les modules clients qui importeront `MatchingModule`.
 
 ### 5e — Admin HTTP endpoint (re-trigger)
 
-- [ ] T081 [US3] Créer `apps/api/src/modules/matching/interface/http/admin-matching.controller.ts` — `POST /api/matching/admin/briefs/:briefId/re-match` avec `AuthGuard` + `RoleGuard` + `@RequireRole('admin')` + `ZodValidationPipe(AdminRematchRequest)` + `Idempotency-Key` header obligatoire. Délègue à `TriggerRematchUseCase`. Réponses 200/202/400/401/403/404/409/422 selon `contracts/http-endpoints.md`.
+- [X] T081 [US3] Créer `apps/api/src/modules/matching/interface/http/admin-matching.controller.ts` — `POST /api/matching/admin/briefs/:briefId/re-match` avec `AuthGuard` + `RoleGuard` + `@RequireRole('admin')` + `ZodValidationPipe(AdminRematchRequest)` + `Idempotency-Key` header obligatoire. Délègue à `TriggerRematchUseCase`. Réponses 200/202/400/401/403/404/409/422 selon `contracts/http-endpoints.md`.
 
 ### 5f — Tests d'intégration US3
 
-- [ ] T082 [US3] Créer `apps/api/test/integration/matching/trigger-rematch.integration.test.ts` (Testcontainers) — scénario 5 quickstart.
-- [ ] T083 [US3] Créer `apps/api/test/integration/matching/anonymisation-cascade.integration.test.ts` — scénario 6 quickstart, vérifie cascade trigger Postgres (briefId nullé, scoreComponents redacted, audit préservé).
-- [ ] T084 [US3] Créer `apps/api/test/integration/matching/append-only-trigger.integration.test.ts` — vérifie que UPDATE/DELETE/TRUNCATE sur `matching_audit_entries` sont rejetés par le trigger Postgres (pattern hérité 008).
-- [ ] T085 [US3] Créer `apps/api/test/integration/matching/query-matching-port.integration.test.ts` — vérifie filtre dynamique verified (`getByBriefIdForVoyageur` exclut révoqués) + vue admin (`getByBriefIdForAdmin` retourne tout).
+- [X] T082 [US3] Créer `apps/api/test/integration/matching/trigger-rematch.integration.test.ts` (Testcontainers) — scénario 5 quickstart.
+- [X] T083 [US3] Créer `apps/api/test/integration/matching/anonymisation-cascade.integration.test.ts` — scénario 6 quickstart, vérifie cascade trigger Postgres (briefId nullé, scoreComponents redacted, audit préservé).
+- [X] T084 [US3] Créer `apps/api/test/integration/matching/append-only-trigger.integration.test.ts` — vérifie que UPDATE/DELETE/TRUNCATE sur `matching_audit_entries` sont rejetés par le trigger Postgres (pattern hérité 008).
+- [X] T085 [US3] Créer `apps/api/test/integration/matching/query-matching-port.integration.test.ts` — vérifie filtre dynamique verified (`getByBriefIdForVoyageur` exclut révoqués) + vue admin (`getByBriefIdForAdmin` retourne tout).
 
 **Checkpoint US3** : les 3 user stories sont indépendamment fonctionnelles. Le module matching est livrable complet.
 
