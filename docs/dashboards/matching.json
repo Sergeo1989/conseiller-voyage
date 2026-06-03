@@ -1,0 +1,129 @@
+{
+  "annotations": { "list": [] },
+  "description": "Module Matching (011) — latence calcul, répartition statuts, taux boost, taux empty/partial. Métriques OTel cv.matching (T086).",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Latence matching (calcul + persistance) — p50/p95/p99",
+      "description": "Histogram matching.duration_ms. Cible SC-001 / SLO Principe X : p95 < 800 ms.",
+      "id": 1,
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "thresholdsStyle": { "mode": "line" } },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 800 }]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(matching_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(matching_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(matching_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Candidats évalués (dernier matching)",
+      "description": "Gauge matching.candidates_evaluated — nb de conseillers verified scorés.",
+      "id": 2,
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "matching_candidates_evaluated",
+          "legendFormat": "Candidats"
+        }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Répartition statuts (24h)",
+      "description": "Counter matching.matched_count par status (ok|partial|empty).",
+      "id": 3,
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "sum(increase(matching_matched_count_total[24h])) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Taux empty / partial vs ok",
+      "description": "Part des matchings dégradés. Alerte WARN empty > 5% / 24h, partial > 15% / 7j.",
+      "id": 4,
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "targets": [
+        {
+          "expr": "sum(rate(matching_matched_count_total{status=\"empty\"}[24h])) / clamp_min(sum(rate(matching_matched_count_total[24h])), 1)",
+          "legendFormat": "empty %"
+        },
+        {
+          "expr": "sum(rate(matching_matched_count_total{status=\"partial\"}[7d])) / clamp_min(sum(rate(matching_matched_count_total[7d])), 1)",
+          "legendFormat": "partial %"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Taux de boost appliqué (cookie cv_suggested)",
+      "description": "Counter matching.boost_applied / total matched_count.",
+      "id": 5,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "targets": [
+        {
+          "expr": "sum(rate(matching_boost_applied_total[24h])) / clamp_min(sum(rate(matching_matched_count_total[24h])), 1)",
+          "legendFormat": "boost %"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Matchings calculés (24h)",
+      "id": 6,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-cv" },
+      "targets": [
+        {
+          "expr": "sum(increase(matching_matched_count_total[24h]))",
+          "legendFormat": "Total"
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["matching", "module-011"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "America/Toronto",
+  "title": "Matching — Module Health",
+  "uid": "cv-matching-health",
+  "version": 1,
+  "weekStart": "monday"
+}

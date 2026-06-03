@@ -39,6 +39,7 @@ import type {
   MatchingResultWriteResult,
   MatchingResultWriter,
 } from '../ports/matching-result-writer.port';
+import type { MatchingComputedMetric, MetricsRecorder } from '../ports/metrics-recorder.port';
 import type { RedisRematchLock, RematchLockAcquireResult } from '../ports/redis-rematch-lock.port';
 
 // =====================================================================
@@ -240,6 +241,17 @@ export class FakeMatchingOutboxWriter implements MatchingOutboxWriter {
   }
   countByEventType(eventType: MatchingOutboxEntryInput['eventType']): number {
     return this.entries.filter((e) => e.eventType === eventType).length;
+  }
+}
+
+// =====================================================================
+// MetricsRecorder (T086 — capture les appels pour assertion)
+// =====================================================================
+
+export class FakeMetricsRecorder implements MetricsRecorder {
+  readonly recorded: MatchingComputedMetric[] = [];
+  recordMatchingComputed(metric: MatchingComputedMetric): void {
+    this.recorded.push(metric);
   }
 }
 

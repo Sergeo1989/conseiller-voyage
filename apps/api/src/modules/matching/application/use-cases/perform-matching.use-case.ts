@@ -3,6 +3,7 @@ import type {
   MatchingOutboxEntryId,
   MatchingResultId,
 } from '@cv/shared/matching';
+import { Logger } from '@nestjs/common';
 import type { Clock } from '../../../../common/ports/clock.port';
 import type { UuidGenerator } from '../../../../common/ports/uuid-generator.port';
 import { applyBoost } from '../../domain/services/apply-boost';
@@ -23,6 +24,7 @@ import type {
   MatchingOutboxWriter,
 } from '../ports/matching-outbox-writer.port';
 import type { MatchingResultWriter } from '../ports/matching-result-writer.port';
+import { type MetricsRecorder, noopMetricsRecorder } from '../ports/metrics-recorder.port';
 
 export interface PerformMatchingDeps {
   readonly clock: Clock;
@@ -37,6 +39,8 @@ export interface PerformMatchingDeps {
   readonly algorithmVersion: string;
   /** Plafond facteur boost (FR-011 ≤ 1.10). Optionnel — défaut 1.10. */
   readonly boostFactorMax?: number;
+  /** Observabilité OTel (T086). Optionnel — défaut no-op (tests/CLI). */
+  readonly metrics?: MetricsRecorder;
 }
 
 export type PerformMatchingResult =
@@ -51,6 +55,8 @@ export type PerformMatchingResult =
 
 export class PerformMatchingUseCase {
   static readonly DEPS_TOKEN = Symbol.for('PerformMatchingDeps');
+
+  private readonly logger = new Logger(PerformMatchingUseCase.name);
 
   constructor(private readonly deps: PerformMatchingDeps) {}
 
@@ -145,6 +151,34 @@ export class PerformMatchingUseCase {
       boostApplied,
     );
     await this.publishOutboxEvent(brief, matchingResultId, topThree, computedAt, boostApplied);
+
+    // T086 — métriques OTel (no-op si aucun recorder injecté).
+    (this.deps.metrics ?? noopMetricsRecorder).recordMatchingComputed({
+      status: topThree.status,
+      durationMs,
+      candidatesEvaluated: eligible.length,
+      boostApplied,
+    });
+
+    // T087 — log structuré Pino : info (ok) / warn (partial) / error (empty).
+    // PII-safe : uniquement des IDs techniques + métadonnées de calcul.
+    const logFields = {
+      briefId: brief.briefId,
+      matchingResultId,
+      status: topThree.status,
+      matchedCount: topThree.matchedCount,
+      candidatesEvaluated: eligible.length,
+      durationMs,
+      algorithmVersion: this.deps.algorithmVersion,
+      boostApplied,
+    };
+    if (topThree.status === 'ok') {
+      this.logger.log(logFields, 'matching computed');
+    } else if (topThree.status === 'partial') {
+      this.logger.warn(logFields, 'matching partial — moins de 3 conseillers verified');
+    } else {
+      this.logger.error(logFields, 'matching empty — aucun conseiller verified éligible');
+    }
 
     return {
       kind: 'ok',

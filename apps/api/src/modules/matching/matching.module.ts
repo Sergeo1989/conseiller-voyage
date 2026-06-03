@@ -26,6 +26,7 @@ import {
   CONSEILLER_SNAPSHOT_READER,
   FSA_CENTROID_READER,
   MATCHING_AUDIT_WRITER,
+  MATCHING_METRICS_RECORDER,
   MATCHING_OUTBOX_WRITER,
   MATCHING_RESULT_READER,
   MATCHING_RESULT_WRITER,
@@ -39,6 +40,7 @@ import { WeightsConfig } from './domain/value-objects/weights-config.vo';
 import { EmbeddedFsaCentroidReader } from './infrastructure/embedded-fsa-centroid-reader';
 import { AllMatchesRevokedScheduler } from './infrastructure/jobs/all-matches-revoked.scheduler';
 import { BriefActivatedConsumer } from './infrastructure/jobs/brief-activated.consumer';
+import { OtelMetricsRecorder } from './infrastructure/otel-metrics-recorder';
 import { PrismaBriefSnapshotReader } from './infrastructure/prisma-brief-snapshot-reader';
 import { PrismaConseillerSnapshotReader } from './infrastructure/prisma-conseiller-snapshot-reader';
 import { PrismaMatchingAuditWriter } from './infrastructure/prisma-matching-audit-writer';
@@ -83,6 +85,9 @@ import { AdminMatchingController } from './interface/http/admin-matching.control
     RedisRematchLockAdapter,
     { provide: REDIS_REMATCH_LOCK, useExisting: RedisRematchLockAdapter },
 
+    OtelMetricsRecorder,
+    { provide: MATCHING_METRICS_RECORDER, useExisting: OtelMetricsRecorder },
+
     // ---------------------------------------------------------------
     // WeightsConfig — singleton lu depuis env vars MATCHING_WEIGHT_*
     // (T003 + ADR-0020). Validé au boot par superRefine Zod côté env.ts
@@ -114,6 +119,7 @@ import { AdminMatchingController } from './interface/http/admin-matching.control
         MATCHING_AUDIT_WRITER,
         MATCHING_OUTBOX_WRITER,
         WeightsConfig,
+        MATCHING_METRICS_RECORDER,
       ],
       useFactory: (
         clock,
@@ -125,6 +131,7 @@ import { AdminMatchingController } from './interface/http/admin-matching.control
         auditWriter,
         outboxWriter,
         weights,
+        metrics,
       ) => ({
         clock,
         uuid,
@@ -135,6 +142,7 @@ import { AdminMatchingController } from './interface/http/admin-matching.control
         auditWriter,
         outboxWriter,
         weights,
+        metrics,
         algorithmVersion: env.MATCHING_ALGORITHM_VERSION,
       }),
     },

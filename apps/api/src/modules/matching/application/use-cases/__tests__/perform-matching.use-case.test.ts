@@ -21,6 +21,7 @@ import {
   FakeMatchingAuditWriter,
   FakeMatchingOutboxWriter,
   FakeMatchingResultWriter,
+  FakeMetricsRecorder,
   FakeUuidGenerator,
 } from '../../__tests__/_fakes';
 import { PerformMatchingUseCase } from '../perform-matching.use-case';
@@ -66,6 +67,7 @@ function buildUseCase() {
   const resultWriter = new FakeMatchingResultWriter();
   const auditWriter = new FakeMatchingAuditWriter();
   const outboxWriter = new FakeMatchingOutboxWriter();
+  const metrics = new FakeMetricsRecorder();
   const useCase = new PerformMatchingUseCase({
     clock: new FakeClock(NOW),
     uuid: new FakeUuidGenerator(),
@@ -75,10 +77,19 @@ function buildUseCase() {
     resultWriter,
     auditWriter,
     outboxWriter,
+    metrics,
     weights: WeightsConfig.DEFAULT_WEIGHTS_V1,
     algorithmVersion: 'v1.0',
   });
-  return { useCase, briefReader, conseillerReader, resultWriter, auditWriter, outboxWriter };
+  return {
+    useCase,
+    briefReader,
+    conseillerReader,
+    resultWriter,
+    auditWriter,
+    outboxWriter,
+    metrics,
+  };
 }
 
 describe('PerformMatchingUseCase', () => {
@@ -279,6 +290,39 @@ describe('PerformMatchingUseCase', () => {
     expect(entries[0]?.boosted).toBe(false);
     expect(entries[0]?.scoreFinal).toBe(entries[0]?.scoreBrut);
     expect(env.resultWriter.list()[0]?.result.boostApplied).toBe(false);
+  });
+
+  // ===================================================================
+  // Polish T086 — métriques OTel via port MetricsRecorder
+  // ===================================================================
+
+  it('T086 : enregistre une métrique recordMatchingComputed par calcul abouti', async () => {
+    const env = buildUseCase();
+    env.briefReader.add(makeBrief());
+    for (let i = 1; i <= 5; i += 1) {
+      env.conseillerReader.add(
+        makeConseiller(`22222222-2222-4222-8222-${String(i).padStart(12, '0')}`),
+      );
+    }
+
+    await env.useCase.execute({ briefId: BRIEF_ID });
+
+    expect(env.metrics.recorded).toHaveLength(1);
+    expect(env.metrics.recorded[0]?.status).toBe('ok');
+    expect(env.metrics.recorded[0]?.candidatesEvaluated).toBe(5);
+    expect(env.metrics.recorded[0]?.durationMs).toBeGreaterThanOrEqual(0);
+    expect(env.metrics.recorded[0]?.boostApplied).toBe(false);
+  });
+
+  it('T086 : un replay idempotent n’enregistre aucune métrique additionnelle', async () => {
+    const env = buildUseCase();
+    env.briefReader.add(makeBrief());
+    env.conseillerReader.add(makeConseiller('22222222-2222-4222-8222-000000000001'));
+
+    await env.useCase.execute({ briefId: BRIEF_ID });
+    await env.useCase.execute({ briefId: BRIEF_ID }); // replay_ignored
+
+    expect(env.metrics.recorded).toHaveLength(1); // pas 2
   });
 
   it('US2 : SC-004 invariant scoreFinal ≤ scoreBrut × 1.10 strict', async () => {

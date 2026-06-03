@@ -192,23 +192,23 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 ### 5a — QueryMatchingResultUseCase (lecture filtrée + admin)
 
-- [X] T0- [ ] T072 XX [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/query-matching-result.use-case.test.ts` — `getByBriefIdForVoyageur` exclut un conseiller révoqué après calcul, retourne null si brief anonymisé. `getByBriefIdForAdmin` retourne tout l'état historique + `currentVerifiedStatus` par entry.
-- [X] T0- [ ] T073 XX [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/query-matching-result.use-case.ts`.
+- [X] T072 [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/query-matching-result.use-case.test.ts` — `getByBriefIdForVoyageur` exclut un conseiller révoqué après calcul, retourne null si brief anonymisé. `getByBriefIdForAdmin` retourne tout l'état historique + `currentVerifiedStatus` par entry.
+- [X] T073 [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/query-matching-result.use-case.ts`.
 
 ### 5b — TriggerRematchUseCase (admin re-matching FR-016)
 
-- [X] T0- [ ] T074 XX [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/trigger-rematch.use-case.test.ts` — verrou Redis SETNX (concurrent rematch → 409), supersede ancien MR + chaînage `supersededByMatchingResultId`, audit `matching.recomputed` avec actor + reason, nouvel event outbox publié selon nouveau statut.
-- [X] T0- [ ] T075 XX [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/trigger-rematch.use-case.ts`.
+- [X] T074 [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/trigger-rematch.use-case.test.ts` — verrou Redis SETNX (concurrent rematch → 409), supersede ancien MR + chaînage `supersededByMatchingResultId`, audit `matching.recomputed` avec actor + reason, nouvel event outbox publié selon nouveau statut.
+- [X] T075 [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/trigger-rematch.use-case.ts`.
 
 ### 5c — DetectAllMatchesRevokedScheduler
 
-- [X] T0- [ ] T076 XX [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/detect-all-matches-revoked.use-case.test.ts` — scan MR actifs, pour chaque MR top 3 : check verified status courant des 3 conseillers, si tous 3 révoqués → émet event `voyageur.brief.all_matches_revoked` + audit `matching.all_matches_revoked_detected`. Idempotence : ne ré-émet pas le même event (UNIQUE sur idempotency key).
-- [X] T0- [ ] T077 XX [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/detect-all-matches-revoked.use-case.ts`.
-- [X] T0- [ ] T078 XX [US3] Créer `apps/api/src/modules/matching/infrastructure/jobs/all-matches-revoked.scheduler.ts` — BullMQ repeatable daily cron 02:00 ca-central-1 (pattern hérité de jobs 008 expiration sweep).
+- [X] T076 [P] [US3] RED : `apps/api/src/modules/matching/application/use-cases/__tests__/detect-all-matches-revoked.use-case.test.ts` — scan MR actifs, pour chaque MR top 3 : check verified status courant des 3 conseillers, si tous 3 révoqués → émet event `voyageur.brief.all_matches_revoked` + audit `matching.all_matches_revoked_detected`. Idempotence : ne ré-émet pas le même event (UNIQUE sur idempotency key).
+- [X] T077 [US3] GREEN : `apps/api/src/modules/matching/application/use-cases/detect-all-matches-revoked.use-case.ts`.
+- [X] T078 [US3] Créer `apps/api/src/modules/matching/infrastructure/jobs/all-matches-revoked.scheduler.ts` — BullMQ repeatable daily cron 02:00 ca-central-1 (pattern hérité de jobs 008 expiration sweep).
 
 ### 5d — Infrastructure MatchingQueryPort
 
-- [X] T0- [ ] T079 XX [US3] Créer `apps/api/src/modules/matching/infrastructure/prisma-matching-query-adapter.ts` — implémente `MatchingQueryPort` (interface publique exportée depuis `@cv/shared/matching`). Filtre dynamique via `ConformiteQueryPort.getVerificationStatus`. **Cette classe est le point d'intégration public pour 012 + 015 + admin US5 extension de 008**.
+- [X] T079 [US3] Créer `apps/api/src/modules/matching/infrastructure/prisma-matching-query-adapter.ts` — implémente `MatchingQueryPort` (interface publique exportée depuis `@cv/shared/matching`). Filtre dynamique via `ConformiteQueryPort.getVerificationStatus`. **Cette classe est le point d'intégration public pour 012 + 015 + admin US5 extension de 008**.
 - [X] T080 [US3] Exporter `MatchingQueryPort` depuis `MatchingModule.exports` + token DI → consommable par les modules clients qui importeront `MatchingModule`.
 
 ### 5e — Admin HTTP endpoint (re-trigger)
@@ -230,9 +230,9 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 ### 6a — Observabilité (Principe VII)
 
-- [ ] T086 [P] Instrumenter métriques OpenTelemetry — créer `apps/api/src/modules/matching/infrastructure/metrics.ts` (exports : counter `matching.matched_count` labelé par status `ok|partial|empty`, histogram `matching.duration_ms`, counter `matching.boost_applied`, gauge `matching.candidates_evaluated`). Brancher depuis `perform-matching.use-case.ts` via un port `MetricsRecorder`.
-- [ ] T087 [P] Logs structurés Pino — vérifier que chaque use case log avec `level=info` (ok), `warn` (partial), `error` (empty ou exception infrastructure), inclut `briefId`, `matchedCount`, `durationMs`, `algorithmVersion`, `correlationId`.
-- [ ] T088 [P] Créer `docs/dashboards/matching.json` — dashboard Grafana versionné : panels p50/p95/p99 duration, repartition status, taux boost, taux empty/partial vs ok. Alerte WARN > 5 % `empty` sur 24h + WARN > 15 % `partial` sur 7j + WARN p95 > 1 200 ms.
+- [X] T086 [P] Instrumenter métriques OpenTelemetry — port `MetricsRecorder` (`application/ports/metrics-recorder.port.ts`) + adapter `infrastructure/otel-metrics-recorder.ts` (counter `matching.matched_count` labelé status, histogram `matching.duration_ms`, counter `matching.boost_applied`, gauge `matching.candidates_evaluated`). Branché depuis `perform-matching.use-case.ts` (dep optionnelle, no-op par défaut) + wiring DI. Tests : 2 cas (métrique enregistrée / replay sans métrique).
+- [X] T087 [P] Logs structurés Pino — `PerformMatchingUseCase` log `info` (ok) / `warn` (partial) / `error` (empty), champs `briefId`, `matchingResultId`, `status`, `matchedCount`, `candidatesEvaluated`, `durationMs`, `algorithmVersion`, `boostApplied` (PII-safe). Pattern hérité de `editer-profil.use-case.ts`.
+- [X] T088 [P] Créer `docs/dashboards/matching.json` + `docs/dashboards/matching-alerts.yaml` — dashboard Grafana versionné : panels p50/p95/p99 duration, répartition status, taux boost, taux empty/partial vs ok. Alertes WARN > 5 % `empty` sur 24h + WARN > 15 % `partial` sur 7j + WARN p95 > 1 200 ms.
 
 ### 6b — Runbooks et documentation FR-CA
 
