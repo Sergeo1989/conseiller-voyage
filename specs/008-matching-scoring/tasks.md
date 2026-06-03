@@ -248,10 +248,10 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 ### 6d — Finalisation ADRs (statut Accepted)
 
-- [ ] T094 [P] Compléter ADR-0020 — Pondération initiale des 4 axes : valeurs chiffrées 0.35/0.25/0.25/0.15, justification produit, procédure de bump algorithmVersion.
-- [ ] T095 [P] Compléter ADR-0021 — Algorithme distance FSA Haversine + 5 paliers.
-- [ ] T096 [P] Compléter ADR-0022 — Source FSA StatCan + licence OGL-Canada + procédure update annuelle.
-- [ ] T097 [P] Compléter ADR-0023 — Trigger Postgres anonymisation cascade : pseudocode SQL + tests d'invariant cascade.
+- [X] T094 [P] ADR-0020 statut accepté + note d'implémentation (WeightsConfig 0.35/0.25/0.25/0.15, bump algorithmVersion, mitigation alignée sur dashboard réel).
+- [X] T095 [P] ADR-0021 statut accepté + note d'implémentation (5 paliers vérifiés identiques au code `compute-fsa-distance.ts`, FR-009b/c).
+- [X] T096 [P] ADR-0022 statut accepté + note d'implémentation + **avertissement bootstrap 41 FSA → régénération 1 622 avant merge prod**.
+- [X] T097 [P] ADR-0023 statut accepté + note d'implémentation (migration réelle `intake_voyageur_briefs`, ordre redact→nullify, tests T083/T084).
 
 ### 6e — Quality gates finaux
 

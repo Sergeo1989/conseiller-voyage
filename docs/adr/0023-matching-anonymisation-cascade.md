@@ -1,7 +1,7 @@
 # ADR-0023 — Anonymisation cascade matching via trigger Postgres
 
 **Date** : 2026-05-31
-**Statut** : proposé
+**Statut** : accepté (implémenté feature 011, 2026-06-03)
 **Décideurs** : équipe technique, équipe conformité
 **Spec lié** : [008-matching-scoring/spec.md](../../specs/008-matching-scoring/spec.md), FR-020 + Assumptions (Conformité Loi 25)
 **Plan lié** : [008-matching-scoring/plan.md](../../specs/008-matching-scoring/plan.md), Constitution Check Principe II
@@ -106,3 +106,7 @@ EXECUTE FUNCTION matching_anonymise_cascade();
 | **CASCADE FK** | Supprime la ligne MatchingResult — perte audit historique. |
 | **Use case applicatif synchrone post-erasure** | Couplage cross-module fort — le code 008 saurait écrire sur 011, violation Principe V. |
 | **Pas de cascade — laisser les pointeurs PII en place** | Violation Loi 25 (PII reste retrouvable via JOIN). Inacceptable. |
+
+## Statut d'implémentation (2026-06-03)
+
+Implémenté en migration `20260531133023_matching_anonymisation_cascade` : fonction `matching_anonymise_cascade()` + trigger `trg_matching_anonymise_cascade` `AFTER UPDATE OF status`. **Précision vs pseudocode** : la table réelle est `intake_voyageur_briefs` (et non `voyageur_briefs`) ; le trigger redacte les `scoreComponents` puis nullifie `briefId`/`suggestedConseillerId` (ordre inverse du pseudocode, comportement équivalent — la sélection des entries se fait avant la nullification). `matching_audit_entries` jamais touchée. Couvert par les tests d'intégration `anonymisation-cascade.integration.test.ts` (T083) + `append-only-trigger.integration.test.ts` (T084).

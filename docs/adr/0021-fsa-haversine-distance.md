@@ -1,7 +1,7 @@
 # ADR-0021 — Algorithme distance FSA Haversine sur centroïdes
 
 **Date** : 2026-05-31
-**Statut** : proposé
+**Statut** : accepté (implémenté feature 011, 2026-06-03)
 **Décideurs** : équipe technique
 **Spec lié** : [008-matching-scoring/spec.md](../../specs/008-matching-scoring/spec.md), FR-009a / FR-009b / FR-009c
 **Plan lié** : [008-matching-scoring/plan.md](../../specs/008-matching-scoring/plan.md), Performance Goals
@@ -83,3 +83,7 @@ Aucun appel d'API externe. La table `FsaCentroidTable` est chargée au boot du m
 | **Manhattan distance lat-lng** | Erreur ±30 % en haute latitude. |
 | **Vincenty (ellipsoïdal)** | 10× plus coûteux que Haversine pour ~1 mm de précision en plus. Surcomplexité injustifiée. |
 | **Décroissance continue (sigmoid)** | Bonne idée pour v1.1 — au MVP les 5 paliers sont plus simples à tuner et à comprendre par l'admin. |
+
+## Statut d'implémentation (2026-06-03)
+
+Implémenté dans `domain/services/compute-fsa-distance.ts` : `computeFsaDistance` (Haversine, rayon Terre 6371 km, retourne `null` si une FSA absente) + `distanceToGeoScore` avec les 5 paliers exacts (`<=0`→1, `<=25`→0,8, `<=100`→0,5, `<=500`→0,2, sinon 0,05 ; `null`→0,5 FR-009b). Conseiller sans FSA exclu + audit `matching.conseiller_address_missing` (FR-009c). Tests T042/T043 (15 cas). Aucun appel réseau.

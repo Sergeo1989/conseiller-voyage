@@ -1,7 +1,7 @@
 # ADR-0020 — Pondération initiale des 4 axes de scoring matching
 
 **Date** : 2026-05-31
-**Statut** : proposé
+**Statut** : accepté (implémenté feature 011, 2026-06-03)
 **Décideurs** : équipe technique, porteur produit
 **Spec lié** : [008-matching-scoring/spec.md](../../specs/008-matching-scoring/spec.md), FR-009
 **Plan lié** : [008-matching-scoring/plan.md](../../specs/008-matching-scoring/plan.md), Performance Goals + Constitution Check Principe VI
@@ -59,8 +59,12 @@ Tout changement de pondération **doit** :
 
 ### Mitigation
 
-- Métrique OTel `matching.score_distribution` (histogramme) suivi mensuellement.
-- Re-pondération sera possible **sans toucher au code** (juste env vars + bump version + ADR).
+- Suivi mensuel via le dashboard `docs/dashboards/matching.json` (répartition status ok/partial/empty, taux boost, latence) — un excès de `empty`/`partial` signale une pondération ou une couverture conseillers à revoir.
+- Re-pondération possible **sans toucher au code** (juste env vars `MATCHING_WEIGHT_*` + bump `MATCHING_ALGORITHM_VERSION` + nouvel ADR).
+
+## Statut d'implémentation (2026-06-03)
+
+Implémenté tel que décidé : `WeightsConfig.DEFAULT_WEIGHTS_V1` = 0,35 / 0,25 / 0,25 / 0,15, lu depuis `MATCHING_WEIGHT_*` (défauts `env.ts`), invariant somme = 1,0 ± 10⁻⁶ vérifié au boot (superRefine Zod) + `weights-config.vo` (tests T040/T041). `algorithmVersion` persisté sur chaque `matching_results`. Filtre langue dur appliqué avant scoring (Q3).
 
 ## Alternatives considérées
 

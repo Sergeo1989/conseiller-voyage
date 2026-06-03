@@ -1,7 +1,7 @@
 # ADR-0022 — Source des centroïdes FSA : Statistique Canada (OGL-Canada)
 
 **Date** : 2026-05-31
-**Statut** : proposé
+**Statut** : accepté (implémenté feature 011, 2026-06-03 — voir note d'implémentation)
 **Décideurs** : équipe technique
 **Spec lié** : [008-matching-scoring/spec.md](../../specs/008-matching-scoring/spec.md), Assumptions (Géocodage)
 **Plan lié** : [008-matching-scoring/plan.md](../../specs/008-matching-scoring/plan.md), Primary Dependencies
@@ -71,3 +71,9 @@ L'OGL-Canada autorise « use, share, alter for any purpose, including commercial
 | **Postes Canada Address Data** | ~10 k CAD/an. Surinvestissement pour un MVP. |
 | **Centroïdes provinciaux uniquement** | Granularité 1 niveau trop grossière (toute Quebec = 1 centroïde) — supprimerait toute valeur du signal géo. |
 | **Geocoding API commercial (Google, Mapbox)** | Rejet Loi 25 + coût + latence. |
+
+## Statut d'implémentation (2026-06-03)
+
+Décision adoptée. `tools/build-fsa-centroids.ts` + `packages/shared/src/matching/fsa-centroids.json` (header `meta` : source, URL, version StatCan 2021, licence OGL-Canada) + `EmbeddedFsaCentroidReader` (validation Zod au boot). Procédure annuelle dans `docs/runbooks/matching-fsa-update.md`.
+
+⚠️ **Reste à faire avant merge prod** : le fichier livré est une **amorce bootstrap** (`meta.isBootstrap = true`, 41 FSA métros) — suffisante pour les tests unitaires/intégration mais pas pour la prod. Régénérer la table complète (~1 622 FSA) via le script (accès réseau + dépendance `shapefile`) et activer l'invariant CI « ≥ 1 500 entrées » une fois `isBootstrap:false`.
