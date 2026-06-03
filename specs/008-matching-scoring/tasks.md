@@ -236,10 +236,10 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 ### 6b — Runbooks et documentation FR-CA
 
-- [ ] T089 [P] Créer `docs/runbooks/matching-rematch.md` — procédure admin re-trigger : (1) consulter file `voyageur.brief.all_matches_revoked` dans dashboard 008-US5, (2) cliquer `POST /api/matching/admin/briefs/:id/re-match`, (3) vérifier nouveau MR créé + ancien superseded.
-- [ ] T090 [P] Créer `docs/runbooks/matching-fsa-update.md` — procédure annuelle mise à jour FSA centroïdes : télécharger nouvelle version StatCan, lancer `pnpm run build-fsa-centroids`, vérifier diff (FSA ajoutés/supprimés), tester en staging.
-- [ ] T091 [P] Finaliser `apps/api/src/modules/matching/README.md` — rôle, dépendances cross-module, endpoints, événements outbox publiés/consommés, ADRs 0020-0023, runbooks.
-- [ ] T092 [P] Ajouter clés i18n `matching.admin.*` dans `apps/web/src/i18n/messages/fr-CA.json` et `en.json` — messages erreur HTTP admin (200, 409 verrou, 422 brief inactif, etc.). FR-CA prioritaire (Principe IV).
+- [X] T089 [P] Créer `docs/runbooks/matching-rematch.md` — procédure admin re-trigger : (1) consulter file `voyageur.brief.all_matches_revoked` dans dashboard 008-US5, (2) `POST /api/matching/admin/briefs/:id/re-match` (codes 200/404/409/422), (3) vérifier nouveau MR créé + ancien superseded.
+- [X] T090 [P] Créer `docs/runbooks/matching-fsa-update.md` — procédure annuelle mise à jour FSA centroïdes : version StatCan, `pnpm tsx tools/build-fsa-centroids.ts`, vérifier diff (FSA ajoutés/supprimés, `isBootstrap:false`), tester en staging. **Note : fichier actuel = amorce bootstrap 41 FSA, régénération complète 1 622 FSA requise avant merge prod.**
+- [X] T091 [P] Finaliser `apps/api/src/modules/matching/README.md` — statuts US1-US3+Polish ✅, observabilité, runbooks liés, tests, section sécurité PII, note T093 satellite.
+- [X] T092 [P] Ajouter clés i18n `matching.admin.*` dans `apps/web/src/i18n/messages/fr-CA.json` et `en.json` — messages re-match + erreurs HTTP admin (succès, 409 verrou, 404, 422 brief inactif, 400, 401, 403). FR-CA prioritaire (Principe IV).
 
 ### 6c — Outbox publisher extension (cross-module, coordination 003)
 

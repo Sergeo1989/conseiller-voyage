@@ -245,6 +245,24 @@
       }
     }
   },
+  "matching": {
+    "admin": {
+      "rematchTitre": "Re-run matching",
+      "rematchDescription": "Recomputes a fresh top 3 of verified advisors from the current state. The previous result is kept for audit.",
+      "rematchRaisonLabel": "Reason (required — 10 to 500 characters)",
+      "rematchRaisonPlaceholder": "The 3 suggested advisors were revoked (expired permit) — ticket #…",
+      "rematchConfirmer": "Re-run matching",
+      "rematchAnnuler": "Cancel",
+      "succes": "New matching computed: {matchedCount, plural, =0 {no advisor found} =1 {1 advisor} other {# advisors}}.",
+      "erreurEnCours": "A re-matching is already in progress for this brief. Try again in a few seconds.",
+      "erreurBriefIntrouvable": "Brief not found or anonymized (Law 25) — re-matching is not possible.",
+      "erreurBriefInactif": "This brief was never matched: re-matching requires a prior result.",
+      "erreurRaisonInvalide": "The reason must be between 10 and 500 characters.",
+      "erreurNonAutorise": "You must be signed in as an administrator.",
+      "erreurInterdit": "This action is restricted to administrators.",
+      "erreurGenerique": "Re-matching failed. Retry or check the runbook."
+    }
+  },
   "email": {
     "approved": {
       "subject": "Your compliance file has been approved",

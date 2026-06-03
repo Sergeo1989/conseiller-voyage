@@ -6,10 +6,10 @@ Fonction pure du domaine (Principe VI TDD obligatoire) qui calcule le top 3 cons
 
 ## Périmètre
 
-- ⏳ **US1** (P1 MVP) — calcul top 3 (filtre langue + 4 axes pondérés), persistance append-only, 1 event outbox parmi `matched`/`partially_matched`/`unmatched`.
-- ⏳ **US2** (P2) — boost soft cookie `cv_suggested` ≤ +10 %, capping strict.
-- ⏳ **US3** (P3) — filtrage dynamique lecture (verified actuel) + re-matching admin manuel + scheduler détection cascade révocation.
-- ⏳ **Polish** — métriques OTel, dashboard Grafana, runbooks, CLI PII scan hebdo, ADRs finalisés.
+- ✅ **US1** (P1 MVP) — calcul top 3 (filtre langue + 4 axes pondérés), persistance append-only, 1 event outbox parmi `matched`/`partially_matched`/`unmatched`.
+- ✅ **US2** (P2) — boost soft cookie `cv_suggested` ≤ +10 %, capping strict.
+- ✅ **US3** (P3) — filtrage dynamique lecture (verified actuel) + re-matching admin manuel + scheduler détection cascade révocation.
+- ✅ **Polish** — métriques OTel + logs Pino structurés, dashboard Grafana, runbooks, CLI PII scan hebdo, ADRs finalisés.
 
 > Aucune UI livrée dans 011 — la lecture côté voyageur arrivera en feature 015.
 
@@ -56,7 +56,9 @@ Publication via le port `MATCHING_QUERY_PORT` (consommé par 012 notifications f
 
 ## Événements outbox publiés
 
-4 events distincts (Q5 clarify) drainés par `OutboxPublisherJob` (extension feature 003) :
+4 events distincts (Q5 clarify) écrits dans `matching_outbox_entries`. Le drainage
+vers le bus interne (extension de l'`OutboxPublisherJob` 003) est livré en **PR
+satellite Mode B** (cf. [ADR-0024](../../../../docs/adr/0024-matching-cross-module-extensions.md), tâche T093) — hors PR 011.
 
 - `voyageur.brief.matched` — top 3 complet (`matchedCount = 3`, status `ok`)
 - `voyageur.brief.partially_matched` — 1 ou 2 entrées (status `partial`)
@@ -94,14 +96,32 @@ Invariant boot : `WEIGHT_DESTINATION + WEIGHT_GEO + WEIGHT_SPECIALITY + WEIGHT_F
 - [ADR-0023](../../../../docs/adr/0023-matching-anonymisation-cascade.md) — Trigger Postgres anonymisation cascade
 - [ADR-0024](../../../../docs/adr/0024-matching-cross-module-extensions.md) — Stratégie extensions cross-module 001/007/008/003
 
+## Observabilité (Principe VII)
+
+- **Métriques OTel** (`infrastructure/otel-metrics-recorder.ts`, meter `cv.matching`) :
+  counter `matching.matched_count` (labelé status), histogram `matching.duration_ms`,
+  counter `matching.boost_applied`, gauge `matching.candidates_evaluated`. Branchées
+  via le port `MetricsRecorder` (couche application découplée d'OTel).
+- **Logs Pino structurés** (`PerformMatchingUseCase`) : `info` (ok) / `warn` (partial) /
+  `error` (empty), champs PII-safe (`briefId`, `matchingResultId`, `status`,
+  `matchedCount`, `durationMs`, `algorithmVersion`, `boostApplied`).
+- **Dashboard** : `docs/dashboards/matching.json` + alertes `docs/dashboards/matching-alerts.yaml`.
+
 ## Runbooks
 
-- `docs/runbooks/matching-rematch.md` (à créer T089) — procédure admin re-trigger
-- `docs/runbooks/matching-fsa-update.md` (à créer T090) — mise à jour annuelle FSA StatCan
+- [`docs/runbooks/matching-rematch.md`](../../../../docs/runbooks/matching-rematch.md) — procédure admin re-trigger
+- [`docs/runbooks/matching-fsa-update.md`](../../../../docs/runbooks/matching-fsa-update.md) — mise à jour annuelle FSA StatCan
 
-## Tests (à venir Phases 3-5)
+## Tests
 
-- **Unit** : ~50 tests Vitest (domain VOs + services + use cases avec fakes en mémoire)
-- **Property-based** : 4 invariants (SC-002 déterminisme, SC-003 plafond 3, SC-005 verified 100 %, SC-006 idempotence 10k replays)
-- **Integration** : 5 fichiers Testcontainers Postgres + Redis
-- **Charge** : k6/autocannon staging (T101b, p95 < 800 ms calcul + < 2 s e2e)
+- **Unit** : domain VOs + services + use cases avec fakes en mémoire (Vitest).
+- **Property-based** : 4 invariants (SC-002 déterminisme, SC-003 plafond 3, SC-005 verified 100 %, SC-006 idempotence 10k replays — fast-check).
+- **Integration** : 5 fichiers Testcontainers Postgres + Redis (perform-matching, boost, trigger-rematch, anonymisation-cascade, append-only-trigger, query-port).
+- **Charge** : `tools/load-test-matching.ts` staging (T101b, p95 < 800 ms calcul + < 2 s e2e).
+
+## Sécurité / Loi 25
+
+- **CLI anti-PII** : `tools/check-no-pii-matching-audit.ts` + workflow CI hebdo
+  `.github/workflows/scan-matching-pii.yml` — scanne `matching_audit_entries.payload`
+  et `matching_result_entries.scoreComponents` (post-anonymisation) contre tout
+  pattern email/téléphone/prénom (FR-020, SC-009).
