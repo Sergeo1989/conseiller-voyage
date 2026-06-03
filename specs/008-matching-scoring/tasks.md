@@ -264,7 +264,7 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 ### 6f — PR + Constitution Check
 
-- [ ] T103 Ouvrir PR vers `main` avec Constitution Check verbatim depuis `plan.md` + **cocher intégralement la DoD de `plan.md`** (chaque case validée avec preuve : test count, coverage, ADRs liés, runbooks créés, dashboard versionné) + 5 ADRs liés (0020-0024) + diff résumé (estimation : ~30-40 fichiers, ~6 000-8 000 lignes). Bloquante avant merge : tests verts en CI (Vitest unit + integration + lint + typecheck + boundaries + license + SCA), pas de E2E Playwright dans 011 (n/a pas d'UI), pas de Lighthouse (n/a). Couvre **finding L3**.
+- [X] T103 PR #21 ouverte vers `main` (Constitution Check verbatim + DoD avec preuves + 5 ADRs). 2 cases DoD restent ouvertes (charge staging + migrations/rollback staging) ; T093 satellite + régénération FSA complète notés comme bloquants pré-merge prod. Ouvrir PR vers `main` avec Constitution Check verbatim depuis `plan.md` + **cocher intégralement la DoD de `plan.md`** (chaque case validée avec preuve : test count, coverage, ADRs liés, runbooks créés, dashboard versionné) + 5 ADRs liés (0020-0024) + diff résumé (estimation : ~30-40 fichiers, ~6 000-8 000 lignes). Bloquante avant merge : tests verts en CI (Vitest unit + integration + lint + typecheck + boundaries + license + SCA), pas de E2E Playwright dans 011 (n/a pas d'UI), pas de Lighthouse (n/a). Couvre **finding L3**.
 
 ---
 
