@@ -374,6 +374,24 @@
       "succesRetablir": "Profil rétabli — visible publiquement à nouveau."
     }
   },
+  "matching": {
+    "admin": {
+      "rematchTitre": "Relancer le matching",
+      "rematchDescription": "Recalcule un nouveau top 3 de conseillers vérifiés à partir de l'état actuel. L'ancien résultat est conservé pour l'audit.",
+      "rematchRaisonLabel": "Raison (obligatoire — de 10 à 500 caractères)",
+      "rematchRaisonPlaceholder": "Les 3 conseillers proposés ont été révoqués (permis expiré) — ticket #…",
+      "rematchConfirmer": "Relancer le matching",
+      "rematchAnnuler": "Annuler",
+      "succes": "Nouveau matching calculé : {matchedCount, plural, =0 {aucun conseiller trouvé} =1 {1 conseiller} other {# conseillers}}.",
+      "erreurEnCours": "Un re-matching est déjà en cours pour ce brief. Réessayez dans quelques secondes.",
+      "erreurBriefIntrouvable": "Brief introuvable ou anonymisé (Loi 25) — aucun re-matching possible.",
+      "erreurBriefInactif": "Ce brief n'a jamais été matché : le re-matching nécessite un résultat préalable.",
+      "erreurRaisonInvalide": "La raison doit contenir entre 10 et 500 caractères.",
+      "erreurNonAutorise": "Vous devez être connecté en tant qu'administrateur.",
+      "erreurInterdit": "Cette action est réservée aux administrateurs.",
+      "erreurGenerique": "Le re-matching a échoué. Réessayez ou consultez le runbook."
+    }
+  },
   "emails": {
     "profil": {
       "masqueAdmin": {

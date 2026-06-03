@@ -89,6 +89,20 @@ const ALLOWED_CROSS_MODULE_SYMBOLS: ReadonlySet<string> = new Set([
   'ConformiteEventPublisher',
   'CONFORMITE_EVENT_PUBLISHER',
   'ConformiteDomainEvent',
+  // ---------------------------------------------------------------------
+  // Feature 011 matching — faux positifs de l'heuristique regex (T098).
+  // ---------------------------------------------------------------------
+  // Noms de tables intake/profil cités UNIQUEMENT dans des commentaires de
+  // documentation des snapshot readers (data-model §5). L'accès Prisma réel
+  // passe par les modèles neutres `voyageurBrief` / `conseillerProfile`
+  // exposés par @cv/db (vendor neutre du schéma), pas par un symbole préfixé.
+  'intake_voyageur_briefs',
+  'intake_voyageur_contacts',
+  'profile_conseiller_profiles',
+  // Interface de requête locale du AdminMatchingController — même famille
+  // que AuthenticatedRequest/AuthenticatedUser ci-dessus ; le préfixe `Auth`
+  // est une collision de nommage, le type appartient au module matching.
+  'AuthenticatedReq',
 ]);
 
 interface Violation {

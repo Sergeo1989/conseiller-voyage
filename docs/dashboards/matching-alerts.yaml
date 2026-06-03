@@ -1,0 +1,74 @@
+# T088 — Alertes Grafana pour le module matching (011).
+# Format compatible Grafana Alerting (provisioning fichier).
+# Cf. https://grafana.com/docs/grafana/latest/alerting/set-up/provision-alerting-resources/
+#
+# Métriques source : meter OTel `cv.matching` (apps/api/src/modules/matching/
+# infrastructure/otel-metrics-recorder.ts). Suffixe `_total` ajouté par
+# l'exporter Prometheus pour les counters.
+
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: matching-quality
+    folder: matching
+    interval: 1m
+    rules:
+      - uid: cv-matching-empty-rate
+        title: WARN — Taux de matchings empty > 5% sur 24h
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 86400, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: (sum(increase(matching_matched_count_total{status="empty"}[24h])) / clamp_min(sum(increase(matching_matched_count_total[24h])), 1)) > 0.05
+              refId: A
+        noDataState: OK
+        execErrState: Alerting
+        for: 1h
+        annotations:
+          summary: '{{ $values.A.Value }} — plus de 5% des briefs ne trouvent aucun conseiller verified (couverture conseillers insuffisante).'
+          runbook_url: docs/runbooks/matching-rematch.md
+        labels:
+          severity: warning
+          module: matching
+
+      - uid: cv-matching-partial-rate
+        title: WARN — Taux de matchings partial > 15% sur 7j
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 604800, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: (sum(increase(matching_matched_count_total{status="partial"}[7d])) / clamp_min(sum(increase(matching_matched_count_total[7d])), 1)) > 0.15
+              refId: A
+        noDataState: OK
+        execErrState: Alerting
+        for: 6h
+        annotations:
+          summary: '{{ $values.A.Value }} — plus de 15% des briefs obtiennent moins de 3 conseillers sur 7 jours.'
+          runbook_url: docs/runbooks/matching-rematch.md
+        labels:
+          severity: warning
+          module: matching
+
+      - uid: cv-matching-latency-p95
+        title: WARN — Latence calcul p95 > 1200 ms
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus-cv
+            model:
+              expr: histogram_quantile(0.95, sum(rate(matching_duration_ms_bucket[5m])) by (le)) > 1200
+              refId: A
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'Latence matching p95 = {{ $values.A.Value }} ms (cible SLO p95 < 800 ms, seuil alerte 1200 ms).'
+          runbook_url: docs/runbooks/matching-rematch.md
+        labels:
+          severity: warning
+          module: matching

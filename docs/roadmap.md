@@ -114,7 +114,7 @@ Reste pour merger 005 vers `main` :
 | 008 | Intake — brief structuré, validation déterministe, brouillon + magic-link voyageur + admin filet + Loi 25 | préqualification | M | ✅ livré PR #20 (squash `f3bff79`, 5 US, 360+ tests, /ultrareview 0 finding) | — (voyageur anonyme) |
 | 009 | Intake — enrichissement LLM (reformulation, extraction d'intentions) | préqualification | M | ⏳ | 008, ADR fournisseur LLM |
 | 010 | Intake — soumission + magic-link de suivi voyageur | préqualification × identité | S | ⏳ | 003, 008 |
-| 011 | Matching — scoring conseiller × brief (pur, TDD obligatoire) | matching | M | ⏳ | 001, 008 |
+| 011 | Matching — scoring conseiller × brief (pur, TDD obligatoire) | matching | M | 🟡 livré branche `008-matching-scoring` (PR #21, US1-US3 + polish) | 001, 008. 3 US + Phase 6 polish (métriques OTel, dashboard, runbooks, ADRs 0020-0024 acceptés, CLI anti-PII, `fsa-centroids.json` complet 1 643 FSA StatCan). Avant merge prod : valider charge + migrations en staging ; T093 (drain `matching_outbox`→bus) en PR satellite Mode B (ADR-0024 §E3). |
 | 012 | Matching — notifications + machine d'état de lead | matching | M | ⏳ | 003, 011 |
 | 013 | Conversation conseiller ↔ voyageur (post-acceptation) | matching | M | ⏳ | 011, 012 |
 | 014 | Tableau de bord conseiller (mes leads, conversations) | matching × identité | M | ⏳ | 005, 012, 013 |

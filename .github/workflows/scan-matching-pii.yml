@@ -1,0 +1,40 @@
+name: Scan Matching PII
+
+# T093b — Vérification hebdomadaire defense-in-depth : aucune PII voyageur dans
+# matching_audit_entries.payload ni matching_result_entries.scoreComponents
+# (FR-020 + SC-009 + Loi 25). Exécuté contre la DB staging.
+#
+# Le secret DATABASE_URL_STAGING doit pointer vers la base staging en lecture.
+# Sans ce secret, le scan se termine en skip non bloquant (le CLI détecte
+# l'absence de DB).
+
+on:
+  schedule:
+    # Tous les lundis à 06:00 UTC.
+    - cron: '0 6 * * 1'
+  workflow_dispatch: {}
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  scan-matching-pii:
+    name: Scan PII — tables matching (staging)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable corepack (pnpm via packageManager field)
+        run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generate Prisma Client
+        run: pnpm --filter @cv/db generate
+      - name: Scan PII matching (staging)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+        run: pnpm exec tsx tools/check-no-pii-matching-audit.ts

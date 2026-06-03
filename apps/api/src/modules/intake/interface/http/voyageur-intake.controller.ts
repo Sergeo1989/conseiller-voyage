@@ -47,7 +47,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { verifyCvSuggestedCookie } from '../../../../common/cv-suggested-cookie.verifier';
 import { ZodValidationPipe } from '../../../../common/pipes/zod-validation.pipe';
+import { env } from '../../../../env';
 import { EraseAllVoyageurDataUseCase } from '../../application/use-cases/erase-all-voyageur-data.use-case';
 import { ListBriefsByEmailUseCase } from '../../application/use-cases/list-briefs-by-email.use-case';
 import { RequestBriefErasureUseCase } from '../../application/use-cases/request-brief-erasure.use-case';
@@ -129,14 +131,24 @@ export class VoyageurIntakeController {
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Headers('accept-language') acceptLanguage: string | undefined,
     @Headers('user-agent') userAgent: string | undefined,
+    @Req() req: { cookies?: Record<string, string | undefined> },
     @Ip() clientIp: string,
   ): Promise<SubmitBriefResponse> {
+    // T070 (US2) — lecture + validation HMAC du cookie `cv_suggested`
+    // (posé par feature 007). Si valide, le conseillerId est figé sur le
+    // brief pour le boost matching (FR-011).
+    const suggestedConseillerId = verifyCvSuggestedCookie(
+      req.cookies?.cv_suggested,
+      env.CV_SUGGESTED_COOKIE_SECRET,
+    );
+
     const result = await this.submitBrief.execute({
       ...body,
       locale: acceptLanguage?.startsWith('en') ? 'en' : 'fr-CA',
       clientIp: clientIp || null,
       userAgent: userAgent ?? null,
       idempotencyKey: idempotencyKey ?? null,
+      suggestedConseillerId,
     });
 
     if (result.kind === 'ok') {

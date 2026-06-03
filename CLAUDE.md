@@ -117,19 +117,22 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/002-voyageur-intake/plan.md`](specs/002-voyageur-intake/plan.md)
-(Module intake / préqualification voyageur — feature 008 roadmap, Tier 2,
-brique centrale boucle économique ; branche `002-voyageur-intake`).
-Formulaire structuré FR-CA prioritaire, brief qualifié consommable par
-le matching (feature 011 future) avec plafond 3 conseillers, magic link
-voyageur (pas de compte permanent), consentement Loi 25 horodaté.
-Consomme `LegalAcceptanceFacade.acceptForBrief` (feature 004) et le
-cookie `cv_suggested` posé par 007 pour boost soft scoring (≤ +10 %).
+**Plan courant** : [`specs/008-matching-scoring/plan.md`](specs/008-matching-scoring/plan.md)
+(Module matching — feature 011 roadmap, Tier 2 boucle économique cœur ;
+branche `008-matching-scoring`). Fonction pure domaine (TDD strict Principe VI)
+qui calcule top 3 conseillers vérifiés pour un brief via 4 axes pondérés
+(destination 0.35 / géo Haversine FSA 0.25 / spécialité 0.25 / familiarité 0.15)
++ filtre dur langue + boost ≤ +10 % sur cookie `cv_suggested` (007).
+Plafond 3 strict (SC-003 invariant), idempotence par briefId,
+append-only Loi 25, 4 événements outbox distincts
+(`voyageur.brief.matched|partially_matched|unmatched|all_matches_revoked`)
+consommés par feature 012 (notifications) et l'extension US5 du dashboard
+admin de 008. Aucune UI livrée dans 011 (lecture voyageur arrivera en 015).
 
 Pour le contexte technologique détaillé et la structure de répertoires de la
 feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
-`contracts/http-endpoints.md`, et `quickstart.md` du même répertoire
-`specs/002-voyageur-intake/`.
+`contracts/{matching-query.port,http-endpoints,outbox-events}.md`, et
+`quickstart.md` du même répertoire `specs/008-matching-scoring/`.
 
 **Features précédentes mergées** (Tier 0 fermé) :
 - `001-conformite-module` (PR #1, squash `8592922`). Source de vérité pour
@@ -162,6 +165,13 @@ feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
   + `shared/auth/{getSession,requireSession,requireConseiller,requireAdmin}`
   + ADR-0016. Constitution v2.2.0 → v2.3.0 (Principe VIII.a).
 
+- `002-voyageur-intake` (PR #20, squash `f3bff79`). Module intake voyageur
+  feature 008 roadmap. 5 US livrées (submit + verify magic-link, mes-briefs,
+  anti-spam multi-briefs + disposable 3-tier, effacement Loi 25 brief seul +
+  global, file admin briefs non-matchés + push manuel). 3 ADRs (0017 audit
+  table séparée, 0018 magic-link random DB, 0019 disposable emails list).
+  Publie outbox `voyageur.brief.activated` consommée par 011 matching.
+
 **Features en cours / à venir** :
-- `002-voyageur-intake` (cette branche) : voir *Plan courant* ci-dessus.
+- `008-matching-scoring` (cette branche) : voir *Plan courant* ci-dessus.
 <!-- SPECKIT END -->

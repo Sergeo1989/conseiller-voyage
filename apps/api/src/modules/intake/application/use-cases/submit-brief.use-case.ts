@@ -49,6 +49,14 @@ export interface SubmitBriefInput extends SubmitBriefPayload {
   readonly clientIp: string | null;
   readonly userAgent: string | null;
   readonly idempotencyKey: string | null;
+  /**
+   * Conseiller suggéré (UUID) validé HMAC depuis cookie `cv_suggested`
+   * (feature 007). Null si cookie absent, expiré, ou signature invalide.
+   * Passé tel quel au brief writer pour persistance (T069).
+   * Le matching (011) appliquera un boost ≤ +10 % si conseiller éligible
+   * au moment du calcul (FR-011).
+   */
+  readonly suggestedConseillerId: string | null;
 }
 
 export type SubmitBriefResult =
@@ -236,6 +244,7 @@ export class SubmitBriefUseCase {
       clientIp: rawInput.clientIp,
       userAgent: rawInput.userAgent,
       idempotencyKey: rawInput.idempotencyKey,
+      suggestedConseillerId: rawInput.suggestedConseillerId,
     });
     return briefId;
   }
