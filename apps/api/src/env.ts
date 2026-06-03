@@ -159,6 +159,9 @@ const EnvSchema = z
 
     /** Plafond du facteur multiplicatif de boost cookie cv_suggested (FR-011). Strictement ≤ 1.10. */
     MATCHING_BOOST_FACTOR_MAX: z.coerce.number().min(1).max(1.1).default(1.1),
+
+    /** Canal Redis pub/sub des events matching drainés depuis l'outbox (T093). */
+    MATCHING_PUBSUB_CHANNEL: z.string().default('matching.events'),
   })
   .superRefine((env, ctx) => {
     // T006 — refus de la KEK de test (32 octets de zéro) en production.

@@ -7,6 +7,7 @@ export * from './brief-snapshot-reader.port';
 export * from './conseiller-snapshot-reader.port';
 export * from './fsa-centroid-reader.port';
 export * from './matching-audit-writer.port';
+export * from './matching-event-publisher.port';
 export * from './matching-outbox-writer.port';
 export * from './matching-result-reader.port';
 export * from './matching-result-writer.port';
