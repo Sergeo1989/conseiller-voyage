@@ -237,7 +237,7 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 ### 6b — Runbooks et documentation FR-CA
 
 - [X] T089 [P] Créer `docs/runbooks/matching-rematch.md` — procédure admin re-trigger : (1) consulter file `voyageur.brief.all_matches_revoked` dans dashboard 008-US5, (2) `POST /api/matching/admin/briefs/:id/re-match` (codes 200/404/409/422), (3) vérifier nouveau MR créé + ancien superseded.
-- [X] T090 [P] Créer `docs/runbooks/matching-fsa-update.md` — procédure annuelle mise à jour FSA centroïdes : version StatCan, `pnpm tsx tools/build-fsa-centroids.ts`, vérifier diff (FSA ajoutés/supprimés, `isBootstrap:false`), tester en staging. **Note : fichier actuel = amorce bootstrap 41 FSA, régénération complète 1 622 FSA requise avant merge prod.**
+- [X] T090 [P] Créer `docs/runbooks/matching-fsa-update.md` — procédure annuelle mise à jour FSA centroïdes : version StatCan, `pnpm tsx tools/build-fsa-centroids.ts --production`, vérifier diff (FSA ajoutés/supprimés, `isBootstrap:false`), tester en staging. **Table complète régénérée : 1 643 FSA (pipeline download→shapefile→reprojection EPSG:3347→WGS84 implémenté).**
 - [X] T091 [P] Finaliser `apps/api/src/modules/matching/README.md` — statuts US1-US3+Polish ✅, observabilité, runbooks liés, tests, section sécurité PII, note T093 satellite.
 - [X] T092 [P] Ajouter clés i18n `matching.admin.*` dans `apps/web/src/i18n/messages/fr-CA.json` et `en.json` — messages re-match + erreurs HTTP admin (succès, 409 verrou, 404, 422 brief inactif, 400, 401, 403). FR-CA prioritaire (Principe IV).
 
@@ -250,7 +250,7 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 
 - [X] T094 [P] ADR-0020 statut accepté + note d'implémentation (WeightsConfig 0.35/0.25/0.25/0.15, bump algorithmVersion, mitigation alignée sur dashboard réel).
 - [X] T095 [P] ADR-0021 statut accepté + note d'implémentation (5 paliers vérifiés identiques au code `compute-fsa-distance.ts`, FR-009b/c).
-- [X] T096 [P] ADR-0022 statut accepté + note d'implémentation + **avertissement bootstrap 41 FSA → régénération 1 622 avant merge prod**.
+- [X] T096 [P] ADR-0022 statut accepté + note d'implémentation. **Table FSA complète régénérée (1 643 FSA StatCan, pipeline reprojection livré).**
 - [X] T097 [P] ADR-0023 statut accepté + note d'implémentation (migration réelle `intake_voyageur_briefs`, ordre redact→nullify, tests T083/T084).
 
 ### 6e — Quality gates finaux
@@ -258,7 +258,7 @@ description: "Task list — feature 011 matching scoring conseiller × brief (to
 - [X] T098 `pnpm check:boundaries` ✓ — 4 modules scannés, 0 violation. 4 faux positifs (heuristique regex) ajoutés à l'allowlist avec justification : `intake_voyageur_briefs`/`intake_voyageur_contacts`/`profile_conseiller_profiles` (cités en commentaire, accès Prisma réel via modèles neutres `voyageurBrief`/`conseillerProfile`) + `AuthenticatedReq` (interface locale du contrôleur).
 - [X] T099 `pnpm lint` ✓ — 830 fichiers, zéro erreur/warning (Biome `--error-on-warnings`).
 - [X] T100 `pnpm typecheck` ✓ — 17 packages OK (turbo), `@cv/shared` inclus, aucun cycle.
-- [X] T101 Matrice quickstart : **109 tests unit + property verts** (encodent les 6 scénarios côté domaine/use-case). Les tests d'intégration Testcontainers (5 fichiers, scénarios e2e) **se skippent proprement en local sans Docker** — exécutés par la CI. Bug préexistant de skip corrigé dans `perform-matching.integration.test.ts` (`it.skipIf` lisait `skipAll` avant `beforeAll`). **Reste avant prod : régénérer `fsa-centroids.json` complet (bootstrap 41 FSA actuellement).**
+- [X] T101 Matrice quickstart : **109 tests unit + property verts** (encodent les 6 scénarios côté domaine/use-case). Les tests d'intégration Testcontainers (5 fichiers, scénarios e2e) **se skippent proprement en local sans Docker** — exécutés par la CI. Bug préexistant de skip corrigé dans `perform-matching.integration.test.ts` (`it.skipIf` lisait `skipAll` avant `beforeAll`). **`fsa-centroids.json` complet régénéré (1 643 FSA StatCan).**
 - [X] T101b Créé `tools/load-test-matching.ts` (harness Nest standalone, échantillon de briefs actifs réels, mesure p50/p95/p99 calcul+persistance, assertion **p95 < 800 ms** SC-001, skip non bloquant si DB/échantillon absent). ⚠️ **À exécuter en staging** (stack complète requise) — non lançable dans cet environnement local sans DB.
 - [X] T102 `docs/roadmap.md` mis à jour — feature 011 ⏳ → 🟡 livré branche `008-matching-scoring` (+ rappels FSA complet + T093 satellite).
 

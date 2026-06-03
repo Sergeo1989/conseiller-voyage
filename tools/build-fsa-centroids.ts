@@ -28,6 +28,9 @@
 
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import AdmZip from 'adm-zip';
+import proj4 from 'proj4';
+import { open as openShapefile } from 'shapefile';
 
 // ---------------------------------------------------------------------------
 // Configuration source
@@ -73,25 +76,162 @@ interface FsaCentroidFile {
 // Mode 1 — Téléchargement + parsing shapefile (production)
 // ---------------------------------------------------------------------------
 
-async function fetchAndParseStatCanShapefile(): Promise<FsaCentroidEntry[]> {
-  // TODO Phase 6 polish T090 — implémentation complète :
-  //
-  //   1. Download SOURCE_URL avec node:fetch (~30 MB zip)
-  //   2. Unzip vers /tmp/fsa-statcan/
-  //   3. Parser lfsa000a21a_e.shp via `shapefile` npm (ou équivalent)
-  //   4. Pour chaque polygone : calculer le centroïde via formule
-  //      classique de centroïde de polygone (signed area weighted).
-  //   5. Reprojection si nécessaire (StatCan utilise Lambert Conformal Conic ;
-  //      reprojeter vers WGS84 EPSG:4326 via proj4js).
-  //   6. Retourner la liste typée.
-  //
-  // Garde-fou : le script ne doit JAMAIS écrire le fichier si fsaCount < 1500
-  // (catch corruption ou download partiel). Le test d'invariant CI vérifie
-  // ce minimum.
-  throw new Error(
-    'fetchAndParseStatCanShapefile not yet implemented. ' +
-      'See TODO Phase 6 T090 docs/runbooks/matching-fsa-update.md.',
+// StatCan boundary files sont projetés en NAD83 / Statistics Canada Lambert
+// (EPSG:3347). On reprojette les centroïdes vers WGS84 (EPSG:4326) via proj4.
+const EPSG_3347 =
+  '+proj=lcc +lat_0=63.390675 +lon_0=-91.8666666666667 +lat_1=49 +lat_2=77 ' +
+  '+x_0=6200000 +y_0=3000000 +datum=NAD83 +units=m +no_defs +type=crs';
+
+// PRUID (code province StatCan) → ISO-3166-2:CA (sans préfixe `CA-`).
+const PRUID_TO_ISO: Record<string, string> = {
+  '10': 'NL',
+  '11': 'PE',
+  '12': 'NS',
+  '13': 'NB',
+  '24': 'QC',
+  '35': 'ON',
+  '46': 'MB',
+  '47': 'SK',
+  '48': 'AB',
+  '59': 'BC',
+  '60': 'YT',
+  '61': 'NT',
+  '62': 'NU',
+};
+
+type Ring = ReadonlyArray<readonly [number, number]>;
+
+/** Centroïde + aire absolue d'un anneau via la formule signed-area. */
+function ringCentroid(ring: Ring): { cx: number; cy: number; area: number } {
+  let twiceArea = 0;
+  let cx = 0;
+  let cy = 0;
+  for (let i = 0; i < ring.length - 1; i += 1) {
+    const [x0, y0] = ring[i] as readonly [number, number];
+    const [x1, y1] = ring[i + 1] as readonly [number, number];
+    const cross = x0 * y1 - x1 * y0;
+    twiceArea += cross;
+    cx += (x0 + x1) * cross;
+    cy += (y0 + y1) * cross;
+  }
+  if (twiceArea === 0) {
+    // Anneau dégénéré → moyenne arithmétique des sommets en repli.
+    const n = Math.max(1, ring.length);
+    const sx = ring.reduce((s, p) => s + p[0], 0) / n;
+    const sy = ring.reduce((s, p) => s + p[1], 0) / n;
+    return { cx: sx, cy: sy, area: 0 };
+  }
+  const area = twiceArea / 2;
+  return { cx: cx / (3 * twiceArea), cy: cy / (3 * twiceArea), area: Math.abs(area) };
+}
+
+/**
+ * Centroïde projeté d'une géométrie (Multi)Polygon. Pour un MultiPolygon
+ * (FSA avec parties disjointes — îles, enclaves), on retient le centroïde de
+ * la PLUS GRANDE partie plutôt qu'une moyenne pondérée : cette dernière peut
+ * tomber dans le vide entre deux morceaux. Le centroïde de la partie dominante
+ * est garanti représentatif de la masse principale (point de référence géo).
+ */
+function geometryCentroid(geometry: GeoJSON.Geometry): { x: number; y: number } | null {
+  const exteriorRings: Ring[] =
+    geometry.type === 'Polygon'
+      ? [geometry.coordinates[0] as Ring]
+      : geometry.type === 'MultiPolygon'
+        ? geometry.coordinates.map((poly) => poly[0] as Ring)
+        : [];
+  if (exteriorRings.length === 0) return null;
+
+  let best: { x: number; y: number; area: number } | null = null;
+  for (const ring of exteriorRings) {
+    const { cx, cy, area } = ringCentroid(ring);
+    if (best === null || area > best.area) {
+      best = { x: cx, y: cy, area };
+    }
+  }
+  return best === null ? null : { x: best.x, y: best.y };
+}
+
+/** Slice propre du Buffer Node vers un ArrayBuffer autonome (pool-safe). */
+function toArrayBuffer(buf: Buffer): ArrayBuffer {
+  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+}
+
+async function downloadStatCanZip(): Promise<AdmZip> {
+  console.error(`📥 Téléchargement ${SOURCE_URL} (~21 MB)...`);
+  const response = await fetch(SOURCE_URL);
+  if (!response.ok) {
+    throw new Error(`Téléchargement échoué : HTTP ${response.status} ${response.statusText}`);
+  }
+  const zipBuffer = Buffer.from(await response.arrayBuffer());
+  console.error(
+    `   ${Math.round(zipBuffer.length / 1024 / 1024)} MB téléchargés, décompression...`,
   );
+  return new AdmZip(zipBuffer);
+}
+
+function extractShapefileParts(zip: AdmZip): { shp: ArrayBuffer; dbf: ArrayBuffer } {
+  const entries = zip.getEntries();
+  const findEntry = (ext: string) =>
+    entries.find((e) => e.entryName.toLowerCase().endsWith(ext) && !e.isDirectory);
+  const shpEntry = findEntry('.shp');
+  const dbfEntry = findEntry('.dbf');
+  const prjEntry = findEntry('.prj');
+  if (!shpEntry || !dbfEntry) {
+    throw new Error('Archive StatCan : .shp ou .dbf introuvable.');
+  }
+  const prj = prjEntry?.getData().toString('utf-8');
+  if (prj && !/Lambert_Conformal_Conic/i.test(prj)) {
+    console.error(
+      `⚠  .prj inattendu (pas Lambert_Conformal_Conic) — vérifier la reprojection :\n${prj.slice(0, 200)}`,
+    );
+  }
+  return { shp: toArrayBuffer(shpEntry.getData()), dbf: toArrayBuffer(dbfEntry.getData()) };
+}
+
+/** Convertit une feature shapefile en entrée FSA, ou null si non éligible. */
+function featureToEntry(
+  feature: GeoJSON.Feature,
+  seen: ReadonlySet<string>,
+): FsaCentroidEntry | null {
+  const props = (feature.properties ?? {}) as Record<string, unknown>;
+  const fsa = String(props.CFSAUID ?? '').toUpperCase();
+  const province = PRUID_TO_ISO[String(props.PRUID ?? '')] ?? '';
+  if (!FSA_REGEX.test(fsa) || province === '' || seen.has(fsa) || !feature.geometry) {
+    return null;
+  }
+  const centroid = geometryCentroid(feature.geometry);
+  if (!centroid) return null;
+  const [lng, lat] = proj4(EPSG_3347, 'WGS84', [centroid.x, centroid.y]);
+  return {
+    fsa,
+    lat: Math.round(lat * 1e4) / 1e4,
+    lng: Math.round(lng * 1e4) / 1e4,
+    province,
+  };
+}
+
+async function fetchAndParseStatCanShapefile(): Promise<FsaCentroidEntry[]> {
+  const zip = await downloadStatCanZip();
+  const { shp, dbf } = extractShapefileParts(zip);
+  const source = await openShapefile(shp, dbf);
+
+  const out: FsaCentroidEntry[] = [];
+  const seen = new Set<string>();
+  let skipped = 0;
+  for (;;) {
+    const result = await source.read();
+    if (result.done) break;
+    const entry = featureToEntry(result.value as GeoJSON.Feature, seen);
+    if (entry === null) {
+      skipped += 1;
+      continue;
+    }
+    seen.add(entry.fsa);
+    out.push(entry);
+  }
+
+  console.error(`   ${out.length} FSAs parsées (${skipped} entrées ignorées).`);
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -259,7 +399,7 @@ async function main(): Promise<void> {
 
   const output = buildOutput(entries, useBootstrap);
   const outputPath = resolve(process.cwd(), 'packages/shared/src/matching/fsa-centroids.json');
-  writeFileSync(outputPath, JSON.stringify(output, null, 2));
+  writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`);
 
   console.error(`✅ ${entries.length} FSAs écrites dans ${outputPath}`);
   console.error(`   Mode : ${useBootstrap ? 'bootstrap' : 'production'}`);

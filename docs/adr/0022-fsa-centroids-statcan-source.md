@@ -74,6 +74,8 @@ L'OGL-Canada autorise « use, share, alter for any purpose, including commercial
 
 ## Statut d'implémentation (2026-06-03)
 
-Décision adoptée. `tools/build-fsa-centroids.ts` + `packages/shared/src/matching/fsa-centroids.json` (header `meta` : source, URL, version StatCan 2021, licence OGL-Canada) + `EmbeddedFsaCentroidReader` (validation Zod au boot). Procédure annuelle dans `docs/runbooks/matching-fsa-update.md`.
+Décision adoptée et pipeline complet livré. `tools/build-fsa-centroids.ts` implémente : download du zip StatCan → décompression (`adm-zip`) → parsing shapefile (`shapefile`) → centroïde planaire (formule signed-area, plus grande partie pour les MultiPolygon) → reprojection NAD83/Statistics Canada Lambert (EPSG:3347) → WGS84 via `proj4`. Mapping `PRUID` → ISO-3166-2:CA.
 
-⚠️ **Reste à faire avant merge prod** : le fichier livré est une **amorce bootstrap** (`meta.isBootstrap = true`, 41 FSA métros) — suffisante pour les tests unitaires/intégration mais pas pour la prod. Régénérer la table complète (~1 622 FSA) via le script (accès réseau + dépendance `shapefile`) et activer l'invariant CI « ≥ 1 500 entrées » une fois `isBootstrap:false`.
+Table **complète régénérée** : `packages/shared/src/matching/fsa-centroids.json` = **1 643 FSA** (`meta.isBootstrap = false`, ~95 KB), validée (régex FSA, bornes lat/lng Canada, 0 doublon, 13 provinces/territoires). Contrôle de cohérence : les centroïdes des grandes villes (Montréal, Toronto, Vancouver) tombent à ~1-2 km du terrain réel. `EmbeddedFsaCentroidReader` re-valide le fichier au boot (Zod). Quelques FSA non-géographiques (ex. G1A — Assemblée nationale du QC) sont légitimement absentes du fichier de frontières → repli géo neutre (FR-009b).
+
+Garde-fou : le script refuse d'écrire si < 1 500 FSA (anti-corruption / download partiel).
