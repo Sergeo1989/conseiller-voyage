@@ -87,6 +87,9 @@ describe('PerformMatchingUseCase (integration)', () => {
   it.skipIf(skipAll)(
     'scénario 4 idempotence : 2 invocations même briefId → 1 seul MR actif (UNIQUE INDEX réel)',
     async () => {
+      // `skipIf(skipAll)` lit skipAll à la collection ; quand la DB est absente
+      // skipAll passe à true en beforeAll (après collection) → garde explicite.
+      if (skipAll) return;
       // Crée un brief minimal en DB pour le smoke (sans seed conseiller, donc empty)
       const contact = await prisma.voyageurContact.create({
         data: {
@@ -133,6 +136,7 @@ describe('PerformMatchingUseCase (integration)', () => {
   );
 
   it.skipIf(skipAll)('brief_not_found : briefId inconnu → no persistence, no outbox', async () => {
+    if (skipAll) return;
     const result = await useCase.execute({
       briefId: '99999999-9999-4999-8999-999999999999',
     });
