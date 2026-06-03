@@ -12,7 +12,7 @@
 
 import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
 import { MATCHING_QUERY_PORT } from '@cv/shared/matching';
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
 import { SystemClock } from '../../common/infrastructure/system-clock';
 import { CLOCK } from '../../common/ports/clock.port';
@@ -26,6 +26,7 @@ import {
   CONSEILLER_SNAPSHOT_READER,
   FSA_CENTROID_READER,
   MATCHING_AUDIT_WRITER,
+  MATCHING_EVENT_PUBLISHER,
   MATCHING_METRICS_RECORDER,
   MATCHING_OUTBOX_WRITER,
   MATCHING_RESULT_READER,
@@ -40,6 +41,7 @@ import { WeightsConfig } from './domain/value-objects/weights-config.vo';
 import { EmbeddedFsaCentroidReader } from './infrastructure/embedded-fsa-centroid-reader';
 import { AllMatchesRevokedScheduler } from './infrastructure/jobs/all-matches-revoked.scheduler';
 import { BriefActivatedConsumer } from './infrastructure/jobs/brief-activated.consumer';
+import { MatchingOutboxPublisherJob } from './infrastructure/jobs/matching-outbox-publisher.job';
 import { OtelMetricsRecorder } from './infrastructure/otel-metrics-recorder';
 import { PrismaBriefSnapshotReader } from './infrastructure/prisma-brief-snapshot-reader';
 import { PrismaConseillerSnapshotReader } from './infrastructure/prisma-conseiller-snapshot-reader';
@@ -47,8 +49,12 @@ import { PrismaMatchingAuditWriter } from './infrastructure/prisma-matching-audi
 import { PrismaMatchingOutboxWriter } from './infrastructure/prisma-matching-outbox-writer';
 import { PrismaMatchingQueryAdapter } from './infrastructure/prisma-matching-query-adapter';
 import { PrismaMatchingResultRepository } from './infrastructure/prisma-matching-result-repository';
+import { RedisMatchingEventPublisher } from './infrastructure/redis-matching-event-publisher';
 import { RedisRematchLockAdapter } from './infrastructure/redis-rematch-lock';
 import { AdminMatchingController } from './interface/http/admin-matching.controller';
+
+/** Intervalle de drain de l'outbox matching (5 s prod, 30 s dev). */
+const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000 : 5_000;
 
 @Module({
   imports: [BullMqModule, IdentiteModule, ConformiteModule],
@@ -87,6 +93,12 @@ import { AdminMatchingController } from './interface/http/admin-matching.control
 
     OtelMetricsRecorder,
     { provide: MATCHING_METRICS_RECORDER, useExisting: OtelMetricsRecorder },
+
+    // Outbox publisher (T093) — draine matching_outbox_entries vers le bus
+    // Redis (consommable par 012). Scheduling via OnModuleInit ci-dessous.
+    RedisMatchingEventPublisher,
+    { provide: MATCHING_EVENT_PUBLISHER, useExisting: RedisMatchingEventPublisher },
+    MatchingOutboxPublisherJob,
 
     // ---------------------------------------------------------------
     // WeightsConfig — singleton lu depuis env vars MATCHING_WEIGHT_*
@@ -238,4 +250,20 @@ import { AdminMatchingController } from './interface/http/admin-matching.control
   ],
   exports: [MATCHING_QUERY_PORT],
 })
-export class MatchingModule {}
+export class MatchingModule implements OnModuleInit, OnModuleDestroy {
+  private outboxInterval?: NodeJS.Timeout;
+
+  constructor(private readonly outboxJob: MatchingOutboxPublisherJob) {}
+
+  onModuleInit(): void {
+    // Drain de l'outbox matching → bus Redis. 5 s en prod, 30 s en dev
+    // (réduit le bruit), aligné sur le OutboxPublisherJob conformité.
+    this.outboxInterval = setInterval(() => {
+      void this.outboxJob.drain();
+    }, OUTBOX_DRAIN_INTERVAL_MS);
+  }
+
+  onModuleDestroy(): void {
+    if (this.outboxInterval) clearInterval(this.outboxInterval);
+  }
+}
