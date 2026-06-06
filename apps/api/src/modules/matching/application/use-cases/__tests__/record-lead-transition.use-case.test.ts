@@ -53,7 +53,7 @@ describe('RecordLeadTransitionUseCase — US2', () => {
     const res = await uc.execute({ leadId: LEAD_ID, conseillerId: OWNER, action: 'accepter' });
     expect(res).toEqual({ kind: 'applied', newState: 'accepte' });
     expect(store.transitions).toHaveLength(1);
-    expect(store.leads[0].currentState).toBe('accepte');
+    expect(store.leads[0]?.currentState).toBe('accepte');
   });
 
   it('transition invalide (envoye + accepter) → invalid_transition', async () => {
@@ -89,7 +89,8 @@ describe('RecordLeadTransitionUseCase — US2', () => {
     const { store, uc } = build([OWNER]);
     await seedLead(store, 'vu');
     // Simule une transition concurrente : l'état réel est déjà accepte.
-    store.leads[0].currentState = 'accepte';
+    const concurrent = store.leads[0];
+    if (concurrent) concurrent.currentState = 'accepte';
     // L'appelant croit être à vu → guard WHERE currentState = vu échoue.
     const res = await uc.execute({
       leadId: LEAD_ID,
@@ -110,6 +111,6 @@ describe('RecordLeadTransitionUseCase — US2', () => {
       reason: 'voyageur injoignable',
     });
     expect(res).toEqual({ kind: 'applied', newState: 'perdu' });
-    expect(store.transitions[0].reason).toBe('voyageur injoignable');
+    expect(store.transitions[0]?.reason).toBe('voyageur injoignable');
   });
 });

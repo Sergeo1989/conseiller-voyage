@@ -48,7 +48,7 @@ describe('ViewLeadUseCase — US2', () => {
     expect(res.kind).toBe('ok');
     if (res.kind === 'ok') expect(res.lead.currentState).toBe('vu');
     expect(store.transitions).toHaveLength(1);
-    expect(store.transitions[0].toState).toBe('vu');
+    expect(store.transitions[0]?.toState).toBe('vu');
   });
 
   it('2e consultation : idempotent (aucune nouvelle transition)', async () => {
@@ -57,7 +57,7 @@ describe('ViewLeadUseCase — US2', () => {
     await uc.execute({ leadId: LEAD_ID, conseillerId: OWNER });
     await uc.execute({ leadId: LEAD_ID, conseillerId: OWNER });
     expect(store.transitions).toHaveLength(1);
-    expect(store.leads[0].currentState).toBe('vu');
+    expect(store.leads[0]?.currentState).toBe('vu');
   });
 
   it('lead inexistant → not_found', async () => {
