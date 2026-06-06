@@ -6,6 +6,7 @@
 
 export * from './auth';
 export * from './intake';
+export * from './matching';
 export * from './mfa';
 
 export const EMAIL_TEMPLATES_PACKAGE_VERSION = '0.1.0';

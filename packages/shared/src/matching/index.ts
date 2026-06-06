@@ -10,4 +10,6 @@
 export * from './branded-ids';
 export * from './contracts';
 export * from './event-names';
+export * from './lead-query.port';
+export * from './lead-state';
 export * from './schemas';
