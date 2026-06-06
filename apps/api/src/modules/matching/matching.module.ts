@@ -29,6 +29,7 @@ import {
   CONSUMED_EVENT_STORE,
   FSA_CENTROID_READER,
   LEAD_BRIEF_SUMMARY_READER,
+  LEAD_METRICS_RECORDER,
   LEAD_NOTIFICATION_MAILER,
   LEAD_NOTIFICATION_OUTBOX,
   LEAD_READER,
@@ -62,6 +63,7 @@ import {
 import { LeadReconciliationScheduler } from './infrastructure/jobs/lead-reconciliation.scheduler';
 import { MatchingEventsConsumer } from './infrastructure/jobs/matching-events.consumer';
 import { MatchingOutboxPublisherJob } from './infrastructure/jobs/matching-outbox-publisher.job';
+import { OtelLeadMetricsRecorder } from './infrastructure/otel-lead-metrics-recorder';
 import { OtelMetricsRecorder } from './infrastructure/otel-metrics-recorder';
 import { PrismaBriefSnapshotReader } from './infrastructure/prisma-brief-snapshot-reader';
 import { PrismaConseillerIdentityResolver } from './infrastructure/prisma-conseiller-identity-resolver';
@@ -307,6 +309,9 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     PrismaConseillerIdentityResolver,
     { provide: CONSEILLER_IDENTITY_RESOLVER, useExisting: PrismaConseillerIdentityResolver },
 
+    OtelLeadMetricsRecorder,
+    { provide: LEAD_METRICS_RECORDER, useExisting: OtelLeadMetricsRecorder },
+
     // Port public lead (lecture seule) — consommé par 014/015.
     PrismaLeadQueryAdapter,
     { provide: MATCHING_LEAD_QUERY_PORT, useExisting: PrismaLeadQueryAdapter },
@@ -321,6 +326,7 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
         LEAD_WRITER,
         LEAD_NOTIFICATION_OUTBOX,
         CONFORMITE_QUERY_PORT,
+        LEAD_METRICS_RECORDER,
       ],
       useFactory: (
         clock,
@@ -329,6 +335,7 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
         leadWriter,
         notificationOutbox,
         conformiteQuery,
+        metrics,
       ) => ({
         clock,
         uuid,
@@ -336,6 +343,7 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
         leadWriter,
         notificationOutbox,
         conformiteQuery,
+        metrics,
       }),
     },
     {
@@ -347,13 +355,21 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     // Use cases US2 — cycle de vie du lead (HTTP conseiller).
     {
       provide: RecordLeadTransitionUseCase.DEPS_TOKEN,
-      inject: [CLOCK, UUID_GENERATOR, LEAD_READER, LEAD_WRITER, CONFORMITE_QUERY_PORT],
-      useFactory: (clock, uuid, leadReader, leadWriter, conformiteQuery) => ({
+      inject: [
+        CLOCK,
+        UUID_GENERATOR,
+        LEAD_READER,
+        LEAD_WRITER,
+        CONFORMITE_QUERY_PORT,
+        LEAD_METRICS_RECORDER,
+      ],
+      useFactory: (clock, uuid, leadReader, leadWriter, conformiteQuery, metrics) => ({
         clock,
         uuid,
         leadReader,
         leadWriter,
         conformiteQuery,
+        metrics,
       }),
     },
     {

@@ -16,9 +16,16 @@ import {
   OutboxPartiallyMatchedPayloadSchema,
   OutboxUnmatchedPayloadSchema,
 } from '@cv/shared/matching';
+import { Logger } from '@nestjs/common';
 import type { Clock } from '../../../../common/ports/clock.port';
 import type { UuidGenerator } from '../../../../common/ports/uuid-generator.port';
-import type { ConsumedEventStore, LeadNotificationOutboxPort, LeadWriter } from '../ports';
+import {
+  type ConsumedEventStore,
+  type LeadMetricsRecorder,
+  type LeadNotificationOutboxPort,
+  type LeadWriter,
+  noopLeadMetricsRecorder,
+} from '../ports';
 
 export interface ConsumeMatchingEventDeps {
   readonly clock: Clock;
@@ -27,6 +34,8 @@ export interface ConsumeMatchingEventDeps {
   readonly leadWriter: LeadWriter;
   readonly notificationOutbox: LeadNotificationOutboxPort;
   readonly conformiteQuery: ConformiteQueryPort;
+  /** Optionnel — no-op par défaut (tests). */
+  readonly metrics?: LeadMetricsRecorder;
 }
 
 export interface ConsumeMatchingEventInput {
@@ -57,6 +66,11 @@ interface NormalizedEntry {
 
 export class ConsumeMatchingEventUseCase {
   static readonly DEPS_TOKEN = Symbol.for('ConsumeMatchingEventDeps');
+
+  private readonly logger = new Logger(ConsumeMatchingEventUseCase.name);
+  private get metrics(): LeadMetricsRecorder {
+    return this.deps.metrics ?? noopLeadMetricsRecorder;
+  }
 
   constructor(private readonly deps: ConsumeMatchingEventDeps) {}
 
@@ -90,6 +104,8 @@ export class ConsumeMatchingEventUseCase {
       occurredAt: this.deps.clock.now(),
     });
     await this.deps.consumedEvents.recordConsumed(input.idempotencyKey, input.name);
+    for (let i = 0; i < leadsClosed; i += 1) this.metrics.recordLeadTransition('perdu');
+    this.logger.log(`all_matches_revoked MR=${p.matchingResultId} → ${leadsClosed} lead(s) perdus`);
     return { kind: 'revoked', leadsClosed };
   }
 
@@ -119,6 +135,12 @@ export class ConsumeMatchingEventUseCase {
     }
 
     await this.deps.consumedEvents.recordConsumed(input.idempotencyKey, input.name);
+
+    for (let i = 0; i < supersededClosed; i += 1) this.metrics.recordLeadTransition('perdu');
+    this.logger.log(
+      `matched MR=${matchingResultId} brief=${briefId} → ${leadsCreated} lead(s), ` +
+        `${notificationsPending} notif, ${skippedUnverified} skip, ${supersededClosed} superseded`,
+    );
 
     return {
       kind: 'processed',
@@ -183,6 +205,7 @@ export class ConsumeMatchingEventUseCase {
       createdAt: now,
     });
 
+    if (created.kind === 'created') this.metrics.recordLeadCreated();
     return { leadCreated: created.kind === 'created', verified: status.verified };
   }
 

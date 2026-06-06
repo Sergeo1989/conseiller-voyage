@@ -13,7 +13,12 @@ import type { LeadState } from '@cv/shared/matching';
 import type { Clock } from '../../../../common/ports/clock.port';
 import type { UuidGenerator } from '../../../../common/ports/uuid-generator.port';
 import { applyLeadTransition } from '../../domain/services/apply-lead-transition';
-import type { LeadReader, LeadWriter } from '../ports';
+import {
+  type LeadMetricsRecorder,
+  type LeadReader,
+  type LeadWriter,
+  noopLeadMetricsRecorder,
+} from '../ports';
 
 /** Actions exposées au conseiller (clore_systeme est réservé au système). */
 export type ConseillerLeadAction =
@@ -29,6 +34,8 @@ export interface RecordLeadTransitionDeps {
   readonly leadReader: LeadReader;
   readonly leadWriter: LeadWriter;
   readonly conformiteQuery: ConformiteQueryPort;
+  /** Optionnel — no-op par défaut (tests). */
+  readonly metrics?: LeadMetricsRecorder;
 }
 
 export interface RecordLeadTransitionInput {
@@ -83,6 +90,7 @@ export class RecordLeadTransitionUseCase {
       occurredAt: this.deps.clock.now(),
     });
     if (appended.kind === 'conflict') return { kind: 'conflict' };
+    (this.deps.metrics ?? noopLeadMetricsRecorder).recordLeadTransition(outcome.toState);
     return { kind: 'applied', newState: outcome.toState };
   }
 }

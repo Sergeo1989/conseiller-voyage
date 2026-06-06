@@ -18,6 +18,7 @@ export * from './redis-rematch-lock.port';
 export * from './conseiller-identity-resolver.port';
 export * from './consumed-event-store.port';
 export * from './lead-brief-summary-reader.port';
+export * from './lead-metrics-recorder.port';
 export * from './lead-notification-mailer.port';
 export * from './lead-notification-outbox.port';
 export * from './lead-reader.port';

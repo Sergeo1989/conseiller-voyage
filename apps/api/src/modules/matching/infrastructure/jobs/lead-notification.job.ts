@@ -15,10 +15,12 @@ import type { Job, Queue } from 'bullmq';
 import { CLOCK, type Clock } from '../../../../common/ports/clock.port';
 import {
   LEAD_BRIEF_SUMMARY_READER,
+  LEAD_METRICS_RECORDER,
   LEAD_NOTIFICATION_MAILER,
   LEAD_NOTIFICATION_OUTBOX,
   LEAD_READER,
   type LeadBriefSummaryReader,
+  type LeadMetricsRecorder,
   type LeadNotificationMailer,
   type LeadNotificationOutboxPort,
   type LeadReader,
@@ -87,6 +89,7 @@ export class LeadNotificationSender {
     @Inject(LEAD_NOTIFICATION_MAILER) private readonly mailer: LeadNotificationMailer,
     @Inject(LEAD_NOTIFICATION_OUTBOX) private readonly outbox: LeadNotificationOutboxPort,
     @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(LEAD_METRICS_RECORDER) private readonly metrics: LeadMetricsRecorder,
   ) {}
 
   /** Traite une notification. Lève si SES échoue (→ retry BullMQ). */
@@ -108,21 +111,30 @@ export class LeadNotificationSender {
       return;
     }
 
-    const result = await this.mailer.sendLeadReceived({
-      conseillerId: data.conseillerId,
-      leadId: data.leadId,
-      briefSummary: summary,
-    });
+    let result: Awaited<ReturnType<LeadNotificationMailer['sendLeadReceived']>>;
+    try {
+      result = await this.mailer.sendLeadReceived({
+        conseillerId: data.conseillerId,
+        leadId: data.leadId,
+        briefSummary: summary,
+      });
+    } catch (err) {
+      // Échec transitoire (SES HS) → métrique + propagation pour retry BullMQ.
+      this.metrics.recordNotificationFailed();
+      throw err;
+    }
 
     switch (result.kind) {
       case 'sent':
         await this.outbox.markSent(data.notificationId, this.clock.now());
+        this.metrics.recordNotificationSent();
         break;
       case 'skipped_unverified':
         await this.outbox.markSkippedUnverified(data.notificationId);
         break;
       case 'skipped_no_address':
         await this.outbox.markFailed(data.notificationId, 'no_address');
+        this.metrics.recordNotificationFailed();
         break;
     }
   }
