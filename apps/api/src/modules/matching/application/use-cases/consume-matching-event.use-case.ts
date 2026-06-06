@@ -11,6 +11,7 @@
 import type { ConformiteQueryPort } from '@cv/shared/conformite';
 import {
   type MatchingEventBusName,
+  OutboxAllMatchesRevokedPayloadSchema,
   OutboxMatchedPayloadSchema,
   OutboxPartiallyMatchedPayloadSchema,
   OutboxUnmatchedPayloadSchema,
@@ -41,9 +42,11 @@ export type ConsumeMatchingEventResult =
       readonly leadsCreated: number;
       readonly notificationsPending: number;
       readonly skippedUnverified: number;
+      /** Leads d'un MR antérieur du même brief clôturés (re-match, FR-018). */
+      readonly supersededClosed: number;
     }
   | { readonly kind: 'unmatched' }
-  | { readonly kind: 'ignored' }; // all_matches_revoked — traité en Phase 5
+  | { readonly kind: 'revoked'; readonly leadsClosed: number }; // all_matches_revoked
 
 interface NormalizedEntry {
   readonly position: 1 | 2 | 3;
@@ -58,13 +61,12 @@ export class ConsumeMatchingEventUseCase {
   constructor(private readonly deps: ConsumeMatchingEventDeps) {}
 
   async execute(input: ConsumeMatchingEventInput): Promise<ConsumeMatchingEventResult> {
-    // all_matches_revoked : clôture des leads en Phase 5 (T048).
-    if (input.name === 'voyageur.brief.all_matches_revoked') {
-      return { kind: 'ignored' };
-    }
-
     if (await this.deps.consumedEvents.hasConsumed(input.idempotencyKey)) {
       return { kind: 'duplicate' };
+    }
+
+    if (input.name === 'voyageur.brief.all_matches_revoked') {
+      return this.handleAllRevoked(input);
     }
 
     if (input.name === 'voyageur.brief.unmatched') {
@@ -74,7 +76,36 @@ export class ConsumeMatchingEventUseCase {
       return { kind: 'unmatched' };
     }
 
+    return this.handleMatched(input);
+  }
+
+  /** all_matches_revoked : clôture les leads du MR en `perdu`, aucune notification. */
+  private async handleAllRevoked(
+    input: ConsumeMatchingEventInput,
+  ): Promise<ConsumeMatchingEventResult> {
+    const p = OutboxAllMatchesRevokedPayloadSchema.parse(input.payload);
+    const leadsClosed = await this.deps.leadWriter.closeLeadsSystem({
+      matchingResultId: p.matchingResultId,
+      reason: 'all_matches_revoked',
+      occurredAt: this.deps.clock.now(),
+    });
+    await this.deps.consumedEvents.recordConsumed(input.idempotencyKey, input.name);
+    return { kind: 'revoked', leadsClosed };
+  }
+
+  /** matched / partially_matched : supersession (FR-018) + leads + notifications. */
+  private async handleMatched(
+    input: ConsumeMatchingEventInput,
+  ): Promise<ConsumeMatchingEventResult> {
     const { matchingResultId, briefId, entries } = this.parseMatched(input);
+
+    // Supersession re-match : clôture les leads non terminaux d'un MR antérieur.
+    const supersededClosed = await this.deps.leadWriter.closeSupersededLeadsForBrief({
+      briefId,
+      currentMatchingResultId: matchingResultId,
+      reason: 're-matched',
+      occurredAt: this.deps.clock.now(),
+    });
 
     let leadsCreated = 0;
     let notificationsPending = 0;
@@ -89,7 +120,13 @@ export class ConsumeMatchingEventUseCase {
 
     await this.deps.consumedEvents.recordConsumed(input.idempotencyKey, input.name);
 
-    return { kind: 'processed', leadsCreated, notificationsPending, skippedUnverified };
+    return {
+      kind: 'processed',
+      leadsCreated,
+      notificationsPending,
+      skippedUnverified,
+      supersededClosed,
+    };
   }
 
   /** Crée le lead + enqueue la notification pour une entry (idempotent). */
