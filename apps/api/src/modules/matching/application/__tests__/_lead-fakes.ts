@@ -10,6 +10,7 @@ import type {
   AppendTransitionInput,
   AppendTransitionResult,
   CloseLeadsSystemInput,
+  CloseSupersededLeadsInput,
   ConsumedEventStore,
   CreateLeadInput,
   CreateLeadResult,
@@ -176,6 +177,31 @@ export class FakeLeadWriter implements LeadWriter {
       if (isTerminalLeadState(lead.currentState)) continue;
       this.store.transitions.push({
         id: `close-${lead.id}`,
+        leadId: lead.id,
+        fromState: lead.currentState,
+        toState: 'perdu',
+        action: 'clore_systeme',
+        actor: 'systeme',
+        actorId: null,
+        reason: input.reason,
+        occurredAt: input.occurredAt,
+      });
+      lead.currentState = 'perdu';
+      lead.closeReason = input.reason;
+      lead.updatedAt = input.occurredAt;
+      count += 1;
+    }
+    return count;
+  }
+
+  async closeSupersededLeadsForBrief(input: CloseSupersededLeadsInput): Promise<number> {
+    let count = 0;
+    for (const lead of this.store.leads) {
+      if (lead.briefId !== input.briefId) continue;
+      if (lead.matchingResultId === input.currentMatchingResultId) continue;
+      if (isTerminalLeadState(lead.currentState)) continue;
+      this.store.transitions.push({
+        id: `superseded-${lead.id}`,
         leadId: lead.id,
         fromState: lead.currentState,
         toState: 'perdu',

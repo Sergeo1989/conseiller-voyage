@@ -16,6 +16,7 @@ import type {
   AppendTransitionInput,
   AppendTransitionResult,
   CloseLeadsSystemInput,
+  CloseSupersededLeadsInput,
   CreateLeadInput,
   CreateLeadResult,
   LeadReader,
@@ -96,19 +97,37 @@ export class PrismaLeadRepository implements LeadWriter, LeadReader {
   }
 
   async closeLeadsSystem(input: CloseLeadsSystemInput): Promise<number> {
+    return this.closeWhere(
+      { matchingResultId: input.matchingResultId, currentState: { in: ACTIVE_STATES } },
+      input.reason,
+      input.occurredAt,
+    );
+  }
+
+  async closeSupersededLeadsForBrief(input: CloseSupersededLeadsInput): Promise<number> {
+    return this.closeWhere(
+      {
+        briefId: input.briefId,
+        matchingResultId: { not: input.currentMatchingResultId },
+        currentState: { in: ACTIVE_STATES },
+      },
+      input.reason,
+      input.occurredAt,
+    );
+  }
+
+  /** Clôture transactionnelle en `perdu` (systeme) des leads ciblés + 1 transition/lead. */
+  private async closeWhere(
+    where: Prisma.LeadWhereInput,
+    reason: string,
+    occurredAt: Date,
+  ): Promise<number> {
     return prisma.$transaction(async (tx) => {
-      const leads = await tx.lead.findMany({
-        where: { matchingResultId: input.matchingResultId, currentState: { in: ACTIVE_STATES } },
-        select: { id: true, currentState: true },
-      });
+      const leads = await tx.lead.findMany({ where, select: { id: true, currentState: true } });
       for (const lead of leads) {
         await tx.lead.update({
           where: { id: lead.id },
-          data: {
-            currentState: 'perdu',
-            closeReason: input.reason,
-            updatedAt: input.occurredAt,
-          },
+          data: { currentState: 'perdu', closeReason: reason, updatedAt: occurredAt },
         });
         await tx.leadTransition.create({
           data: {
@@ -118,8 +137,8 @@ export class PrismaLeadRepository implements LeadWriter, LeadReader {
             action: 'clore_systeme',
             actor: 'systeme',
             actorId: null,
-            reason: input.reason,
-            occurredAt: input.occurredAt,
+            reason,
+            occurredAt,
           },
         });
       }

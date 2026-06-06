@@ -56,6 +56,14 @@ export interface CloseLeadsSystemInput {
   readonly occurredAt: Date;
 }
 
+export interface CloseSupersededLeadsInput {
+  readonly briefId: string;
+  /** MatchingResult courant (nouveau) — ses leads ne sont PAS clôturés. */
+  readonly currentMatchingResultId: string;
+  readonly reason: LeadSystemCloseReason;
+  readonly occurredAt: Date;
+}
+
 export interface LeadWriter {
   createLead(input: CreateLeadInput): Promise<CreateLeadResult>;
 
@@ -67,6 +75,13 @@ export interface LeadWriter {
    * clôturé. Retourne le nombre de leads effectivement clôturés.
    */
   closeLeadsSystem(input: CloseLeadsSystemInput): Promise<number>;
+
+  /**
+   * Supersession re-match (FR-018) : clôture en `perdu` les leads non terminaux
+   * d'un brief appartenant à un **autre** MatchingResult que le courant.
+   * Retourne le nombre de leads clôturés.
+   */
+  closeSupersededLeadsForBrief(input: CloseSupersededLeadsInput): Promise<number>;
 }
 
 export const LEAD_WRITER = Symbol.for('LeadWriter');

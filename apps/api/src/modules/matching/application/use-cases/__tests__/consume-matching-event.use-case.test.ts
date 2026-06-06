@@ -65,6 +65,7 @@ describe('ConsumeMatchingEventUseCase — US1', () => {
       leadsCreated: 3,
       notificationsPending: 3,
       skippedUnverified: 0,
+      supersededClosed: 0,
     });
     expect(store.leads).toHaveLength(3);
     expect(store.notifications.filter((n) => n.status === 'pending')).toHaveLength(3);
@@ -140,9 +141,91 @@ describe('ConsumeMatchingEventUseCase — US1', () => {
       leadsCreated: 3,
       notificationsPending: 2,
       skippedUnverified: 1,
+      supersededClosed: 0,
     });
     const c2Notif = store.notifications.find((n) => n.conseillerId === C2);
     expect(c2Notif?.status).toBe('skipped_unverified');
     expect(store.notifications.filter((n) => n.status === 'pending')).toHaveLength(2);
+  });
+});
+
+describe('ConsumeMatchingEventUseCase — US3 supersession + all_revoked', () => {
+  const OLD_MR = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+
+  async function seedOldLead(store: LeadFakeStore) {
+    await new FakeLeadWriter(store).createLead({
+      id: 'd0000000-0000-4000-8000-000000000001',
+      matchingResultId: OLD_MR,
+      matchingResultEntryPosition: 1,
+      conseillerId: C1,
+      briefId: BRIEF_ID,
+      scoreFinal: 0.7,
+      boosted: false,
+      createdAt: new Date('2026-06-04T10:00:00Z'),
+    });
+  }
+
+  it('re-match (FR-018) : leads de l’ancien MR → perdu (re-matched), nouveaux créés', async () => {
+    const { store, uc } = build([C1, C2, C3]);
+    await seedOldLead(store);
+    const res = await uc.execute(matchedEvent('evt-rematch-1'));
+    expect(res.kind).toBe('processed');
+    if (res.kind === 'processed') expect(res.supersededClosed).toBe(1);
+    // L'ancien lead est clôturé en perdu (motif re-matched).
+    const old = store.leads.find((l) => l.matchingResultId === OLD_MR);
+    expect(old?.currentState).toBe('perdu');
+    expect(old?.closeReason).toBe('re-matched');
+    // 3 nouveaux leads créés pour le nouveau MR.
+    expect(store.leads.filter((l) => l.matchingResultId === MR_ID)).toHaveLength(3);
+    // Au plus 1 lead actif par (conseiller × brief) — SC-008.
+    const activeForC1 = store.leads.filter(
+      (l) => l.conseillerId === C1 && l.briefId === BRIEF_ID && l.currentState !== 'perdu',
+    );
+    expect(activeForC1).toHaveLength(1);
+  });
+
+  it('all_matches_revoked : leads clôturés perdu, aucune notification', async () => {
+    const { store, uc } = build([C1, C2, C3]);
+    // Crée d'abord les leads via matched.
+    await uc.execute(matchedEvent('evt-pre-revoke'));
+    expect(store.leads.filter((l) => l.currentState === 'envoye')).toHaveLength(3);
+    const notifsBefore = store.notifications.length;
+
+    const res = await uc.execute({
+      name: 'voyageur.brief.all_matches_revoked',
+      idempotencyKey: 'evt-allrevoked-1',
+      payload: {
+        matchingResultId: MR_ID,
+        briefId: BRIEF_ID,
+        algorithmVersion: 'v1.0',
+        originalComputedAt: '2026-06-05T11:00:00.000Z',
+        revokedAt: '2026-06-05T11:59:00.000Z',
+        revokedConseillerIds: [C1, C2, C3],
+      },
+    });
+    expect(res.kind).toBe('revoked');
+    if (res.kind === 'revoked') expect(res.leadsClosed).toBe(3);
+    expect(store.leads.every((l) => l.currentState === 'perdu')).toBe(true);
+    expect(store.leads.every((l) => l.closeReason === 'all_matches_revoked')).toBe(true);
+    // Aucune notification supplémentaire émise pour la révocation.
+    expect(store.notifications).toHaveLength(notifsBefore);
+  });
+
+  it('all_matches_revoked rejoué → duplicate (idempotent)', async () => {
+    const { uc } = build([C1, C2, C3]);
+    const event = {
+      name: 'voyageur.brief.all_matches_revoked' as const,
+      idempotencyKey: 'evt-allrevoked-2',
+      payload: {
+        matchingResultId: MR_ID,
+        briefId: BRIEF_ID,
+        algorithmVersion: 'v1.0',
+        originalComputedAt: '2026-06-05T11:00:00.000Z',
+        revokedAt: '2026-06-05T11:59:00.000Z',
+        revokedConseillerIds: [C1, C2, C3],
+      },
+    };
+    await uc.execute(event);
+    expect((await uc.execute(event)).kind).toBe('duplicate');
   });
 });
