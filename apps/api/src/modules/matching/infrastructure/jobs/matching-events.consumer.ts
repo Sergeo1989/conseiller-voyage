@@ -21,8 +21,8 @@ import {
 import type { Redis } from 'ioredis';
 import { REDIS_CLIENT } from '../../../../common/interceptors/idempotency.interceptor';
 import { env } from '../../../../env';
-import type { ConsumeMatchingEventUseCase } from '../../application/use-cases/consume-matching-event.use-case';
-import type { LeadNotificationDispatcher } from './lead-notification.job';
+import { ConsumeMatchingEventUseCase } from '../../application/use-cases/consume-matching-event.use-case';
+import { LeadNotificationDispatcher } from './lead-notification.job';
 
 @Injectable()
 export class MatchingEventsConsumer implements OnModuleInit, OnModuleDestroy {
@@ -31,7 +31,9 @@ export class MatchingEventsConsumer implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    @Inject(ConsumeMatchingEventUseCase)
     private readonly consumeUseCase: ConsumeMatchingEventUseCase,
+    @Inject(LeadNotificationDispatcher)
     private readonly dispatcher: LeadNotificationDispatcher,
   ) {}
 

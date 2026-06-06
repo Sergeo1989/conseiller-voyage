@@ -45,6 +45,7 @@ import { ConsumeMatchingEventUseCase } from './application/use-cases/consume-mat
 import { DetectAllMatchesRevokedUseCase } from './application/use-cases/detect-all-matches-revoked.use-case';
 import { PerformMatchingUseCase } from './application/use-cases/perform-matching.use-case';
 import { QueryMatchingResultUseCase } from './application/use-cases/query-matching-result.use-case';
+import { ReconcileLeadsUseCase } from './application/use-cases/reconcile-leads.use-case';
 import { RecordLeadTransitionUseCase } from './application/use-cases/record-lead-transition.use-case';
 import { TriggerRematchUseCase } from './application/use-cases/trigger-rematch.use-case';
 import { ViewLeadUseCase } from './application/use-cases/view-lead.use-case';
@@ -58,6 +59,7 @@ import {
   LeadNotificationSender,
   LeadNotificationWorker,
 } from './infrastructure/jobs/lead-notification.job';
+import { LeadReconciliationScheduler } from './infrastructure/jobs/lead-reconciliation.scheduler';
 import { MatchingEventsConsumer } from './infrastructure/jobs/matching-events.consumer';
 import { MatchingOutboxPublisherJob } from './infrastructure/jobs/matching-outbox-publisher.job';
 import { OtelMetricsRecorder } from './infrastructure/otel-metrics-recorder';
@@ -80,6 +82,9 @@ import { ConseillerLeadController } from './interface/http/conseiller-lead.contr
 
 /** Intervalle de drain de l'outbox matching (5 s prod, 30 s dev). */
 const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000 : 5_000;
+
+/** Intervalle du sweep de réconciliation des leads (filet bus HS). */
+const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_000 : 60_000;
 
 @Module({
   imports: [
@@ -367,6 +372,23 @@ const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000
       useFactory: (deps) => new ViewLeadUseCase(deps),
     },
 
+    // Use case US3 — sweep de réconciliation (mode dégradé bus HS).
+    {
+      provide: ReconcileLeadsUseCase.DEPS_TOKEN,
+      inject: [LEAD_READER, MATCHING_RESULT_READER, ConsumeMatchingEventUseCase],
+      useFactory: (leadReader, matchingResultReader, consume) => ({
+        leadReader,
+        matchingResultReader,
+        consume,
+      }),
+    },
+    {
+      provide: ReconcileLeadsUseCase,
+      inject: [ReconcileLeadsUseCase.DEPS_TOKEN],
+      useFactory: (deps) => new ReconcileLeadsUseCase(deps),
+    },
+    LeadReconciliationScheduler,
+
     // Jobs notifications conseiller (un job par destinataire) + consumer bus.
     LeadNotificationDispatcher,
     LeadNotificationSender,
@@ -378,10 +400,12 @@ const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000
 export class MatchingModule implements OnModuleInit, OnModuleDestroy {
   private outboxInterval?: NodeJS.Timeout;
   private leadDispatchInterval?: NodeJS.Timeout;
+  private leadReconcileInterval?: NodeJS.Timeout;
 
   constructor(
     private readonly outboxJob: MatchingOutboxPublisherJob,
     private readonly leadDispatcher: LeadNotificationDispatcher,
+    private readonly leadReconciliation: LeadReconciliationScheduler,
   ) {}
 
   onModuleInit(): void {
@@ -396,10 +420,17 @@ export class MatchingModule implements OnModuleInit, OnModuleDestroy {
     this.leadDispatchInterval = setInterval(() => {
       void this.leadDispatcher.dispatchPending();
     }, OUTBOX_DRAIN_INTERVAL_MS);
+
+    // Sweep de réconciliation des leads (filet « bus HS », ADR-0026) — moins
+    // fréquent : le pub/sub couvre le cas nominal.
+    this.leadReconcileInterval = setInterval(() => {
+      void this.leadReconciliation.sweep();
+    }, LEAD_RECONCILE_INTERVAL_MS);
   }
 
   onModuleDestroy(): void {
     if (this.outboxInterval) clearInterval(this.outboxInterval);
     if (this.leadDispatchInterval) clearInterval(this.leadDispatchInterval);
+    if (this.leadReconcileInterval) clearInterval(this.leadReconcileInterval);
   }
 }

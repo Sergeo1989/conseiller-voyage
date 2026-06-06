@@ -129,6 +129,28 @@ export class ConsumeMatchingEventUseCase {
     };
   }
 
+  /**
+   * Rejoue la création des leads + notifications pour un MatchingResult donné
+   * (sweep de réconciliation, mode dégradé bus HS — ADR-0026). Idempotent via
+   * les contraintes UNIQUE DB ; ne touche PAS la dédup d'événements.
+   */
+  async replayMatchingResult(input: {
+    matchingResultId: string;
+    briefId: string;
+    entries: ReadonlyArray<NormalizedEntry>;
+  }): Promise<{ leadsCreated: number; notificationsPending: number; skippedUnverified: number }> {
+    let leadsCreated = 0;
+    let notificationsPending = 0;
+    let skippedUnverified = 0;
+    for (const entry of input.entries) {
+      const outcome = await this.processEntry(input.matchingResultId, input.briefId, entry);
+      if (outcome.leadCreated) leadsCreated += 1;
+      if (outcome.verified) notificationsPending += 1;
+      else skippedUnverified += 1;
+    }
+    return { leadsCreated, notificationsPending, skippedUnverified };
+  }
+
   /** Crée le lead + enqueue la notification pour une entry (idempotent). */
   private async processEntry(
     matchingResultId: string,
