@@ -22,11 +22,11 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 
 ## Phase 1 : Setup — Infrastructure partagée
 
-- [ ] T001 [P] Étendre `packages/shared/src/matching/` — ajouter `lead-state.ts` (enum `LeadState`, `LeadAction`, `LeadTransitionActor` + schemas Zod) et le contrat `lead-query.port.ts` (interface `MatchingLeadQueryPort` + vues `LeadDetailView`/`LeadAdminListView`/`BriefLeadsSummaryView` + token `MATCHING_LEAD_QUERY_PORT`), re-exports dans `index.ts`.
-- [ ] T002 [P] Créer le gabarit courriel `packages/email-templates/src/matching/lead-received.tsx` (react-email, FR-CA, résumé brief NON sensible + lien espace conseiller, AUCUNE PII de contact) + export depuis le barrel `matching/`.
-- [ ] T003 [P] Créer `docs/adr/0025-lead-state-machine.md` (statut Proposed) — états + table de transitions + fonction pure TDD (cf. research R4).
-- [ ] T004 [P] Créer `docs/adr/0026-lead-bus-consumption-reconciliation.md` (statut Proposed) — abonnement pub/sub `matching.events` + sweep de réconciliation (résilience pub/sub-lossy, cf. research R1).
-- [ ] T005 [P] Mettre à jour `apps/api/src/modules/matching/README.md` — section Leads (rôle, dépendances 001/006, endpoints conseiller, événements consommés, ADRs 0025-0026).
+- [X] T001 [P] Étendre `packages/shared/src/matching/` — ajouter `lead-state.ts` (enum `LeadState`, `LeadAction`, `LeadTransitionActor` + schemas Zod) et le contrat `lead-query.port.ts` (interface `MatchingLeadQueryPort` + vues `LeadDetailView`/`LeadAdminListView`/`BriefLeadsSummaryView` + token `MATCHING_LEAD_QUERY_PORT`), re-exports dans `index.ts`.
+- [X] T002 [P] Créer le gabarit courriel `packages/email-templates/src/matching/lead-received.tsx` (react-email, FR-CA, résumé brief NON sensible + lien espace conseiller, AUCUNE PII de contact) + export depuis le barrel `matching/`.
+- [X] T003 [P] Créer `docs/adr/0025-lead-state-machine.md` (statut Proposed) — états + table de transitions + fonction pure TDD (cf. research R4).
+- [X] T004 [P] Créer `docs/adr/0026-lead-bus-consumption-reconciliation.md` (statut Proposed) — abonnement pub/sub `matching.events` + sweep de réconciliation (résilience pub/sub-lossy, cf. research R1).
+- [X] T005 [P] Mettre à jour `apps/api/src/modules/matching/README.md` — section Leads (rôle, dépendances 001/006, endpoints conseiller, événements consommés, ADRs 0025-0026).
 
 **Smoke test Phase 1** : `pnpm typecheck` OK, `pnpm lint` OK, gabarit email rendu sans erreur.
 
@@ -38,21 +38,21 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 
 ### Schéma DB et migrations (séquentielles)
 
-- [ ] T006 Compléter `packages/db/prisma/schema/matching.prisma` — modèles `Lead`, `LeadTransition`, `LeadNotificationOutbox`, `ConsumedMatchingEvent` + enums (`LeadState`, `LeadAction`, `LeadTransitionActor`, `LeadNotificationStatus`) + index + CHECK position ∈ {1,2,3} + UNIQUE(conseillerId, matchingResultId) (data-model §Entités).
-- [ ] T007 Migration `2026XXXX_init_lead/migration.sql` — tables + enums + index + contraintes, via `prisma migrate diff` filtré sur `lead_*` / `consumed_matching_events`.
-- [ ] T008 Migration `2026XXXX_lead_transitions_append_only/migration.sql` — trigger Postgres `BEFORE UPDATE OR DELETE OR TRUNCATE` sur `lead_transitions` (réutilise `raise_append_only_error`).
-- [ ] T009 Migration `2026XXXX_lead_anonymisation_cascade/migration.sql` — trigger `AFTER UPDATE` sur `intake_voyageur_briefs` (status → `anonymized`) : `UPDATE leads SET briefId = NULL WHERE briefId = OLD.id`. **JAMAIS toucher `lead_transitions`** (audit Loi 25, cf. ADR-0023/0026).
+- [X] T006 Compléter `packages/db/prisma/schema/matching.prisma` — modèles `Lead`, `LeadTransition`, `LeadNotificationOutbox`, `ConsumedMatchingEvent` + enums (`LeadState`, `LeadAction`, `LeadTransitionActor`, `LeadNotificationStatus`) + index + CHECK position ∈ {1,2,3} + UNIQUE(conseillerId, matchingResultId) (data-model §Entités).
+- [X] T007 Migration `2026XXXX_init_lead/migration.sql` — tables + enums + index + contraintes, via `prisma migrate diff` filtré sur `lead_*` / `consumed_matching_events`.
+- [X] T008 Migration `2026XXXX_lead_transitions_append_only/migration.sql` — trigger Postgres `BEFORE UPDATE OR DELETE OR TRUNCATE` sur `lead_transitions` (réutilise `raise_append_only_error`).
+- [X] T009 Migration `2026XXXX_lead_anonymisation_cascade/migration.sql` — trigger `AFTER UPDATE` sur `intake_voyageur_briefs` (status → `anonymized`) : `UPDATE leads SET briefId = NULL WHERE briefId = OLD.id`. **JAMAIS toucher `lead_transitions`** (audit Loi 25, cf. ADR-0023/0026).
 
 ### Shared + ports (parallélisables)
 
-- [ ] T010 [P] Créer `packages/shared/src/matching/lead-branded-ids.ts` — `LeadId`, `LeadTransitionId`, `LeadNotificationId` (branded UUID + asserts + schemas Zod).
-- [ ] T011 [P] Créer `apps/api/src/modules/matching/application/ports/lead-writer.port.ts` — `createLead(input)`, `appendTransition(leadId, transition, expectedState)` (guard concurrence optimiste), `closeLeadsSystem(matchingResultId, reason)`.
-- [ ] T012 [P] Créer `.../ports/lead-reader.port.ts` — `findById`, `listByConseiller(filter)`, `findActiveByBriefAndConseiller`, `findActiveMatchingResultsWithoutLead(limit)` (pour le sweep).
-- [ ] T013 [P] Créer `.../ports/lead-notification-outbox.port.ts` — `enqueue(entry)` (UNIQUE idempotencyKey), `scanPending(limit)`, `markSent/markFailed`.
-- [ ] T014 [P] Créer `.../ports/lead-notification-mailer.port.ts` — `sendLeadReceived(conseillerId, briefSummary)` ; résout l'adresse via le module identité (jamais stockée).
-- [ ] T015 [P] Créer `.../ports/consumed-event-store.port.ts` — `hasConsumed(idempotencyKey)`, `recordConsumed(idempotencyKey, eventName)`.
-- [ ] T016 [P] Créer `.../ports/index.ts` (leads) + tokens DI `Symbol.for(...)`.
-- [ ] T017 Étendre `apps/api/src/modules/matching/matching.module.ts` — providers placeholder (ajoutés au fil des phases) + imports IdentiteModule (résolution adresse conseiller).
+- [X] T010 [P] Créer `packages/shared/src/matching/lead-branded-ids.ts` — `LeadId`, `LeadTransitionId`, `LeadNotificationId` (branded UUID + asserts + schemas Zod).
+- [X] T011 [P] Créer `apps/api/src/modules/matching/application/ports/lead-writer.port.ts` — `createLead(input)`, `appendTransition(leadId, transition, expectedState)` (guard concurrence optimiste), `closeLeadsSystem(matchingResultId, reason)`.
+- [X] T012 [P] Créer `.../ports/lead-reader.port.ts` — `findById`, `listByConseiller(filter)`, `findActiveByBriefAndConseiller`, `findActiveMatchingResultsWithoutLead(limit)` (pour le sweep).
+- [X] T013 [P] Créer `.../ports/lead-notification-outbox.port.ts` — `enqueue(entry)` (UNIQUE idempotencyKey), `scanPending(limit)`, `markSent/markFailed`.
+- [X] T014 [P] Créer `.../ports/lead-notification-mailer.port.ts` — `sendLeadReceived(conseillerId, briefSummary)` ; résout l'adresse via le module identité (jamais stockée).
+- [X] T015 [P] Créer `.../ports/consumed-event-store.port.ts` — `hasConsumed(idempotencyKey)`, `recordConsumed(idempotencyKey, eventName)`.
+- [X] T016 [P] Créer `.../ports/index.ts` (leads) + tokens DI `Symbol.for(...)`.
+- [X] T017 Étendre `apps/api/src/modules/matching/matching.module.ts` — providers placeholder (ajoutés au fil des phases) + imports IdentiteModule (résolution adresse conseiller).
 
 **Smoke test Phase 2** : `pnpm db:migrate` applique les 3 migrations, `pnpm prisma:generate` OK, `pnpm typecheck` OK, aucune régression sur les tests 011 existants.
 
