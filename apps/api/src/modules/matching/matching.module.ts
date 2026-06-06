@@ -12,6 +12,7 @@
 
 import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
 import { MATCHING_QUERY_PORT } from '@cv/shared/matching';
+import { BullModule } from '@nestjs/bullmq';
 import { Module, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
 import { SystemClock } from '../../common/infrastructure/system-clock';
@@ -24,7 +25,13 @@ import { IdentiteModule } from '../identite/identite.module';
 import {
   BRIEF_SNAPSHOT_READER,
   CONSEILLER_SNAPSHOT_READER,
+  CONSUMED_EVENT_STORE,
   FSA_CENTROID_READER,
+  LEAD_BRIEF_SUMMARY_READER,
+  LEAD_NOTIFICATION_MAILER,
+  LEAD_NOTIFICATION_OUTBOX,
+  LEAD_READER,
+  LEAD_WRITER,
   MATCHING_AUDIT_WRITER,
   MATCHING_EVENT_PUBLISHER,
   MATCHING_METRICS_RECORDER,
@@ -33,6 +40,7 @@ import {
   MATCHING_RESULT_WRITER,
   REDIS_REMATCH_LOCK,
 } from './application/ports';
+import { ConsumeMatchingEventUseCase } from './application/use-cases/consume-matching-event.use-case';
 import { DetectAllMatchesRevokedUseCase } from './application/use-cases/detect-all-matches-revoked.use-case';
 import { PerformMatchingUseCase } from './application/use-cases/perform-matching.use-case';
 import { QueryMatchingResultUseCase } from './application/use-cases/query-matching-result.use-case';
@@ -41,23 +49,41 @@ import { WeightsConfig } from './domain/value-objects/weights-config.vo';
 import { EmbeddedFsaCentroidReader } from './infrastructure/embedded-fsa-centroid-reader';
 import { AllMatchesRevokedScheduler } from './infrastructure/jobs/all-matches-revoked.scheduler';
 import { BriefActivatedConsumer } from './infrastructure/jobs/brief-activated.consumer';
+import {
+  LEAD_NOTIFICATIONS_QUEUE,
+  LeadNotificationDispatcher,
+  LeadNotificationSender,
+  LeadNotificationWorker,
+} from './infrastructure/jobs/lead-notification.job';
+import { MatchingEventsConsumer } from './infrastructure/jobs/matching-events.consumer';
 import { MatchingOutboxPublisherJob } from './infrastructure/jobs/matching-outbox-publisher.job';
 import { OtelMetricsRecorder } from './infrastructure/otel-metrics-recorder';
 import { PrismaBriefSnapshotReader } from './infrastructure/prisma-brief-snapshot-reader';
 import { PrismaConseillerSnapshotReader } from './infrastructure/prisma-conseiller-snapshot-reader';
+import { PrismaConsumedEventStore } from './infrastructure/prisma-consumed-event-store';
+import { PrismaLeadBriefSummaryReader } from './infrastructure/prisma-lead-brief-summary-reader';
+import { PrismaLeadNotificationOutbox } from './infrastructure/prisma-lead-notification-outbox';
+import { PrismaLeadRepository } from './infrastructure/prisma-lead-repository';
 import { PrismaMatchingAuditWriter } from './infrastructure/prisma-matching-audit-writer';
 import { PrismaMatchingOutboxWriter } from './infrastructure/prisma-matching-outbox-writer';
 import { PrismaMatchingQueryAdapter } from './infrastructure/prisma-matching-query-adapter';
 import { PrismaMatchingResultRepository } from './infrastructure/prisma-matching-result-repository';
 import { RedisMatchingEventPublisher } from './infrastructure/redis-matching-event-publisher';
 import { RedisRematchLockAdapter } from './infrastructure/redis-rematch-lock';
+import { SesLeadNotificationMailer } from './infrastructure/ses-lead-notification-mailer';
 import { AdminMatchingController } from './interface/http/admin-matching.controller';
 
 /** Intervalle de drain de l'outbox matching (5 s prod, 30 s dev). */
 const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000 : 5_000;
 
 @Module({
-  imports: [BullMqModule, IdentiteModule, ConformiteModule],
+  imports: [
+    BullMqModule,
+    IdentiteModule,
+    ConformiteModule,
+    // Queue notifications conseiller (012) — un job par destinataire.
+    BullModule.registerQueue({ name: LEAD_NOTIFICATIONS_QUEUE }),
+  ],
   controllers: [AdminMatchingController],
   providers: [
     // ---------------------------------------------------------------
@@ -247,13 +273,75 @@ const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000
     // ---------------------------------------------------------------
     PrismaMatchingQueryAdapter,
     { provide: MATCHING_QUERY_PORT, useExisting: PrismaMatchingQueryAdapter },
+
+    // ---------------------------------------------------------------
+    // Feature 012 — Leads : adapters → ports
+    // ---------------------------------------------------------------
+    PrismaLeadRepository,
+    { provide: LEAD_WRITER, useExisting: PrismaLeadRepository },
+    { provide: LEAD_READER, useExisting: PrismaLeadRepository },
+
+    PrismaLeadNotificationOutbox,
+    { provide: LEAD_NOTIFICATION_OUTBOX, useExisting: PrismaLeadNotificationOutbox },
+
+    PrismaConsumedEventStore,
+    { provide: CONSUMED_EVENT_STORE, useExisting: PrismaConsumedEventStore },
+
+    PrismaLeadBriefSummaryReader,
+    { provide: LEAD_BRIEF_SUMMARY_READER, useExisting: PrismaLeadBriefSummaryReader },
+
+    SesLeadNotificationMailer,
+    { provide: LEAD_NOTIFICATION_MAILER, useExisting: SesLeadNotificationMailer },
+
+    // Use case consommation événements (US1) — factory deps.
+    {
+      provide: ConsumeMatchingEventUseCase.DEPS_TOKEN,
+      inject: [
+        CLOCK,
+        UUID_GENERATOR,
+        CONSUMED_EVENT_STORE,
+        LEAD_WRITER,
+        LEAD_NOTIFICATION_OUTBOX,
+        CONFORMITE_QUERY_PORT,
+      ],
+      useFactory: (
+        clock,
+        uuid,
+        consumedEvents,
+        leadWriter,
+        notificationOutbox,
+        conformiteQuery,
+      ) => ({
+        clock,
+        uuid,
+        consumedEvents,
+        leadWriter,
+        notificationOutbox,
+        conformiteQuery,
+      }),
+    },
+    {
+      provide: ConsumeMatchingEventUseCase,
+      inject: [ConsumeMatchingEventUseCase.DEPS_TOKEN],
+      useFactory: (deps) => new ConsumeMatchingEventUseCase(deps),
+    },
+
+    // Jobs notifications conseiller (un job par destinataire) + consumer bus.
+    LeadNotificationDispatcher,
+    LeadNotificationSender,
+    LeadNotificationWorker,
+    MatchingEventsConsumer,
   ],
   exports: [MATCHING_QUERY_PORT],
 })
 export class MatchingModule implements OnModuleInit, OnModuleDestroy {
   private outboxInterval?: NodeJS.Timeout;
+  private leadDispatchInterval?: NodeJS.Timeout;
 
-  constructor(private readonly outboxJob: MatchingOutboxPublisherJob) {}
+  constructor(
+    private readonly outboxJob: MatchingOutboxPublisherJob,
+    private readonly leadDispatcher: LeadNotificationDispatcher,
+  ) {}
 
   onModuleInit(): void {
     // Drain de l'outbox matching → bus Redis. 5 s en prod, 30 s en dev
@@ -261,9 +349,16 @@ export class MatchingModule implements OnModuleInit, OnModuleDestroy {
     this.outboxInterval = setInterval(() => {
       void this.outboxJob.drain();
     }, OUTBOX_DRAIN_INTERVAL_MS);
+
+    // Dispatch des notifications conseiller pending (résilience : couvre les
+    // notifications enfilées hors flux temps réel, ex. après reprise SES).
+    this.leadDispatchInterval = setInterval(() => {
+      void this.leadDispatcher.dispatchPending();
+    }, OUTBOX_DRAIN_INTERVAL_MS);
   }
 
   onModuleDestroy(): void {
     if (this.outboxInterval) clearInterval(this.outboxInterval);
+    if (this.leadDispatchInterval) clearInterval(this.leadDispatchInterval);
   }
 }
