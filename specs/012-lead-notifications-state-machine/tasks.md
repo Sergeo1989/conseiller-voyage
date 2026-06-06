@@ -125,7 +125,7 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 
 ### 4d — Test d'intégration
 
-- [ ] T044 [US2] Créer `apps/api/test/integration/matching/lead-lifecycle.integration.test.ts` (Testcontainers) — quickstart S4 + S5 + S6 (concurrence) + S9 (append-only trigger) + S10 (révoqué bloqué).
+- [ ] T044 [US2] Créer `apps/api/test/integration/matching/lead-lifecycle.integration.test.ts` (Testcontainers) — quickstart S4 + S5 + S6 (concurrence) + S9 (append-only trigger) + S10 (révoqué bloqué) + **S13 (indépendance des frères : `booking-confirmed` sur un lead → les 2 frères inchangés, FR-016)**.
 
 **Checkpoint US2** : un conseiller pilote son lead de bout en bout via l'API.
 
@@ -166,7 +166,8 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 - [ ] T056 [P] Étendre `tools/check-no-pii-matching-audit.ts` (ou nouveau CLI) pour scanner `lead_transitions`/`lead_notification_outbox` + workflow CI hebdo.
 - [ ] T057 [P] Créer `docs/runbooks/matching-lead-notifications.md` (retry/dead-letter notifications, réconciliation, SES HS) + finaliser README module.
 - [ ] T058 [P] Finaliser ADR-0025 + ADR-0026 (statut Accepted) avec notes d'implémentation.
-- [ ] T059 Quality gates : `pnpm check:boundaries` + `pnpm lint` + `pnpm typecheck` (17 packages) + matrice quickstart 12 scénarios verts.
+- [ ] T059 Quality gates : `pnpm check:boundaries` + `pnpm lint` + `pnpm typecheck` (17 packages) + matrice quickstart (13 scénarios) verts.
+- [ ] T059b Test de charge léger en staging — créer `tools/load-test-leads.ts` (k6/autocannon : flux d'événements `matched` + transitions conseiller). Assertions **SC-005** : p95 réception événement → mise en file notification **< 5 s** ; p95 transition synchrone **< 800 ms** (Principe X). Gabarit hérité de 011 `tools/load-test-matching.ts`.
 - [ ] T060 Mettre à jour `docs/roadmap.md` (012 ⏳ → 🟡) + cocher DoD `plan.md` + ouvrir PR vers `main` (Constitution Check verbatim + ADRs 0025-0026).
 
 ---
@@ -213,6 +214,6 @@ Pour toute tâche `RED` : commit séparé test rouge AVANT le commit `GREEN`. Pa
 - Anonymisation cascade + append-only testés explicitement (T052/S9) — invariants Loi 25.
 - Un job BullMQ par destinataire (Principe X) — vérifié en intégration (T032).
 
-**Total tâches** : 60 (5 Setup + 12 Foundational + 15 US1 + 12 US2 + 9 US3 + 7 Polish).
+**Total tâches** : 61 (5 Setup + 12 Foundational + 15 US1 + 12 US2 + 9 US3 + 8 Polish — dont T059b test de charge SC-005).
 
 **Suite recommandée** : `/speckit.analyze` (cohérence spec/plan/tasks) avant `/speckit.implement`.

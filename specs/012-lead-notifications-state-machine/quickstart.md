@@ -69,3 +69,13 @@ Scénarios de validation end-to-end (Testcontainers Postgres + Redis). Chaque sc
 
 1. SES en échec. Consommer `matched`.
 2. **Attendu** : leads créés ; notifications `failed` retentées (backoff) → `sent` au rétablissement ; aucun doublon perçu.
+
+## Scénario 13 — Indépendance des leads frères (US2, FR-016)
+
+1. Un brief avec 3 leads. Le lead du conseiller A est mené jusqu'à `reservation_confirmee`.
+2. **Attendu** : les leads des conseillers B et C restent **inchangés** (aucune clôture automatique en `perdu`) ; leur état et leur historique ne sont pas modifiés par l'action de A.
+
+## Performance — Test de charge léger (SC-005 / Principe X)
+
+1. Simuler ~N événements `matched`/min + une série de transitions conseiller.
+2. **Attendu** : p95 réception événement → mise en file notification **< 5 s** ; p95 transition synchrone **< 800 ms**.

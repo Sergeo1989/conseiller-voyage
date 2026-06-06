@@ -22,7 +22,7 @@
 
 **Project Type** : web-service (backend NestJS, monolithe modulaire — module `matching`). Aucune UI livrée (014/015 ultérieurs).
 
-**Performance Goals** : notification mise en file en < quelques secondes après réception de l'événement (SC-005) ; transitions d'état synchrones p95 < 800 ms (SLO Principe X).
+**Performance Goals** : p95 réception événement → mise en file de la notification **< 5 s** (SC-005) ; transitions d'état synchrones p95 **< 800 ms** (SLO Principe X). Vérifiés par un test de charge léger en staging.
 
 **Constraints** : append-only sur l'historique des transitions (Loi 25/audit) ; aucune PII de contact voyageur dans les notifications ; concurrence optimiste ; idempotence at-least-once sur consommation d'événements et notifications.
 

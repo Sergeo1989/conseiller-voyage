@@ -123,7 +123,7 @@ Le système garantit en continu qu'aucun conseiller non vérifié n'agit sur un 
 - **SC-002**: Aucune notification ni aucun lead exposé ne contient de coordonnée de contact direct du voyageur (vérifié par contrôle automatisé, 0 fuite).
 - **SC-003**: Toute transition d'état invalide est refusée (0 transition illégale acceptée sur la suite de tests d'invariant de la machine d'état).
 - **SC-004**: Après anonymisation d'un brief, 0 lead associé ne permet de retrouver la PII voyageur, tandis que 100 % de l'historique d'audit des transitions reste consultable.
-- **SC-005**: Le délai entre la disponibilité d'un matching et la mise en file de la notification du conseiller est inférieur à un seuil opérationnel (cible : notification déclenchée en moins de quelques secondes en charge nominale).
+- **SC-005**: En charge nominale, le délai **p95 entre la réception de l'événement de matching et la mise en file de la notification** du conseiller est **< 5 s** ; le délai p95 d'une **transition d'état synchrone** (endpoint conseiller) est **< 800 ms** (SLO Principe X). Vérifié par un test de charge léger.
 - **SC-006**: Un conseiller révoqué n'est ni notifié ni autorisé à agir dans 100 % des cas testés (re-filtrage dynamique effectif).
 - **SC-007**: Les métriques « % leads acceptés » et « conversion lead → devis → réservation » sont calculables à partir des données persistées, sans traitement manuel.
 - **SC-008**: Après un re-matching, un conseiller n'a jamais plus d'un lead **actif** (non terminal) pour un même brief (les leads de l'ancien matching sont clôturés en `perdu`), vérifié par test d'invariant.
