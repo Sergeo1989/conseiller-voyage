@@ -139,15 +139,15 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 
 ### 5a — Réconciliation + supersession + all_revoked (TDD)
 
-- [ ] T045 [P] [US3] RED : `.../application/use-cases/__tests__/reconcile-leads.use-case.test.ts` — MR actif sans lead → recrée leads + notifications (mode dégradé bus HS).
-- [ ] T046 [US3] GREEN : `.../application/use-cases/reconcile-leads.use-case.ts` + `.../infrastructure/jobs/lead-reconciliation.scheduler.ts` (BullMQ repeatable).
-- [ ] T047 [P] [US3] RED : étendre `consume-matching-event.use-case.test.ts` — supersession re-match (FR-018/SC-008 : leads de l'ancien MR → `perdu` motif `re-matched`, nouveaux leads créés) + `all_matches_revoked` (aucune notif, leads → `perdu`).
-- [ ] T048 [US3] GREEN : étendre `consume-matching-event.use-case.ts` (détection MR superseded via `MatchingResultReader`, clôture système, traitement `all_matches_revoked`).
+- [X] T045 [P] [US3] RED : `.../application/use-cases/__tests__/reconcile-leads.use-case.test.ts` — MR actif sans lead → recrée leads + notifications (mode dégradé bus HS).
+- [X] T046 [US3] GREEN : `.../application/use-cases/reconcile-leads.use-case.ts` + `.../infrastructure/jobs/lead-reconciliation.scheduler.ts` (BullMQ repeatable).
+- [X] T047 [P] [US3] RED : étendre `consume-matching-event.use-case.test.ts` — supersession re-match (FR-018/SC-008 : leads de l'ancien MR → `perdu` motif `re-matched`, nouveaux leads créés) + `all_matches_revoked` (aucune notif, leads → `perdu`).
+- [X] T048 [US3] GREEN : étendre `consume-matching-event.use-case.ts` (détection MR superseded via `MatchingResultReader`, clôture système, traitement `all_matches_revoked`).
 
 ### 5b — Port public lecture
 
-- [ ] T049 [US3] Créer `.../infrastructure/prisma-lead-query-adapter.ts` — implémente `MatchingLeadQueryPort` (lecture pure, filtre verified dynamique, `null` si brief anonymisé).
-- [ ] T050 [US3] Exporter `MATCHING_LEAD_QUERY_PORT` depuis `MatchingModule.exports` (consommable par 014/015).
+- [X] T049 [US3] Créer `.../infrastructure/prisma-lead-query-adapter.ts` — implémente `MatchingLeadQueryPort` (lecture pure, filtre verified dynamique, `null` si brief anonymisé).
+- [X] T050 [US3] Exporter `MATCHING_LEAD_QUERY_PORT` depuis `MatchingModule.exports` (consommable par 014/015).
 
 ### 5c — Tests d'intégration US3
 

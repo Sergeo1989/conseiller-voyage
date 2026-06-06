@@ -11,7 +11,7 @@
 //   - useClass pour les adapters (injection directe DI)
 
 import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
-import { MATCHING_QUERY_PORT } from '@cv/shared/matching';
+import { MATCHING_LEAD_QUERY_PORT, MATCHING_QUERY_PORT } from '@cv/shared/matching';
 import { BullModule } from '@nestjs/bullmq';
 import { Module, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
@@ -69,6 +69,7 @@ import { PrismaConseillerSnapshotReader } from './infrastructure/prisma-conseill
 import { PrismaConsumedEventStore } from './infrastructure/prisma-consumed-event-store';
 import { PrismaLeadBriefSummaryReader } from './infrastructure/prisma-lead-brief-summary-reader';
 import { PrismaLeadNotificationOutbox } from './infrastructure/prisma-lead-notification-outbox';
+import { PrismaLeadQueryAdapter } from './infrastructure/prisma-lead-query-adapter';
 import { PrismaLeadRepository } from './infrastructure/prisma-lead-repository';
 import { PrismaMatchingAuditWriter } from './infrastructure/prisma-matching-audit-writer';
 import { PrismaMatchingOutboxWriter } from './infrastructure/prisma-matching-outbox-writer';
@@ -306,6 +307,10 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     PrismaConseillerIdentityResolver,
     { provide: CONSEILLER_IDENTITY_RESOLVER, useExisting: PrismaConseillerIdentityResolver },
 
+    // Port public lead (lecture seule) — consommé par 014/015.
+    PrismaLeadQueryAdapter,
+    { provide: MATCHING_LEAD_QUERY_PORT, useExisting: PrismaLeadQueryAdapter },
+
     // Use case consommation événements (US1) — factory deps.
     {
       provide: ConsumeMatchingEventUseCase.DEPS_TOKEN,
@@ -395,7 +400,7 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     LeadNotificationWorker,
     MatchingEventsConsumer,
   ],
-  exports: [MATCHING_QUERY_PORT],
+  exports: [MATCHING_QUERY_PORT, MATCHING_LEAD_QUERY_PORT],
 })
 export class MatchingModule implements OnModuleInit, OnModuleDestroy {
   private outboxInterval?: NodeJS.Timeout;
