@@ -16,6 +16,7 @@ export * from './redis-rematch-lock.port';
 
 // Feature 012 — ports leads (notifications conseiller + machine d'état)
 export * from './consumed-event-store.port';
+export * from './lead-brief-summary-reader.port';
 export * from './lead-notification-mailer.port';
 export * from './lead-notification-outbox.port';
 export * from './lead-reader.port';

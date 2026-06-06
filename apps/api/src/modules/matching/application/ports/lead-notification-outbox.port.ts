@@ -38,6 +38,9 @@ export interface LeadNotificationOutboxPort {
   markSent(notificationId: string, sentAt: Date): Promise<void>;
 
   markFailed(notificationId: string, error: string): Promise<void>;
+
+  /** Issue définitive non bloquante : conseiller non vérifié à l'envoi (FR-008). */
+  markSkippedUnverified(notificationId: string): Promise<void>;
 }
 
 export const LEAD_NOTIFICATION_OUTBOX = Symbol.for('LeadNotificationOutbox');

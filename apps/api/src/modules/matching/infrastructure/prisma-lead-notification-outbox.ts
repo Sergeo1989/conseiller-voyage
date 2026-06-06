@@ -61,6 +61,13 @@ export class PrismaLeadNotificationOutbox implements LeadNotificationOutboxPort 
       data: { status: 'failed', attempts: { increment: 1 }, lastError: error.slice(0, 1000) },
     });
   }
+
+  async markSkippedUnverified(notificationId: string): Promise<void> {
+    await prisma.leadNotificationOutbox.update({
+      where: { id: notificationId },
+      data: { status: 'skipped_unverified' },
+    });
+  }
 }
 
 function isUniqueViolation(err: unknown): boolean {

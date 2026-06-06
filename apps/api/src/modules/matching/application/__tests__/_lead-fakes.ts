@@ -314,6 +314,11 @@ export class FakeLeadNotificationOutbox implements LeadNotificationOutboxPort {
       n.lastError = error;
     }
   }
+
+  async markSkippedUnverified(id: string): Promise<void> {
+    const n = this.store.notifications.find((x) => x.id === id);
+    if (n) n.status = 'skipped_unverified';
+  }
 }
 
 // ---------------------------------------------------------------------------
