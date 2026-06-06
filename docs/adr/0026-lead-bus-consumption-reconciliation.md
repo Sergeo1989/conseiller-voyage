@@ -1,7 +1,7 @@
 # ADR-0026 — Consommation du bus matching + sweep de réconciliation des leads
 
 **Date** : 2026-06-05
-**Statut** : proposé (feature 012)
+**Statut** : accepté (implémenté feature 012, 2026-06-06)
 **Décideurs** : équipe technique
 **Spec lié** : [012-lead-notifications-state-machine/spec.md](../../specs/012-lead-notifications-state-machine/spec.md), FR-001 + FR-003 + FR-011
 **Plan lié** : [012-lead-notifications-state-machine/plan.md](../../specs/012-lead-notifications-state-machine/plan.md), Constitution Check Principe X
@@ -83,7 +83,26 @@ SES. Échec → `failed` + backoff/dead-letter, le lead reste créé (mode dégr
 | Pub/sub seul sans sweep | Viole FR-011 (perte d'événements en cas de panne) |
 | Un seul job multi-destinataires | Interdit par le Principe X |
 
-## Statut d'implémentation
+## Statut d'implémentation (2026-06-06)
 
-À compléter (statut → accepté) à la fin de la Phase 5 (US3) avec les notes
-d'implémentation et les références de tests (T029-T032, T045-T046, T053).
+Implémenté :
+- **Consumer** `infrastructure/jobs/matching-events.consumer.ts` — abonnement
+  pub/sub `MATCHING_PUBSUB_CHANNEL`, route par `name`, délègue à
+  `ConsumeMatchingEventUseCase` (dédup `consumed_matching_events` via
+  `PrismaConsumedEventStore`).
+- **Sweep** `application/use-cases/reconcile-leads.use-case.ts` +
+  `infrastructure/jobs/lead-reconciliation.scheduler.ts` (intervalle module 60 s
+  prod / 120 s dev) — rejoue `replayMatchingResult` pour les MR actifs sans lead.
+- **Notifications** : pattern outbox + `LeadNotificationDispatcher` (un job
+  BullMQ par destinataire, `jobId = notificationId`) + `LeadNotificationWorker`
+  (@Processor) → `SesLeadNotificationMailer`. Échec SES → `failed` + retry
+  BullMQ ; lead créé quand même.
+- **Idempotence** : `consumed_matching_events` (PK) + UNIQUE
+  `leads (conseillerId, matchingResultId)` + UNIQUE
+  `lead_notification_outbox.idempotencyKey`.
+
+**Tests** : unitaires `consume-matching-event` (dédup, supersession, all_revoked)
++ `reconcile-leads` (orphelins, idempotence). Scénarios bus/SES end-to-end
+(S11/S12) en stubs d'intégration `lead-resilience.integration.test.ts` — validés
+en staging (cf. CLAUDE.md). Note : DI des use cases injectés via `@Inject(Class)`
+(références de valeur requises par NestJS).

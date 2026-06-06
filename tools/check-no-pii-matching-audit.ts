@@ -9,7 +9,11 @@
 // est une vérification defense-in-depth exécutée en CI hebdo contre la DB
 // staging.
 //
-// Périmètre : ces deux colonnes JSONB uniquement. Les logs Pino structurés
+// Étendu feature 012 : `lead_transitions.reason` (motif ≤ 500 chars, jamais de
+// PII) et `lead_notification_outbox.lastError` (message d'échec SES) sont aussi
+// scannées (FR-004 / FR-009 — aucune coordonnée voyageur, audit append-only).
+//
+// Périmètre : colonnes texte/JSONB ci-dessus uniquement. Les logs Pino structurés
 // vivent dans Grafana Loki (OTel) — non scannables depuis le FS, couverts par
 // la politique de rétention Loki (90 j) + le caractère PII-safe des champs
 // loggés (cf. T087).
@@ -96,7 +100,7 @@ function isAbsentDbError(err: unknown): boolean {
 
 async function main(): Promise<void> {
   process.stdout.write(
-    '[check-no-pii-matching-audit] Scan matching_audit_entries + matching_result_entries...\n',
+    '[check-no-pii-matching-audit] Scan matching_audit_entries + matching_result_entries + lead_* (012)...\n',
   );
 
   let findings: Finding[];
@@ -104,6 +108,9 @@ async function main(): Promise<void> {
     findings = [
       ...(await scanColumn('matching_audit_entries', 'payload')),
       ...(await scanColumn('matching_result_entries', 'scoreComponents')),
+      // Feature 012 — colonnes texte libres des leads (FR-004 / FR-009).
+      ...(await scanColumn('lead_transitions', 'reason')),
+      ...(await scanColumn('lead_notification_outbox', 'lastError')),
     ];
   } catch (err) {
     if (isAbsentDbError(err)) {

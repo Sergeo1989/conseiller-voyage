@@ -161,13 +161,13 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 
 ## Phase 6 : Polish & Cross-Cutting
 
-- [ ] T054 [P] Métriques OTel — `.../infrastructure/lead-metrics.ts` (counters `lead.created`, `lead.transition{to_state}`, `lead.notification_sent/failed`) branchées via port `LeadMetricsRecorder` ; dashboard `docs/dashboards/matching-leads.json` + alertes (taux échec notif, latence, taux acceptation bas).
-- [ ] T055 [P] Logs Pino structurés (PII-safe) dans les use cases (info/warn/error par issue).
-- [ ] T056 [P] Étendre `tools/check-no-pii-matching-audit.ts` (ou nouveau CLI) pour scanner `lead_transitions`/`lead_notification_outbox` + workflow CI hebdo.
-- [ ] T057 [P] Créer `docs/runbooks/matching-lead-notifications.md` (retry/dead-letter notifications, réconciliation, SES HS) + finaliser README module.
-- [ ] T058 [P] Finaliser ADR-0025 + ADR-0026 (statut Accepted) avec notes d'implémentation.
+- [X] T054 [P] Métriques OTel — `.../infrastructure/lead-metrics.ts` (counters `lead.created`, `lead.transition{to_state}`, `lead.notification_sent/failed`) branchées via port `LeadMetricsRecorder` ; dashboard `docs/dashboards/matching-leads.json` + alertes (taux échec notif, latence, taux acceptation bas).
+- [X] T055 [P] Logs Pino structurés (PII-safe) dans les use cases (info/warn/error par issue).
+- [X] T056 [P] Étendre `tools/check-no-pii-matching-audit.ts` (ou nouveau CLI) pour scanner `lead_transitions`/`lead_notification_outbox` + workflow CI hebdo.
+- [X] T057 [P] Créer `docs/runbooks/matching-lead-notifications.md` (retry/dead-letter notifications, réconciliation, SES HS) + finaliser README module.
+- [X] T058 [P] Finaliser ADR-0025 + ADR-0026 (statut Accepted) avec notes d'implémentation.
 - [ ] T059 Quality gates : `pnpm check:boundaries` + `pnpm lint` + `pnpm typecheck` (17 packages) + matrice quickstart (13 scénarios) verts.
-- [ ] T059b Test de charge léger en staging — créer `tools/load-test-leads.ts` (k6/autocannon : flux d'événements `matched` + transitions conseiller). Assertions **SC-005** : p95 réception événement → mise en file notification **< 5 s** ; p95 transition synchrone **< 800 ms** (Principe X). Gabarit hérité de 011 `tools/load-test-matching.ts`.
+- [X] T059b Test de charge léger en staging — créer `tools/load-test-leads.ts` (k6/autocannon : flux d'événements `matched` + transitions conseiller). Assertions **SC-005** : p95 réception événement → mise en file notification **< 5 s** ; p95 transition synchrone **< 800 ms** (Principe X). Gabarit hérité de 011 `tools/load-test-matching.ts`.
 - [ ] T060 Mettre à jour `docs/roadmap.md` (012 ⏳ → 🟡) + cocher DoD `plan.md` + ouvrir PR vers `main` (Constitution Check verbatim + ADRs 0025-0026).
 
 ---

@@ -1,7 +1,7 @@
 # ADR-0025 — Machine d'état du lead : fonction pure du domaine
 
 **Date** : 2026-06-05
-**Statut** : proposé (feature 012)
+**Statut** : accepté (implémenté feature 012, 2026-06-06)
 **Décideurs** : équipe technique
 **Spec lié** : [012-lead-notifications-state-machine/spec.md](../../specs/012-lead-notifications-state-machine/spec.md), FR-006 + FR-007 + FR-020
 **Plan lié** : [012-lead-notifications-state-machine/plan.md](../../specs/012-lead-notifications-state-machine/plan.md), Constitution Check Principe VI
@@ -85,7 +85,18 @@ idempotence des montées (FR-020).
 | Librairie XState | Surdimensionné, dépendance pour une logique triviale |
 | Event sourcing pur (pas de colonne état) | Surcoût de lecture injustifié pour le guard de concurrence |
 
-## Statut d'implémentation
+## Statut d'implémentation (2026-06-06)
 
-À compléter (statut → accepté) à la fin de la Phase 4 (US2) avec les notes
-d'implémentation et les références de tests (T033-T035).
+Implémenté en `apps/api/src/modules/matching/domain/services/apply-lead-transition.ts`
+(fonction pure `applyLeadTransition(current, action, actor) → outcome` : `applied` /
+`noop` / `rejected`). Table de transitions explicite ; `marquer_vu` idempotent
+(applied seulement depuis `envoye`, sinon `noop`) ; garde acteur (`clore_systeme`
+réservé au système). État dénormalisé `leads.current_state` muté
+transactionnellement avec l'insert de transition (guard concurrence optimiste
+`WHERE current_state = :expected`, `prisma-lead-repository.ts`).
+
+**Tests** : `apply-lead-transition.test.ts` (13 cas — table, terminaux,
+idempotence, rejets) + `apply-lead-transition.property.test.ts` (fast-check :
+SC-003 « aucune transition illégale acceptée », FR-020 idempotence des montées,
+aucune sortie d'état terminal). Commits RED→GREEN séparés (T033/T034/T035).
+Valeurs ASCII en code/DB ; libellés accentués FR-CA dans l'i18n `matching.lead.etat.*`.
