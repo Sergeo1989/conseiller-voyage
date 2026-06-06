@@ -261,6 +261,31 @@
       "erreurNonAutorise": "You must be signed in as an administrator.",
       "erreurInterdit": "This action is restricted to administrators.",
       "erreurGenerique": "Re-matching failed. Retry or check the runbook."
+    },
+    "lead": {
+      "etat": {
+        "envoye": "Sent",
+        "vu": "Viewed",
+        "accepte": "Accepted",
+        "refuse": "Declined",
+        "devis_envoye": "Quote sent",
+        "reservation_confirmee": "Booking confirmed",
+        "perdu": "Lost"
+      },
+      "action": {
+        "accepter": "Accept",
+        "refuser": "Decline",
+        "devisEnvoye": "Mark quote sent",
+        "reservationConfirmee": "Mark booking confirmed",
+        "perdu": "Mark as lost"
+      },
+      "succesTransition": "Lead updated: {etat}.",
+      "erreurConflit": "The lead state changed. Reload the page and try again.",
+      "erreurTransitionInvalide": "This action is not allowed from the lead's current state.",
+      "erreurNonVerifie": "Your verified status is required to act on this lead.",
+      "erreurIntrouvable": "Lead not found.",
+      "erreurNonProprietaire": "This lead does not belong to your account.",
+      "erreurIdempotency": "An idempotency key is required for this action."
     }
   },
   "email": {

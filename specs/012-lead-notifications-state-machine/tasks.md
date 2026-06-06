@@ -119,9 +119,9 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 ### 4c — Infrastructure + interface
 
 - [X] T040 [US2] Étendre `prisma-lead-repository.ts` — `appendTransition` avec guard `WHERE currentState = :expected` (concurrence optimiste) + maj `currentState` transactionnelle.
-- [ ] T041 [US2] Créer `.../interface/http/conseiller-lead.controller.ts` — `GET /leads`, `GET /leads/:id` (auto-vu), `POST /leads/:id/{accept,refuse,quote-sent,booking-confirmed,lost}` ; `AuthGuard` + `RoleGuard @RequireRole('conseiller')` + autorisation propriétaire + Zod + `Idempotency-Key`. Codes 200/403/404/409/422 (contracts/http-endpoints.md).
-- [ ] T042 [US2] Wiring DI use cases + controller dans `matching.module.ts`.
-- [ ] T043 [P] [US2] Ajouter clés i18n `matching.lead.*` dans `apps/web/src/i18n/messages/fr-CA.json` + `en.json` (messages d'erreur HTTP : conflit, transition invalide, non vérifié, succès).
+- [X] T041 [US2] Créer `.../interface/http/conseiller-lead.controller.ts` — `GET /leads`, `GET /leads/:id` (auto-vu), `POST /leads/:id/{accept,refuse,quote-sent,booking-confirmed,lost}` ; `AuthGuard` + `RoleGuard @RequireRole('conseiller')` + autorisation propriétaire + Zod + `Idempotency-Key`. Codes 200/403/404/409/422 (contracts/http-endpoints.md).
+- [X] T042 [US2] Wiring DI use cases + controller dans `matching.module.ts`.
+- [X] T043 [P] [US2] Ajouter clés i18n `matching.lead.*` dans `apps/web/src/i18n/messages/fr-CA.json` + `en.json` (messages d'erreur HTTP : conflit, transition invalide, non vérifié, succès).
 
 ### 4d — Test d'intégration
 

@@ -24,6 +24,7 @@ import { ConformiteModule } from '../conformite/interface/conformite.module';
 import { IdentiteModule } from '../identite/identite.module';
 import {
   BRIEF_SNAPSHOT_READER,
+  CONSEILLER_IDENTITY_RESOLVER,
   CONSEILLER_SNAPSHOT_READER,
   CONSUMED_EVENT_STORE,
   FSA_CENTROID_READER,
@@ -44,7 +45,9 @@ import { ConsumeMatchingEventUseCase } from './application/use-cases/consume-mat
 import { DetectAllMatchesRevokedUseCase } from './application/use-cases/detect-all-matches-revoked.use-case';
 import { PerformMatchingUseCase } from './application/use-cases/perform-matching.use-case';
 import { QueryMatchingResultUseCase } from './application/use-cases/query-matching-result.use-case';
+import { RecordLeadTransitionUseCase } from './application/use-cases/record-lead-transition.use-case';
 import { TriggerRematchUseCase } from './application/use-cases/trigger-rematch.use-case';
+import { ViewLeadUseCase } from './application/use-cases/view-lead.use-case';
 import { WeightsConfig } from './domain/value-objects/weights-config.vo';
 import { EmbeddedFsaCentroidReader } from './infrastructure/embedded-fsa-centroid-reader';
 import { AllMatchesRevokedScheduler } from './infrastructure/jobs/all-matches-revoked.scheduler';
@@ -59,6 +62,7 @@ import { MatchingEventsConsumer } from './infrastructure/jobs/matching-events.co
 import { MatchingOutboxPublisherJob } from './infrastructure/jobs/matching-outbox-publisher.job';
 import { OtelMetricsRecorder } from './infrastructure/otel-metrics-recorder';
 import { PrismaBriefSnapshotReader } from './infrastructure/prisma-brief-snapshot-reader';
+import { PrismaConseillerIdentityResolver } from './infrastructure/prisma-conseiller-identity-resolver';
 import { PrismaConseillerSnapshotReader } from './infrastructure/prisma-conseiller-snapshot-reader';
 import { PrismaConsumedEventStore } from './infrastructure/prisma-consumed-event-store';
 import { PrismaLeadBriefSummaryReader } from './infrastructure/prisma-lead-brief-summary-reader';
@@ -72,6 +76,7 @@ import { RedisMatchingEventPublisher } from './infrastructure/redis-matching-eve
 import { RedisRematchLockAdapter } from './infrastructure/redis-rematch-lock';
 import { SesLeadNotificationMailer } from './infrastructure/ses-lead-notification-mailer';
 import { AdminMatchingController } from './interface/http/admin-matching.controller';
+import { ConseillerLeadController } from './interface/http/conseiller-lead.controller';
 
 /** Intervalle de drain de l'outbox matching (5 s prod, 30 s dev). */
 const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000 : 5_000;
@@ -84,7 +89,7 @@ const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000
     // Queue notifications conseiller (012) — un job par destinataire.
     BullModule.registerQueue({ name: LEAD_NOTIFICATIONS_QUEUE }),
   ],
-  controllers: [AdminMatchingController],
+  controllers: [AdminMatchingController, ConseillerLeadController],
   providers: [
     // ---------------------------------------------------------------
     // Communs — Clock + UuidGenerator (singleton dans tout le module)
@@ -293,6 +298,9 @@ const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000
     SesLeadNotificationMailer,
     { provide: LEAD_NOTIFICATION_MAILER, useExisting: SesLeadNotificationMailer },
 
+    PrismaConseillerIdentityResolver,
+    { provide: CONSEILLER_IDENTITY_RESOLVER, useExisting: PrismaConseillerIdentityResolver },
+
     // Use case consommation événements (US1) — factory deps.
     {
       provide: ConsumeMatchingEventUseCase.DEPS_TOKEN,
@@ -324,6 +332,39 @@ const OUTBOX_DRAIN_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000
       provide: ConsumeMatchingEventUseCase,
       inject: [ConsumeMatchingEventUseCase.DEPS_TOKEN],
       useFactory: (deps) => new ConsumeMatchingEventUseCase(deps),
+    },
+
+    // Use cases US2 — cycle de vie du lead (HTTP conseiller).
+    {
+      provide: RecordLeadTransitionUseCase.DEPS_TOKEN,
+      inject: [CLOCK, UUID_GENERATOR, LEAD_READER, LEAD_WRITER, CONFORMITE_QUERY_PORT],
+      useFactory: (clock, uuid, leadReader, leadWriter, conformiteQuery) => ({
+        clock,
+        uuid,
+        leadReader,
+        leadWriter,
+        conformiteQuery,
+      }),
+    },
+    {
+      provide: RecordLeadTransitionUseCase,
+      inject: [RecordLeadTransitionUseCase.DEPS_TOKEN],
+      useFactory: (deps) => new RecordLeadTransitionUseCase(deps),
+    },
+    {
+      provide: ViewLeadUseCase.DEPS_TOKEN,
+      inject: [CLOCK, UUID_GENERATOR, LEAD_READER, LEAD_WRITER],
+      useFactory: (clock, uuid, leadReader, leadWriter) => ({
+        clock,
+        uuid,
+        leadReader,
+        leadWriter,
+      }),
+    },
+    {
+      provide: ViewLeadUseCase,
+      inject: [ViewLeadUseCase.DEPS_TOKEN],
+      useFactory: (deps) => new ViewLeadUseCase(deps),
     },
 
     // Jobs notifications conseiller (un job par destinataire) + consumer bus.

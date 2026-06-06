@@ -390,6 +390,31 @@
       "erreurNonAutorise": "Vous devez être connecté en tant qu'administrateur.",
       "erreurInterdit": "Cette action est réservée aux administrateurs.",
       "erreurGenerique": "Le re-matching a échoué. Réessayez ou consultez le runbook."
+    },
+    "lead": {
+      "etat": {
+        "envoye": "Envoyé",
+        "vu": "Vu",
+        "accepte": "Accepté",
+        "refuse": "Refusé",
+        "devis_envoye": "Devis envoyé",
+        "reservation_confirmee": "Réservation confirmée",
+        "perdu": "Perdu"
+      },
+      "action": {
+        "accepter": "Accepter",
+        "refuser": "Refuser",
+        "devisEnvoye": "Marquer le devis envoyé",
+        "reservationConfirmee": "Marquer la réservation confirmée",
+        "perdu": "Marquer comme perdu"
+      },
+      "succesTransition": "Lead mis à jour : {etat}.",
+      "erreurConflit": "L'état du lead a changé. Rechargez la page puis réessayez.",
+      "erreurTransitionInvalide": "Cette action n'est pas autorisée depuis l'état actuel du lead.",
+      "erreurNonVerifie": "Votre statut vérifié est requis pour agir sur ce lead.",
+      "erreurIntrouvable": "Lead introuvable.",
+      "erreurNonProprietaire": "Ce lead n'appartient pas à votre compte.",
+      "erreurIdempotency": "Une clé d'idempotence est requise pour cette action."
     }
   },
   "emails": {
