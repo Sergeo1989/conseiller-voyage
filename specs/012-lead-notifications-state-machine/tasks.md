@@ -68,26 +68,26 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 
 ### 3a — Domaine (TDD strict)
 
-- [ ] T018 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/lead-state.vo.test.ts` — guards `isTerminal`, parsing enum.
-- [ ] T019 [US1] GREEN : `.../domain/value-objects/lead-state.vo.ts`.
-- [ ] T020 [P] [US1] Créer `.../domain/entities/lead.entity.ts` + `lead-transition.entity.ts` + tests d'invariant (position 1-3, currentState cohérent, briefId nullable).
-- [ ] T021 [P] [US1] Créer `.../domain/events/lead-events.ts` — `LeadCreated`, `LeadNotificationRequested`.
+- [X] T018 [P] [US1] RED : `apps/api/src/modules/matching/domain/value-objects/__tests__/lead-state.vo.test.ts` — guards `isTerminal`, parsing enum.
+- [X] T019 [US1] GREEN : `.../domain/value-objects/lead-state.vo.ts`.
+- [X] T020 [P] [US1] Créer `.../domain/entities/lead.entity.ts` + `lead-transition.entity.ts` + tests d'invariant (position 1-3, currentState cohérent, briefId nullable).
+- [X] T021 [P] [US1] Créer `.../domain/events/lead-events.ts` — `LeadCreated`, `LeadNotificationRequested`.
 
 ### 3b — Application (TDD)
 
-- [ ] T022 [US1] RED : `.../application/use-cases/__tests__/consume-matching-event.use-case.test.ts` (fakes) — `matched` 3 conseillers vérifiés → 3 leads + 3 notifications enqueued ; `partial` → 2 ; `unmatched` → 0 + trace ; replay même idempotencyKey → no-op ; conseiller non vérifié → `skipped_unverified`, pas de notification.
-- [ ] T023 [US1] Créer `.../application/__tests__/_lead-fakes.ts` — fakes en mémoire des 5 ports leads + ConformiteQueryPort fake + Clock + UuidGenerator.
-- [ ] T024 [US1] GREEN : `.../application/use-cases/consume-matching-event.use-case.ts` (dédup → filtre verified → create leads → enqueue notifications).
+- [X] T022 [US1] RED : `.../application/use-cases/__tests__/consume-matching-event.use-case.test.ts` (fakes) — `matched` 3 conseillers vérifiés → 3 leads + 3 notifications enqueued ; `partial` → 2 ; `unmatched` → 0 + trace ; replay même idempotencyKey → no-op ; conseiller non vérifié → `skipped_unverified`, pas de notification.
+- [X] T023 [US1] Créer `.../application/__tests__/_lead-fakes.ts` — fakes en mémoire des 5 ports leads + ConformiteQueryPort fake + Clock + UuidGenerator.
+- [X] T024 [US1] GREEN : `.../application/use-cases/consume-matching-event.use-case.ts` (dédup → filtre verified → create leads → enqueue notifications).
 
 ### 3c — Infrastructure
 
-- [ ] T025 [P] [US1] Créer `.../infrastructure/prisma-lead-repository.ts` (implémente lead-writer + lead-reader ; transaction create lead + transition initiale `→ envoye`).
-- [ ] T026 [P] [US1] Créer `.../infrastructure/prisma-lead-notification-outbox.ts`.
-- [ ] T027 [P] [US1] Créer `.../infrastructure/prisma-consumed-event-store.ts`.
-- [ ] T028 [P] [US1] Créer `.../infrastructure/ses-lead-notification-mailer.ts` — rend `lead-received.tsx`, résout l'adresse via le port identité, re-check `verified`, envoie via SES.
-- [ ] T029 [US1] Créer `.../infrastructure/jobs/matching-events.consumer.ts` — abonnement Redis pub/sub `MATCHING_PUBSUB_CHANNEL`, route par `name`, appelle `ConsumeMatchingEventUseCase`.
-- [ ] T030 [US1] Créer `.../infrastructure/jobs/lead-notification.job.ts` — BullMQ **un job par destinataire** (queue `matching.lead-notifications`), retry backoff + dead-letter, appelle le mailer.
-- [ ] T031 [US1] Wiring DI dans `matching.module.ts` — ports→adapters leads + use case + consumer (subscribe onModuleInit) + job.
+- [X] T025 [P] [US1] Créer `.../infrastructure/prisma-lead-repository.ts` (implémente lead-writer + lead-reader ; transaction create lead + transition initiale `→ envoye`).
+- [X] T026 [P] [US1] Créer `.../infrastructure/prisma-lead-notification-outbox.ts`.
+- [X] T027 [P] [US1] Créer `.../infrastructure/prisma-consumed-event-store.ts`.
+- [X] T028 [P] [US1] Créer `.../infrastructure/ses-lead-notification-mailer.ts` — rend `lead-received.tsx`, résout l'adresse via le port identité, re-check `verified`, envoie via SES.
+- [X] T029 [US1] Créer `.../infrastructure/jobs/matching-events.consumer.ts` — abonnement Redis pub/sub `MATCHING_PUBSUB_CHANNEL`, route par `name`, appelle `ConsumeMatchingEventUseCase`.
+- [X] T030 [US1] Créer `.../infrastructure/jobs/lead-notification.job.ts` — BullMQ **un job par destinataire** (queue `matching.lead-notifications`), retry backoff + dead-letter, appelle le mailer.
+- [X] T031 [US1] Wiring DI dans `matching.module.ts` — ports→adapters leads + use case + consumer (subscribe onModuleInit) + job.
 
 ### 3d — Test d'intégration
 
@@ -105,20 +105,20 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 
 ### 4a — Domaine machine d'état (TDD strict)
 
-- [ ] T033 [P] [US2] RED : `.../domain/services/__tests__/apply-lead-transition.test.ts` — table de transitions complète, transition hors table rejetée, no-op idempotent (vu→vu), `clore_systeme → perdu` depuis tout état non terminal.
-- [ ] T034 [US2] GREEN : `.../domain/services/apply-lead-transition.ts` (fonction pure `(current, action, actor) → Result<LeadState, TransitionError>`).
-- [ ] T035 [P] [US2] RED+GREEN : `.../domain/services/__tests__/apply-lead-transition.property.test.ts` (fast-check) — SC-003 (aucune transition illégale acceptée sur 1 000 tirages) + FR-020 (idempotence des montées).
+- [X] T033 [P] [US2] RED : `.../domain/services/__tests__/apply-lead-transition.test.ts` — table de transitions complète, transition hors table rejetée, no-op idempotent (vu→vu), `clore_systeme → perdu` depuis tout état non terminal.
+- [X] T034 [US2] GREEN : `.../domain/services/apply-lead-transition.ts` (fonction pure `(current, action, actor) → Result<LeadState, TransitionError>`).
+- [X] T035 [P] [US2] RED+GREEN : `.../domain/services/__tests__/apply-lead-transition.property.test.ts` (fast-check) — SC-003 (aucune transition illégale acceptée sur 1 000 tirages) + FR-020 (idempotence des montées).
 
 ### 4b — Application (TDD)
 
-- [ ] T036 [US2] RED : `.../application/use-cases/__tests__/record-lead-transition.use-case.test.ts` — concurrence optimiste (état obsolète → conflit), re-check verified (non vérifié → rejet), append-only transition, états terminaux.
-- [ ] T037 [US2] GREEN : `.../application/use-cases/record-lead-transition.use-case.ts`.
-- [ ] T038 [US2] RED : `.../application/use-cases/__tests__/view-lead.use-case.test.ts` — auto `envoye→vu` à la 1re lecture, idempotent (2e lecture sans nouvelle transition).
-- [ ] T039 [US2] GREEN : `.../application/use-cases/view-lead.use-case.ts`.
+- [X] T036 [US2] RED : `.../application/use-cases/__tests__/record-lead-transition.use-case.test.ts` — concurrence optimiste (état obsolète → conflit), re-check verified (non vérifié → rejet), append-only transition, états terminaux.
+- [X] T037 [US2] GREEN : `.../application/use-cases/record-lead-transition.use-case.ts`.
+- [X] T038 [US2] RED : `.../application/use-cases/__tests__/view-lead.use-case.test.ts` — auto `envoye→vu` à la 1re lecture, idempotent (2e lecture sans nouvelle transition).
+- [X] T039 [US2] GREEN : `.../application/use-cases/view-lead.use-case.ts`.
 
 ### 4c — Infrastructure + interface
 
-- [ ] T040 [US2] Étendre `prisma-lead-repository.ts` — `appendTransition` avec guard `WHERE currentState = :expected` (concurrence optimiste) + maj `currentState` transactionnelle.
+- [X] T040 [US2] Étendre `prisma-lead-repository.ts` — `appendTransition` avec guard `WHERE currentState = :expected` (concurrence optimiste) + maj `currentState` transactionnelle.
 - [ ] T041 [US2] Créer `.../interface/http/conseiller-lead.controller.ts` — `GET /leads`, `GET /leads/:id` (auto-vu), `POST /leads/:id/{accept,refuse,quote-sent,booking-confirmed,lost}` ; `AuthGuard` + `RoleGuard @RequireRole('conseiller')` + autorisation propriétaire + Zod + `Idempotency-Key`. Codes 200/403/404/409/422 (contracts/http-endpoints.md).
 - [ ] T042 [US2] Wiring DI use cases + controller dans `matching.module.ts`.
 - [ ] T043 [P] [US2] Ajouter clés i18n `matching.lead.*` dans `apps/web/src/i18n/messages/fr-CA.json` + `en.json` (messages d'erreur HTTP : conflit, transition invalide, non vérifié, succès).
