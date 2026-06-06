@@ -91,7 +91,7 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 
 ### 3d — Test d'intégration
 
-- [ ] T032 [US1] Créer `apps/api/test/integration/matching/lead-notifications.integration.test.ts` (Testcontainers Postgres + Redis) — quickstart S1 + S2 + S3 + dedup (un job/destinataire, aucune PII contact).
+- [X] T032 [US1] Créer `apps/api/test/integration/matching/lead-notifications.integration.test.ts` (Testcontainers Postgres + Redis) — quickstart S1 + S2 + S3 + dedup (un job/destinataire, aucune PII contact).
 
 **Checkpoint US1** : un `matched` publié sur le bus produit leads + notifications conseiller. MVP livrable.
 
@@ -125,7 +125,7 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 
 ### 4d — Test d'intégration
 
-- [ ] T044 [US2] Créer `apps/api/test/integration/matching/lead-lifecycle.integration.test.ts` (Testcontainers) — quickstart S4 + S5 + S6 (concurrence) + S9 (append-only trigger) + S10 (révoqué bloqué) + **S13 (indépendance des frères : `booking-confirmed` sur un lead → les 2 frères inchangés, FR-016)**.
+- [X] T044 [US2] Créer `apps/api/test/integration/matching/lead-lifecycle.integration.test.ts` (Testcontainers) — quickstart S4 + S5 + S6 (concurrence) + S9 (append-only trigger) + S10 (révoqué bloqué) + **S13 (indépendance des frères : `booking-confirmed` sur un lead → les 2 frères inchangés, FR-016)**.
 
 **Checkpoint US2** : un conseiller pilote son lead de bout en bout via l'API.
 
@@ -151,9 +151,9 @@ description: "Task list — feature 012 notifications conseillers + machine d'é
 
 ### 5c — Tests d'intégration US3
 
-- [ ] T051 [US3] Créer `apps/api/test/integration/matching/lead-rematch.integration.test.ts` — quickstart S7 (supersession, ≤ 1 lead actif par conseiller × brief).
-- [ ] T052 [US3] Créer `apps/api/test/integration/matching/lead-anonymisation-cascade.integration.test.ts` — quickstart S8 (briefId nullé, transitions préservées).
-- [ ] T053 [US3] Créer `apps/api/test/integration/matching/lead-resilience.integration.test.ts` — quickstart S11 (all_revoked) + S12 (SES HS → retry sans doublon).
+- [X] T051 [US3] Créer `apps/api/test/integration/matching/lead-rematch.integration.test.ts` — quickstart S7 (supersession, ≤ 1 lead actif par conseiller × brief).
+- [X] T052 [US3] Créer `apps/api/test/integration/matching/lead-anonymisation-cascade.integration.test.ts` — quickstart S8 (briefId nullé, transitions préservées).
+- [X] T053 [US3] Créer `apps/api/test/integration/matching/lead-resilience.integration.test.ts` — quickstart S11 (all_revoked) + S12 (SES HS → retry sans doublon).
 
 **Checkpoint US3** : les 3 US sont indépendamment fonctionnelles. Module leads livrable complet.
 
