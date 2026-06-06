@@ -26,7 +26,11 @@ export interface CreateLeadInput {
   readonly createdAt: Date;
 }
 
-export type CreateLeadResult = { readonly kind: 'created' } | { readonly kind: 'duplicate' }; // UNIQUE (conseillerId, matchingResultId)
+// Retourne toujours le leadId (créé OU existant) pour permettre l'enqueue
+// idempotent de la notification, y compris sur replay partiel.
+export type CreateLeadResult =
+  | { readonly kind: 'created'; readonly leadId: string }
+  | { readonly kind: 'duplicate'; readonly leadId: string }; // UNIQUE (conseillerId, matchingResultId)
 
 export interface AppendTransitionInput {
   readonly transitionId: string;
