@@ -76,6 +76,16 @@
 
 La DoD de la constitution sera cochée intégralement avant merge (tests TDD domaine, intégration Testcontainers, lint/typecheck/boundaries, métriques + dashboard, sécurité OWASP, doc FR-CA, ADRs, migrations testées staging).
 
+**État DoD (2026-06-06, fin d'implémentation branche)** :
+
+- ✅ TDD domaine + use cases : machine d'état pure + property-tests (SC-003, FR-020), 4 use cases, 158 tests unitaires matching verts (commits RED→GREEN visibles).
+- ✅ Migrations Prisma (init_lead + append-only + cascade anonymisation) **appliquées et validées sur DB dev réelle** (tables + triggers vérifiés).
+- ✅ Lint (`biome --error-on-warnings`, 883 fichiers) + typecheck (17/17 packages) + `check:boundaries` — verts.
+- ✅ Observabilité : métriques OTel `cv.matching.lead.*` + logs Pino PII-safe.
+- ✅ Sécurité : RBAC `RoleGuard('conseiller')`, autorisation propriétaire, re-check verified, Zod serveur, Idempotency-Key, append-only trigger.
+- ✅ Doc FR-CA : i18n `matching.lead.*`, runbook, README module, ADRs 0025-0026 acceptés.
+- ⏳ **Restant avant merge prod** : tests d'intégration Testcontainers (stubs documentés `lead-*.integration.test.ts`, convention 011) + test de charge `load-test-leads.ts` à exécuter en **staging** (cf. CLAUDE.md « validations staging restantes »).
+
 ## Project Structure
 
 ### Documentation (this feature)
