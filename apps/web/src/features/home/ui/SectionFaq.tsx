@@ -2,6 +2,8 @@
 // <details>/<summary> natif : accessible et fonctionnel SANS JavaScript (SC-009).
 // Le balisage FAQPage JSON-LD est ajouté côté page (US3). Présentationnel pur (RSC).
 
+import { ChevronDown } from 'lucide-react';
+
 interface FaqItem {
   readonly question: string;
   readonly answer: string;
@@ -24,12 +26,10 @@ export function SectionFaq({ heading, items }: SectionFaqProps) {
             <details key={item.question} className="group py-4">
               <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-slate-900">
                 <dt>{item.question}</dt>
-                <span
+                <ChevronDown
                   aria-hidden="true"
-                  className="ml-4 text-slate-400 transition-transform group-open:rotate-45"
-                >
-                  +
-                </span>
+                  className="ml-4 h-5 w-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180"
+                />
               </summary>
               <dd className="mt-2 text-slate-600">{item.answer}</dd>
             </details>

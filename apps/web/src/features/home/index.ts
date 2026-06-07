@@ -6,6 +6,7 @@ export { buildHomepageJsonLd } from './lib/homepage-jsonld';
 export { BandeauLoi25 } from './ui/BandeauLoi25';
 export { CtaDecrireVoyage } from './ui/CtaDecrireVoyage';
 export { Hero } from './ui/Hero';
+export { JsonLd } from './ui/JsonLd';
 export { MentionPasDeContact } from './ui/MentionPasDeContact';
 export { SectionAvantageConseiller } from './ui/SectionAvantageConseiller';
 export { SectionCommentCaMarche } from './ui/SectionCommentCaMarche';

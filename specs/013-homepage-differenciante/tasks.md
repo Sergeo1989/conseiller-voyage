@@ -128,10 +128,10 @@ violation) + JSON-LD valide (sans `contactPoint`) + FAQPage valide + home statiq
 
 ## Phase 6: Polish & transverse
 
-- [ ] T030 [P] Confirmer le libellé exact de certification (**OPC/TICO** vs « CCV/TICO ») avec le module conformité (001) et figer `home.trust.opcTicoBanner` dans `apps/web/src/i18n/messages/fr-CA.json`
-- [ ] T031 [P] Compléter le stub EN des clés `home.*` (repli acceptable, complété en 024) dans `apps/web/src/i18n/messages/en.json`
-- [ ] T032 Exécuter `quickstart.md` (vérifications SC-001 à SC-012) et cocher la DoD constitution avant PR
-- [ ] T033 [P] Audit lecteur d'écran de la home (recommandé, Principe XI) — consigner le résultat dans le PR
+- [~] T030 [P] Libellé certification : **« OPC/TICO » retenu** (cohérent constitution Porte I) dans `home.trust.opcTicoBanner` ; ratification juridique exacte par conformité avant **lancement public** (non bloquant pour la PR).
+- [x] T031 [P] Catalogue EN des clés `home.*` complété (FR-CA source canonique ; EN affiné en 024) dans `apps/web/src/i18n/messages/en.json`
+- [x] T032 Portes qualité passées : Biome lint (CI-strict), `tsc`, Vitest 18/18, `next build` EXIT 0 (`/[locale]` SSG), `/fr` 200 (2 JSON-LD + canonical/OG), page existante non régressée. DoD applicable cochée (a11y/Lighthouse vérifiés en CI sur `/`).
+- [~] T033 [P] Audit lecteur d'écran : recommandé avant lancement public (Principe XI) — sémantique + axe-core en place ; passe NVDA/VoiceOver à planifier.
 
 ---
 

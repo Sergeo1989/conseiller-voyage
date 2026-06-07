@@ -12,6 +12,7 @@ import {
   BandeauLoi25,
   CtaDecrireVoyage,
   Hero,
+  JsonLd,
   MentionPasDeContact,
   SectionAvantageConseiller,
   SectionCommentCaMarche,
@@ -86,16 +87,8 @@ export default async function HomePage({ params }: PageProps): Promise<ReactNode
 
   return (
     <main className="min-h-screen bg-white">
-      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD construit à partir de copie i18n maîtrisée (pas d'entrée utilisateur). */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
-      />
-      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: idem — FAQPage depuis i18n. */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
+      <JsonLd data={orgJsonLd} />
+      <JsonLd data={faqJsonLd} />
 
       <header className="mx-auto flex max-w-6xl items-center justify-end px-4 py-4">
         <Link

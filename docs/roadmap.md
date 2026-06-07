@@ -177,7 +177,7 @@ Reste pour merger 005 vers `main` :
 | 017 | Schemas JSON-LD + sitemaps dynamiques + hreflang | SEO | S | ⏳ | 016 |
 | 018 | Pages d'atterrissage par thématique de voyage (FR-CA) | SEO | M | ⏳ | 016, 017 |
 | 019 | GEO / AI search readiness (llms.txt, citabilité passages) | SEO | S | ⏳ | 016-018 |
-| 026 | Page d'accueil — positionnement différenciant (neutralité, matching, confiance OPC/TICO, Loi 25) | SEO × matching | M | 🟡 spec en cours (branche `013-homepage-differenciante`, priorisée hors Sprint 6) | 011 ✅, 004 ✅, 008 ✅ ; 017 ⏳ partiel (JSON-LD homepage auto-contenu, infra sitemaps/hreflang complète différée) |
+| 026 | Page d'accueil — positionnement différenciant (neutralité, matching, confiance OPC/TICO, Loi 25) | SEO × matching | M | 🟡 implémenté branche `013-homepage-differenciante` (US1-US3 : héro + sections différenciation + « côté humain » + FAQ/JSON-LD/SEO statique ; Tailwind v4 + Turbopack activés ; lucide SVG ; build vert) — PR à ouvrir. Reste : image OG, ratification libellés légaux, audit lecteur d'écran. | 011 ✅, 004 ✅, 008 ✅ ; 017 ⏳ partiel (JSON-LD homepage auto-contenu, infra sitemaps/hreflang complète différée) |
 | 027 | SEO programmatique d'intention (arborescence FSA × spécialité × destination × langue) | SEO | L | ⏳ | 011, 016, 017, 018 |
 
 **Contraintes spécifiques à 016 (pages publiques individuelles)** — application [ADR-0002](adr/0002-pas-de-cta-contact-direct.md) :

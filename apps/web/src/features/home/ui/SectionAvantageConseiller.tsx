@@ -1,7 +1,9 @@
 // FR-025 [US2] — « Pourquoi un conseiller (le côté humain) ».
 // Met en avant l'accompagnement humain, le suivi par un pro, et le fait de
 // rester concentré sur SON projet — loin du bruit des comparateurs en ligne.
-// Composant présentationnel pur (RSC).
+// Composant présentationnel pur (RSC). Icônes lucide (SVG) par position.
+
+import { type LucideIcon, MessagesSquare, Sparkles, UserRoundCheck, Volume2 } from 'lucide-react';
 
 interface Point {
   readonly title: string;
@@ -13,6 +15,9 @@ interface SectionAvantageConseillerProps {
   readonly intro: string;
   readonly points: readonly Point[];
 }
+
+// Icônes alignées sur l'ordre des points i18n (accompagnement, suivi, hors bruit, expertise).
+const ICONS: readonly LucideIcon[] = [UserRoundCheck, MessagesSquare, Volume2, Sparkles];
 
 export function SectionAvantageConseiller({
   heading,
@@ -28,12 +33,18 @@ export function SectionAvantageConseiller({
         <p className="mt-4 text-lg text-slate-600">{intro}</p>
       </div>
       <ul className="mt-10 grid gap-6 sm:grid-cols-2">
-        {points.map((point) => (
-          <li key={point.title} className="rounded-lg border border-slate-200 bg-white p-6">
-            <h3 className="font-semibold text-slate-900">{point.title}</h3>
-            <p className="mt-2 text-slate-600">{point.body}</p>
-          </li>
-        ))}
+        {points.map((point, i) => {
+          const Icon = ICONS[i % ICONS.length] ?? UserRoundCheck;
+          return (
+            <li key={point.title} className="rounded-lg border border-slate-200 bg-white p-6">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                <Icon aria-hidden="true" className="h-5 w-5" />
+              </span>
+              <h3 className="mt-4 font-semibold text-slate-900">{point.title}</h3>
+              <p className="mt-2 text-slate-600">{point.body}</p>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

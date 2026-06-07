@@ -6,6 +6,7 @@
 // OPC/TICO. Composant présentationnel pur (RSC) : reçoit des chaînes déjà
 // traduites + le segment d'URL de langue, donc testable sans runtime next-intl.
 
+import { BadgeCheck } from 'lucide-react';
 import { CtaDecrireVoyage } from './CtaDecrireVoyage';
 
 interface HeroProps {
@@ -40,8 +41,8 @@ export function Hero({ urlLocale, title, subtitle, ctaLabel, freeLabel, trustLab
         <CtaDecrireVoyage urlLocale={urlLocale} label={ctaLabel} />
       </div>
       <p className="mt-3 text-sm text-slate-500">{freeLabel}</p>
-      <p className="mt-2 text-sm font-medium text-slate-700">
-        <span aria-hidden="true">✔ </span>
+      <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-700">
+        <BadgeCheck aria-hidden="true" className="h-4 w-4 text-blue-700" />
         {trustLabel}
       </p>
     </section>
