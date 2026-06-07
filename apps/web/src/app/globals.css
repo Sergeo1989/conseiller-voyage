@@ -1,5 +1,9 @@
+@import "tailwindcss";
+
 /*
  * Styles globaux d'accessibilité (Principe XI WCAG 2.1 AA).
+ * Chargés APRÈS Tailwind (preflight) : ces règles affinent le commun
+ * dénominateur a11y et restent prioritaires sur le reset.
  *
  *   - font-size body ≥ 16px (Safari/Linux livrent 13-14px par défaut,
  *     FAIL WCAG 1.4.4)
