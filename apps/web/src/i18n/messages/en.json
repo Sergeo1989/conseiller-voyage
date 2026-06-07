@@ -10,13 +10,116 @@
     "login": "Sign in"
   },
   "home": {
-    "ctaPrimary": "Describe my project",
+    "hero": {
+      "title": "Describe your trip. We present the 3 verified advisors that fit you.",
+      "subtitle": "Independent of any network. No extra cost compared to booking online."
+    },
+    "meta": {
+      "title": "Conseiller Voyage — Describe your trip, we present the right advisors",
+      "description": "Independent Quebec service: describe your project and get up to 3 verified travel advisors (OPC/TICO) matched for you. Free, no obligation."
+    },
+    "ctaPrimary": "Describe my trip",
     "ctaSecondary": "See how it works",
+    "advisorAccess": "Advisor space",
     "trust": {
       "verifiedAdvisors": "{count, plural, =0 {No verified advisors yet} =1 {1 verified advisor} other {# verified advisors}}",
+      "opcTicoBanner": "All OPC/TICO verified",
       "certificates": "CCV (Quebec) and TICO (Ontario) certificates",
       "dataResidency": "Data hosted in Canada (Law 25)",
-      "freeForTravelers": "Free for travelers"
+      "freeForTravelers": "Free for travelers, no obligation"
+    },
+    "commentCaMarche": {
+      "heading": "How it works",
+      "steps": [
+        {
+          "title": "Describe your trip",
+          "body": "A few minutes: destination, type of project, approximate dates, language."
+        },
+        {
+          "title": "We present up to 3 advisors",
+          "body": "Our matching picks the verified advisors most relevant to your project."
+        },
+        {
+          "title": "You talk and you choose",
+          "body": "You speak with them directly and decide. No fees, no obligation."
+        }
+      ]
+    },
+    "avantageConseiller": {
+      "heading": "Why an advisor, and not just a booking site",
+      "intro": "Booking online means you, alone, facing hundreds of options. An advisor is a professional who takes charge of your project — the human touch on top.",
+      "points": [
+        {
+          "title": "Human guidance",
+          "body": "A real person understands your project, your wishes and your constraints, and guides you at every step."
+        },
+        {
+          "title": "Follow-up by a pro",
+          "body": "Before, during and after: an advisor who stays reachable if something unexpected happens during your trip."
+        },
+        {
+          "title": "Away from comparison noise",
+          "body": "No dozens of tabs or prices to dissect. You stay focused on your trip, not on tools."
+        },
+        {
+          "title": "Personalized expertise",
+          "body": "Tailored recommendations no online booking engine can offer."
+        }
+      ]
+    },
+    "pourquoiTrois": {
+      "heading": "Why 3, and not a list",
+      "body": "A directory leaves you to sift through dozens of profiles. We present up to 3 verified advisors chosen for YOUR project — based on destination, trip type, language and region.",
+      "note": "Not a list to sort through yourself."
+    },
+    "neutralite": {
+      "heading": "Independent and neutral",
+      "body": "We present every verified advisor — independents and network members alike. No affiliation, no favoritism: our only interest is the right advisor for you."
+    },
+    "thematiques": {
+      "heading": "Whatever your trip",
+      "items": [
+        "Honeymoon",
+        "Family travel",
+        "Adventure and outdoors",
+        "Cruise",
+        "Europe",
+        "Asia and Japan"
+      ]
+    },
+    "faq": {
+      "heading": "Frequently asked questions",
+      "items": [
+        {
+          "question": "Is it free for travelers?",
+          "answer": "Yes, completely free and with no obligation. You describe your project, we present advisors — that's it."
+        },
+        {
+          "question": "How are advisors verified?",
+          "answer": "Every advisor presented holds the required authorizations (OPC in Quebec, TICO in Ontario). Verification is an eligibility requirement, not a marketing promise."
+        },
+        {
+          "question": "Why can't I contact an advisor directly?",
+          "answer": "Conseiller Voyage is matchmaking, not a directory of contact details. Describe your project and we present the right advisors."
+        },
+        {
+          "question": "How many advisors will I receive?",
+          "answer": "Up to 3, chosen for your project. Sometimes fewer, depending on your request and availability."
+        },
+        {
+          "question": "What happens to my data?",
+          "answer": "Your data stays in Canada. No contact details are shared without your consent (Law 25)."
+        }
+      ]
+    },
+    "loi25": {
+      "heading": "Your data stays in Canada",
+      "body": "Hosted in a Canadian region. No contact details shared without your consent."
+    },
+    "pasDeContact": {
+      "heading": "Why no direct contact?",
+      "body": "Conseiller Voyage is a qualified matchmaking service, not a directory of contact details. We present advisors suited to your project.",
+      "linkLabel": "Understand the model"
     }
   },
   "errors": {

@@ -10,13 +10,116 @@
     "login": "Connexion"
   },
   "home": {
-    "ctaPrimary": "Décrire mon projet",
+    "hero": {
+      "title": "Décrivez votre voyage. On vous présente les 3 conseillers vérifiés faits pour vous.",
+      "subtitle": "Indépendant de tout réseau. Aucun frais de plus qu'en ligne."
+    },
+    "meta": {
+      "title": "Conseiller Voyage — Décrivez votre voyage, on vous présente les bons conseillers",
+      "description": "Service québécois indépendant : décrivez votre projet et recevez jusqu'à 3 conseillers en voyages vérifiés (OPC/TICO) faits pour vous. Gratuit, sans engagement."
+    },
+    "ctaPrimary": "Décrire mon voyage",
     "ctaSecondary": "Voir comment ça marche",
+    "advisorAccess": "Espace conseiller",
     "trust": {
       "verifiedAdvisors": "{count, plural, =0 {Aucun conseiller vérifié pour l'instant} =1 {1 conseiller vérifié} other {# conseillers vérifiés}}",
+      "opcTicoBanner": "Tous vérifiés OPC/TICO",
       "certificates": "Certificats CCV (Québec) et TICO (Ontario)",
       "dataResidency": "Données hébergées au Canada (Loi 25)",
-      "freeForTravelers": "Gratuit pour les voyageurs"
+      "freeForTravelers": "Gratuit pour les voyageurs, sans engagement"
+    },
+    "commentCaMarche": {
+      "heading": "Comment ça marche",
+      "steps": [
+        {
+          "title": "Décrivez votre voyage",
+          "body": "Quelques minutes : destination, type de projet, dates approximatives, langue."
+        },
+        {
+          "title": "On vous présente jusqu'à 3 conseillers",
+          "body": "Notre appariement choisit les conseillers vérifiés les plus pertinents pour votre projet."
+        },
+        {
+          "title": "Vous échangez et vous choisissez",
+          "body": "Vous discutez directement avec eux et décidez. Sans frais, sans engagement."
+        }
+      ]
+    },
+    "avantageConseiller": {
+      "heading": "Pourquoi un conseiller, et pas juste un site de réservation",
+      "intro": "Réserver en ligne, c'est vous, seul, face à des centaines d'options. Un conseiller, c'est un professionnel qui prend en charge votre projet — le côté humain en plus.",
+      "points": [
+        {
+          "title": "Un accompagnement humain",
+          "body": "Une vraie personne comprend votre projet, vos envies et vos contraintes, et vous guide à chaque étape."
+        },
+        {
+          "title": "Un suivi par un pro",
+          "body": "Avant, pendant et après : un conseiller qui reste joignable si un imprévu survient en voyage."
+        },
+        {
+          "title": "Loin du bruit des comparateurs",
+          "body": "Pas des dizaines d'onglets ni de prix à décortiquer. Vous restez concentré sur votre voyage, pas sur des outils."
+        },
+        {
+          "title": "Une expertise personnalisée",
+          "body": "Des recommandations sur mesure qu'aucun moteur de réservation en ligne ne peut offrir."
+        }
+      ]
+    },
+    "pourquoiTrois": {
+      "heading": "Pourquoi 3, et pas une liste",
+      "body": "Un annuaire vous laisse trier des dizaines de profils. Nous, on vous présente jusqu'à 3 conseillers vérifiés choisis pour VOTRE projet — selon la destination, le type de voyage, la langue et la région.",
+      "note": "Pas une liste à trier soi-même."
+    },
+    "neutralite": {
+      "heading": "Indépendant et neutre",
+      "body": "On présente tout conseiller vérifié — indépendants comme membres de réseaux. Aucune appartenance, aucun favoritisme : notre seul intérêt, c'est le bon conseiller pour vous."
+    },
+    "thematiques": {
+      "heading": "Quel que soit votre projet de voyage",
+      "items": [
+        "Lune de miel",
+        "Voyage en famille",
+        "Aventure et plein air",
+        "Croisière",
+        "Europe",
+        "Asie et Japon"
+      ]
+    },
+    "faq": {
+      "heading": "Questions fréquentes",
+      "items": [
+        {
+          "question": "Est-ce gratuit pour les voyageurs ?",
+          "answer": "Oui, entièrement gratuit et sans engagement. Vous décrivez votre projet, on vous présente des conseillers — c'est tout."
+        },
+        {
+          "question": "Comment les conseillers sont-ils vérifiés ?",
+          "answer": "Chaque conseiller présenté détient les autorisations requises (OPC au Québec, TICO en Ontario). La vérification est une condition d'éligibilité, pas une promesse marketing."
+        },
+        {
+          "question": "Pourquoi je ne peux pas contacter un conseiller directement ?",
+          "answer": "Conseiller Voyage fait de la mise en relation par appariement, pas un annuaire de coordonnées. Décrivez votre projet et on vous présente les bons conseillers."
+        },
+        {
+          "question": "Combien de conseillers vais-je recevoir ?",
+          "answer": "Jusqu'à 3, choisis pour votre projet. Parfois moins, selon votre demande et les disponibilités."
+        },
+        {
+          "question": "Qu'advient-il de mes données ?",
+          "answer": "Vos données restent au Canada. Aucune coordonnée n'est partagée sans votre accord (Loi 25)."
+        }
+      ]
+    },
+    "loi25": {
+      "heading": "Vos données restent au Canada",
+      "body": "Hébergement en région canadienne. Aucune coordonnée partagée sans votre accord."
+    },
+    "pasDeContact": {
+      "heading": "Pourquoi pas de contact direct ?",
+      "body": "Conseiller Voyage est un service de mise en relation qualifiée, pas un annuaire de coordonnées. On vous présente des conseillers adaptés à votre projet.",
+      "linkLabel": "Comprendre le modèle"
     }
   },
   "errors": {

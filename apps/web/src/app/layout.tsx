@@ -9,12 +9,26 @@
 // Les styles globaux d'accessibilité sont importés via globals.css —
 // Next.js les inline dans son <head> auto-généré.
 
+import { GeistSans } from 'geist/font/sans';
+import { Fraunces } from 'next/font/google';
 import type { ReactNode } from 'react';
 import './globals.css';
 
+// Serif d'affichage (signature de marque) pour les grands titres. Geist sans
+// reste le corps + les titres de cartes. display:swap évite le FOIT.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+  display: 'swap',
+});
+
 export default function RootLayout({ children }: { children: ReactNode }): ReactNode {
   return (
-    <html lang="fr-CA" suppressHydrationWarning>
+    <html
+      lang="fr-CA"
+      className={`${GeistSans.variable} ${fraunces.variable}`}
+      suppressHydrationWarning
+    >
       <body suppressHydrationWarning>{children}</body>
     </html>
   );

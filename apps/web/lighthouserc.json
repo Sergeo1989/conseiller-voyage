@@ -3,6 +3,7 @@
   "ci": {
     "collect": {
       "url": [
+        "http://localhost:3000/fr",
         "http://localhost:3000/fr/comment-ca-marche",
         "http://localhost:3000/fr/mentions-legales",
         "http://localhost:3000/fr/cgu-voyageur",
