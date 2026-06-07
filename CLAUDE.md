@@ -117,28 +117,25 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/013-homepage-differenciante/plan.md`](specs/013-homepage-differenciante/plan.md)
-(Feature roadmap **026** — page d'accueil publique différenciante ; module
-`SEO × matching` ; Tier 3 acquisition, priorisée hors séquence ; branche
-`013-homepage-differenciante`). Remplace le squelette de soft-launch
-(`apps/web/src/app/[locale]/page.tsx`) par une page voyageur de positionnement
-rendue **SSR/SSG**, qui traduit les 4 différenciateurs structurels (neutralité
-multi-réseaux, appariement algorithmique, vérification OPC/TICO, vie privée
-Loi 25) en messages explicites. **Contenu statique** piloté par i18n FR-CA —
-aucun appel matching en direct, aucune donnée persistée. **CTA unique** «
-Décrire mon voyage » → `/voyage/nouveau` (invariant intake = unique route de
-mise en relation) ; **zéro contact direct**, zéro conseiller cliquable
-(ADR-0002). Modèle = on présente **des conseillers (jusqu'à 3), pas des
-soumissions**. Slice front `features/home` (sections RSC pures) + builder
-JSON-LD pur testé (`Organization`+`WebSite`, sans `contactPoint`). Portes
-Lighthouse CI + axe-core (héritées de 005) étendues à `/` (Perf ≥ 90 / SEO ≥
-95 / A11y ≥ 95 ; LCP < 2,5 s, CLS < 0,1). Pas de nouvel ADR (couvert par
-ADR-0002).
+**Plan courant** : [`specs/014-conversation-conseiller-voyageur/plan.md`](specs/014-conversation-conseiller-voyageur/plan.md)
+(Feature roadmap **013** — conversation conseiller ↔ voyageur post-acceptation ;
+module `matching` ; Tier 2 boucle économique cœur ; branche
+`014-conversation-conseiller-voyageur`). Ouvre un **fil** par couple (conseiller ×
+lead `accepté`) : messages texte + **pièces jointes** (devis PDF transmis tels
+quels, **S3 ca-central-1**, URL signées) ; **une notification par destinataire**
+(outbox + BullMQ → SES via 003) ; éligibilité d'écriture **lue** via
+`MatchingLeadQueryPort` (012) + conformité (001) — la machine d'état n'est **pas**
+ré-implémentée ; cascade **anonymisation Loi 25** (audit préservé) ; **idempotence**
+d'envoi ; **cloisonnement** des fils. **Anti-marketplace strict** (ADR-0002) :
+zéro montant/paiement/lien de réservation, devis = fichier opaque, mention
+permanente, règlement hors plateforme. Expose un **port public**
+`ConversationQueryPort` (consommé par 014/015) + endpoints HTTP + **UI minimale**.
+Domaine pur testé TDD (`canWrite`, `validateMessage`, `validateAttachment`).
+ADR-0027 (pièces jointes anti-transaction + URL signées) à rédiger.
 
-Pour le contexte technologique détaillé et la structure de répertoires de la
-feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
-`contracts/{homepage-ui,metadata-jsonld}.contract.md`, et `quickstart.md` du
-même répertoire `specs/013-homepage-differenciante/`.
+Pour le contexte détaillé, lire ce plan ainsi que `research.md`, `data-model.md`,
+`contracts/{conversation-query.port,http-endpoints,notifications-and-storage}.md`,
+et `quickstart.md` du même répertoire `specs/014-conversation-conseiller-voyageur/`.
 
 **Features précédentes mergées** (Tier 0 fermé) :
 - `001-conformite-module` (PR #1, squash `8592922`). Source de vérité pour
@@ -197,8 +194,16 @@ même répertoire `specs/013-homepage-differenciante/`.
   Expose le port public `MatchingLeadQueryPort` + endpoints HTTP conseiller
   (consommés par 014). Avant déploiement prod : tests intégration Testcontainers
   + charge en staging restants.
+- `013-homepage-differenciante` = **feature 026 roadmap** (PR #25, squash `d67b34a`).
+  Page d'accueil publique différenciante (module SEO × matching) : héro + sections
+  différenciation + « côté humain » + FAQ, JSON-LD `Organization`/`WebSite`/`FAQPage`,
+  SSR/SSG statique cacheable, anti-marketplace (CTA unique → intake, 0 contact).
+  **Active l'infra front** : Tailwind CSS v4 (PostCSS), `next dev` en **Turbopack**
+  (corrige `import.meta` des packages `@cv/*`), lucide-react ; typo serif Fraunces +
+  Geist sans. Règles globales dans `@layer base` (cascade Tailwind). Reste post-MVP :
+  image OG, ratification libellés OPC/TICO, audit lecteur d'écran.
 
 **Features en cours / à venir** :
-- `013-homepage-differenciante` (cette branche, feature roadmap 026) : voir
-  *Plan courant* ci-dessus.
+- `014-conversation-conseiller-voyageur` (cette branche, feature roadmap 013) :
+  voir *Plan courant* ci-dessus.
 <!-- SPECKIT END -->
