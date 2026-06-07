@@ -26,7 +26,7 @@ export function SectionThematiquesTeaser({
           <li key={item}>
             <Link
               href={`/${urlLocale}/voyage/nouveau`}
-              className="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-blue-700 hover:text-blue-700"
+              className="inline-flex min-h-[44px] items-center rounded-full border border-slate-300 px-5 text-sm font-medium text-slate-700 transition-colors hover:border-blue-700 hover:text-blue-700"
             >
               {item}
             </Link>
