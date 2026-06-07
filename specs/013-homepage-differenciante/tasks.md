@@ -29,9 +29,9 @@ Frontend `apps/web` (convention feature-slicing VIII.a) : route mince dans
 
 ## Phase 1: Setup (infrastructure partagée)
 
-- [ ] T001 [P] Scaffolder le slice `features/home` ({ui/, lib/, index.ts}) dans `apps/web/src/features/home/`
-- [ ] T002 [P] Ajouter `http://localhost:3000/fr` aux URLs de collecte dans `apps/web/lighthouserc.json`
-- [ ] T003 [P] Créer le squelette du namespace i18n `home.*` (clés vides/placeholder) dans `apps/web/src/i18n/messages/fr-CA.json` et `apps/web/src/i18n/messages/en.json`
+- [x] T001 [P] Scaffolder le slice `features/home` ({ui/, lib/, index.ts}) dans `apps/web/src/features/home/`
+- [x] T002 [P] Ajouter `http://localhost:3000/fr` aux URLs de collecte dans `apps/web/lighthouserc.json`
+- [x] T003 [P] Créer le squelette du namespace i18n `home.*` (clés vides/placeholder) dans `apps/web/src/i18n/messages/fr-CA.json` et `apps/web/src/i18n/messages/en.json`
 
 ---
 
@@ -40,8 +40,8 @@ Frontend `apps/web` (convention feature-slicing VIII.a) : route mince dans
 **⚠️ CRITIQUE** : aucune user story ne peut démarrer avant cette phase.
 
 - [ ] T004 Définir et réconcilier les clés i18n `home.*` FR-CA (hero.title mandaté, hero.subtitle, ctaPrimary = « Décrire mon voyage » [remplace « Décrire mon projet »], trust.{opcTicoBanner, freeForTravelers}, commentCaMarche.{heading,step1,step2,step3}, pourquoiTrois.{heading,step1,step2,step3,note}, neutralite.{heading,body}, thematiques.{heading,items[]}, faq.{heading,items[]={question,answer}}, loi25.{heading,body}, pasDeContact.{heading,body,link}, advisorAccess) dans `apps/web/src/i18n/messages/fr-CA.json` + stub EN dans `en.json`
-- [ ] T005 Composant partagé `CtaDecrireVoyage` (lien `next/link` locale-aware vers `/<locale>/voyage/nouveau`, libellé via `home.ctaPrimary`) dans `apps/web/src/features/home/ui/CtaDecrireVoyage.tsx`
-- [ ] T006 Surface publique du slice dans `apps/web/src/features/home/index.ts` (réexporte les composants de section au fil de leur création)
+- [x] T005 Composant partagé `CtaDecrireVoyage` (lien `next/link` locale-aware vers `/<locale>/voyage/nouveau`, libellé via `home.ctaPrimary`) dans `apps/web/src/features/home/ui/CtaDecrireVoyage.tsx`
+- [x] T006 Surface publique du slice dans `apps/web/src/features/home/index.ts` (réexporte les composants de section au fil de leur création)
 
 **Checkpoint** : i18n + CTA + surface prêts — les user stories peuvent démarrer.
 
@@ -57,13 +57,13 @@ remplace le squelette de soft-launch.
 
 ### Tests (TDD — rouge AVANT vert)
 
-- [ ] T007 [P] [US1] Test RED des invariants héro/CTA : un seul `<h1>`, **exactement un** CTA primaire avec `href` vers `/voyage/nouveau`, **0** `mailto:`/`tel:`/formulaire de contact (contrat U1/U3/I1/I2/I3/I5) dans `apps/web/src/features/home/ui/__tests__/home-invariants.test.tsx`
+- [x] T007 [P] [US1] Test RED des invariants héro/CTA : un seul `<h1>`, **exactement un** CTA primaire avec `href` vers `/voyage/nouveau`, **0** `mailto:`/`tel:`/formulaire de contact (contrat U1/U3/I1/I2/I3/I5) dans `apps/web/src/features/home/ui/__tests__/home-invariants.test.tsx`
 
 ### Implémentation
 
-- [ ] T008 [US1] Composant `Hero` (RSC) : `<h1>` `home.hero.title`, sous-titre `home.hero.subtitle`, `<CtaDecrireVoyage>`, message « gratuit/sans engagement » `home.trust.freeForTravelers` (FR-021), micro-confiance `home.trust.opcTicoBanner` ; aucune image (LCP = H1) dans `apps/web/src/features/home/ui/Hero.tsx`
-- [ ] T009 [US1] Route mince `app/[locale]/page.tsx` : RSC statique rendant `<main>` + `Hero` (remplace le squelette inline-styles) dans `apps/web/src/app/[locale]/page.tsx` → rend T007 vert
-- [ ] T010 [US1] Vérifier le rendu **sans JavaScript** (composants RSC, CTA = `Link`) — contrôle manuel + assertion dans `home-invariants.test.tsx` (contrat J1, SC-009)
+- [x] T008 [US1] Composant `Hero` (RSC) : `<h1>` `home.hero.title`, sous-titre `home.hero.subtitle`, `<CtaDecrireVoyage>`, message « gratuit/sans engagement » `home.trust.freeForTravelers` (FR-021), micro-confiance `home.trust.opcTicoBanner` ; aucune image (LCP = H1) dans `apps/web/src/features/home/ui/Hero.tsx`
+- [x] T009 [US1] Route mince `app/[locale]/page.tsx` : RSC statique rendant `<main>` + `Hero` (remplace le squelette inline-styles) dans `apps/web/src/app/[locale]/page.tsx` → rend T007 vert
+- [x] T010 [US1] Vérifier le rendu **sans JavaScript** (composants RSC, CTA = `Link`) — contrôle manuel + assertion dans `home-invariants.test.tsx` (contrat J1, SC-009)
 
 **Checkpoint** : MVP — la home convertit (héro + CTA), anti-marketplace garanti par test.
 
