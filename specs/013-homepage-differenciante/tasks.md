@@ -111,17 +111,19 @@ violation) + JSON-LD valide sans `contactPoint`.
 - [ ] T020 [US3] `generateMetadata` (title/description i18n, `alternates.canonical`, `openGraph`, `twitter`, `robots` indexable) + injection du `<script type="application/ld+json">` via `buildHomepageJsonLd` dans `apps/web/src/app/[locale]/page.tsx` (contrat M1–M6, L8)
 - [ ] T021 [P] [US3] Test a11y Playwright + axe-core tag `@a11y` sur `/fr` (0 violation sérieuse/critique, un seul `<h1>`, repères sémantiques, opérabilité clavier) dans `apps/web/tests/a11y/home.spec.ts`
 - [ ] T022 [US3] Valider la porte Lighthouse CI sur `/fr` (Perf≥90/SEO≥95/A11y≥95, LCP≤2500, CLS≤0.1) — exécuter `lhci` localement, ajuster si dépassement (contrat SC-004/005)
+- [ ] T023 [US3] **Garantir la cacheabilité à l'échelle** (plusieurs M visites/jour) : `generateStaticParams` (fr, en), rendu statique sans fonction dynamique par requête (aucun `cookies()`/`headers()` sur la route), `Cache-Control` long + revalidation à la demande dans `apps/web/src/app/[locale]/page.tsx` (contrat S1–S4, FR-017/018, SC-010/011)
+- [ ] T024 [P] [US3] **Magnétisme SEO/GEO** : image de partage social (OG) + contenu citable (passages courts, sémantique propre) ; vérifier la richesse des métadonnées dans `app/[locale]/page.tsx` + composants de section (contrat S5, FR-019)
 
-**Checkpoint** : les 3 stories fonctionnent ; portes a11y + perf vertes.
+**Checkpoint** : les 3 stories fonctionnent ; portes a11y + perf vertes ; home statique cacheable au CDN.
 
 ---
 
 ## Phase 6: Polish & transverse
 
-- [ ] T023 [P] Confirmer le libellé exact de certification (**OPC/TICO** vs « CCV/TICO ») avec le module conformité (001) et figer `home.trust.opcTicoBanner` dans `apps/web/src/i18n/messages/fr-CA.json`
-- [ ] T024 [P] Compléter le stub EN des clés `home.*` (repli acceptable, complété en 024) dans `apps/web/src/i18n/messages/en.json`
-- [ ] T025 Exécuter `quickstart.md` (vérifications SC-001 à SC-009) et cocher la DoD constitution avant PR
-- [ ] T026 [P] Audit lecteur d'écran de la home (recommandé, Principe XI) — consigner le résultat dans le PR
+- [ ] T025 [P] Confirmer le libellé exact de certification (**OPC/TICO** vs « CCV/TICO ») avec le module conformité (001) et figer `home.trust.opcTicoBanner` dans `apps/web/src/i18n/messages/fr-CA.json`
+- [ ] T026 [P] Compléter le stub EN des clés `home.*` (repli acceptable, complété en 024) dans `apps/web/src/i18n/messages/en.json`
+- [ ] T027 Exécuter `quickstart.md` (vérifications SC-001 à SC-011) et cocher la DoD constitution avant PR
+- [ ] T028 [P] Audit lecteur d'écran de la home (recommandé, Principe XI) — consigner le résultat dans le PR
 
 ---
 
@@ -146,7 +148,7 @@ violation) + JSON-LD valide sans `contactPoint`.
 - Setup : T001-T003 `[P]`.
 - US2 : composants de section T012-T016 `[P]` (fichiers distincts) ; T017 (compose `page.tsx`) après.
 - US3 : T018/T021 `[P]` (test pur + test a11y, fichiers distincts).
-- ⚠️ Sérialiser tout ce qui touche `apps/web/src/app/[locale]/page.tsx` (T009 → T017 → T020) : même fichier.
+- ⚠️ Sérialiser tout ce qui touche `apps/web/src/app/[locale]/page.tsx` (T009 → T017 → T020 → T023) : même fichier.
 
 ---
 
@@ -171,6 +173,6 @@ MVP US1 → ajouter US2 (sections différenciation) → ajouter US3 (SEO/perf/a1
 - Pas de migration, pas de nouvel ADR (couvert par ADR-0002), pas de Server Action.
 - Réconciliations de copie (CTA, OPC/TICO) traitées en T004/T023 — ne pas inventer le libellé légal.
 
-**Total tâches** : 26 (3 Setup + 3 Foundational + 4 US1 + 7 US2 + 5 US3 + 4 Polish).
+**Total tâches** : 28 (3 Setup + 3 Foundational + 4 US1 + 7 US2 + 7 US3 + 4 Polish).
 
 **Suite recommandée** : `/speckit.analyze` (cohérence spec/plan/tasks) puis `/speckit.implement`.

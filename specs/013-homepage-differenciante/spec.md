@@ -35,6 +35,7 @@ direct conseiller).
 - Q: L'accès des conseillers/admins pilotes (présent dans le squelette actuel) doit-il disparaître ? → A: Non. L'accès conseiller/admin devient **secondaire et discret** (lien d'en-tête ou de pied de page « Espace conseiller »), pour ne pas concurrencer le CTA primaire voyageur tout en préservant la porte d'entrée du soft-launch.
 - Q: Faut-il livrer un nouveau design system avec cette page ? → A: Non. La page réutilise les primitives existantes (`packages/ui` shadcn/Radix + Tailwind) ; la formalisation du design system reste la feature 025. Aucun blocage sur 025.
 - Q: Quel traitement visuel du héro ? → A: **Héro texte centré** (texte-only, sans image). Le LCP devient le H1 (pas d'image à charger), le CLS est nul et il n'y a aucune dépendance au design system (025). Choix le plus sûr pour la porte Lighthouse (Perf ≥ 90) et le plus fidèle au positionnement sobre. Le squelette de mise en page agréé (en-tête sobre → héro → « pourquoi 3 » → neutralité → bandeau Loi 25 → mention anti-contact → CTA répété → pied de page) est détaillé dans `plan.md`.
+- Q: Quel régime de trafic viser ? → A: **Plateforme « magnétique »** visant le **maximum de trafic organique** — potentiellement **plusieurs millions de visites par jour**. Conséquence directe sur la home : elle DOIT être **entièrement statique et servie par le CDN canadien**, sans aucune dépendance par requête à l'origine applicative (DB/Redis/SES), pour absorber les pics (campagnes, viralité) au bord sans dégradation. Le magnétisme repose sur un SEO/GEO maximal (contenu citable, métadonnées + balisage riches, partage social). La montée en charge du reste de la plateforme et l'arborescence SEO de masse relèvent des features SEO (016-019, 027) et infra (021), différées.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -132,6 +133,7 @@ HTTP indexable.
 - **Accès conseiller/admin** : conservé en lien secondaire discret (en-tête/pied de page), sans concurrencer le CTA voyageur, sans exposer d'information de contact.
 - **Bascule de langue** : un sélecteur FR/EN reste présent ; FR-CA est la source canonique, EN est différé (catalogue i18n vide ou repli FR jusqu'à 024) — aucun fork de gabarit.
 - **Copie codée en dur** : toute chaîne visible provient du catalogue i18n FR-CA (pas de texte en dur), pour permettre l'ajout d'EN sans fork.
+- **Pic de trafic (campagne, viralité, saisonnalité)** : absorbé par le cache CDN ; l'origine applicative n'est pas sollicitée par requête (page statique). Aucun chemin de la home ne déclenche de travail serveur par visiteur.
 
 ## Requirements *(mandatory)*
 
@@ -153,6 +155,9 @@ HTTP indexable.
 - **FR-014**: La copie de comptage DOIT rester exacte : le matériel explicatif emploie « **jusqu'à 3** » ; la page NE DOIT PAS garantir un nombre de conseillers ni un résultat avant soumission du brief (aucune requête matching en direct).
 - **FR-015**: L'accès conseiller/admin DOIT être conservé en **lien secondaire discret** (en-tête ou pied de page) sans concurrencer le CTA primaire voyageur et sans exposer d'information de contact.
 - **FR-016**: Toute animation décorative DOIT respecter `prefers-reduced-motion`.
+- **FR-017**: La page DOIT être **rendue entièrement statique** (pré-générée par langue) et servie via le **CDN canadien**, **sans aucune dépendance par requête** à la DB/Redis/SES ni aux services applicatifs — afin de soutenir un trafic de l'ordre de **plusieurs millions de visites/jour** sans charge sur l'origine ni dégradation. Aucune fonction de rendu dynamique par requête (lecture de cookies/en-têtes par requête) ne doit être utilisée sur cette route.
+- **FR-018**: La page DOIT émettre une **politique de cache** permettant un **taux de hit CDN élevé** (TTL long + revalidation à la demande lorsque la copie change), de sorte que la quasi-totalité des requêtes soit servie au bord (edge).
+- **FR-019**: La page DOIT **maximiser la découvrabilité (magnétisme SEO + GEO)** : contenu sémantique **citable par les moteurs de recherche IA**, métadonnées + balisage structuré complets, image de partage social — pour attirer et convertir un trafic organique de masse. (Complète l'infra SEO 017 et la lecture GEO 019, différées.)
 
 ### Key Entities *(include if feature involves data)*
 
@@ -172,6 +177,8 @@ HTTP indexable.
 - **SC-007**: Le JSON-LD `Organization` + `WebSite` passe un validateur de données structurées avec 0 erreur, sans `contactPoint`/`telephone`.
 - **SC-008**: **100 %** des chaînes visibles proviennent du catalogue i18n FR-CA (0 copie codée en dur), permettant l'ajout d'EN ultérieur sans fork de gabarit.
 - **SC-009**: La page d'accueil rend son contenu principal et son CTA fonctionnels **avec JavaScript désactivé** (preuve du rendu serveur/statique).
+- **SC-010**: La home soutient un trafic de l'ordre de **plusieurs millions de visites/jour** : **≥ 95 %** des requêtes servies depuis le cache CDN (edge), l'origine applicative **n'est pas sollicitée par requête** ; TTFB p95 (cache hit) **< 200 ms**. Vérifiable par la configuration (génération statique + `Cache-Control`) et un test de charge léger au bord.
+- **SC-011**: La page reste **servie même si l'origine applicative (DB/Redis/SES/app) est indisponible** (servie depuis le CDN), preuve de résilience à l'échelle.
 
 ## Assumptions
 
@@ -183,3 +190,4 @@ HTTP indexable.
 - **Internationalisation** : FR-CA est la source canonique ; l'anglais est différé à 024 (catalogue EN ajouté par clés séparées, jamais par fork).
 - **Public et authentification** : la page d'accueil est publique et anonyme (aucune personnalisation, aucune session requise) ; l'accès conseiller/admin reste un lien secondaire discret.
 - **Remplacement du squelette** : cette feature remplace le squelette de soft-launch actuel (`/[locale]/page.tsx`) par la page de positionnement voyageur, en préservant l'accès conseiller/admin en secondaire.
+- **Échelle et magnétisme** : la home est conçue pour **plusieurs millions de visites/jour**, absorbées par le **CDN canadien (CloudFront ca-central-1)** ; comme elle est statique, l'origine applicative est quasi non sollicitée. Le magnétisme (attirer ce trafic) repose sur le SEO/GEO de la home + l'arborescence SEO de masse des features 016-019/027 (différées) — la home en est l'entrée phare, pas le seul levier.

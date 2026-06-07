@@ -33,11 +33,11 @@ dépendance nouvelle.
 
 **Project Type**: Web frontend (`apps/web`), convention feature-slicing Principe VIII.a.
 
-**Performance Goals**: LCP < 2,5 s · INP < 200 ms · CLS < 0,1 · Lighthouse Perf ≥ 90 / SEO ≥ 95 / A11y ≥ 95 (portes bloquantes).
+**Performance Goals**: LCP < 2,5 s · INP < 200 ms · CLS < 0,1 · Lighthouse Perf ≥ 90 / SEO ≥ 95 / A11y ≥ 95 (portes bloquantes) · **taux de hit CDN ≥ 95 % · TTFB cache-hit p95 < 200 ms**.
 
-**Constraints**: SSR/SSG obligatoire ; contenu principal + CTA fonctionnels **sans JavaScript client** ; copie 100 % FR-CA via i18n (EN différé 024, jamais de fork) ; anti-marketplace strict (0 coordonnée de contact, 0 conseiller cliquable — ADR-0002) ; un seul CTA primaire vers `/voyage/nouveau`.
+**Constraints**: **génération entièrement statique** (par langue) servie au CDN, **aucune fonction de rendu dynamique par requête** (pas de `cookies()`/`headers()` sur la route home) → origine non sollicitée par visiteur ; `Cache-Control` long + revalidation à la demande ; contenu principal + CTA fonctionnels **sans JavaScript client** ; copie 100 % FR-CA via i18n (EN différé 024, jamais de fork) ; anti-marketplace strict (0 coordonnée de contact, 0 conseiller cliquable — ADR-0002) ; un seul CTA primaire vers `/voyage/nouveau`.
 
-**Scale/Scope**: 1 route publique (`/[locale]`) ; ~7 sections ; trafic anonyme non authentifié ; aucune personnalisation.
+**Scale/Scope**: **plusieurs millions de visites/jour** absorbées par le **CDN (CloudFront ca-central-1)** ; la home étant statique, l'origine est quasi non sollicitée. 1 route publique (`/[locale]`) × langues ; ~7 sections ; trafic anonyme non authentifié ; aucune personnalisation.
 
 ## Constitution Check
 
@@ -108,11 +108,14 @@ HTTP de sécurité déjà posés globalement (middleware). Aucun secret, aucun S
 désérialisation d'entrée. Surface d'attaque ≈ contenu statique. OWASP : sans objet
 nouveau.
 
-### X. Fiabilité et résilience — ✅ PASS
+### X. Fiabilité et résilience — ✅ PASS (renforcé échelle)
 
-Page pré-rendue → disponibilité élevée via CDN, indépendante de la DB/Redis/SES (mode
-dégradé naturel : la home reste servie même si les services applicatifs sont HS).
-Idempotence sans objet (aucune écriture). Repli i18n si une clé manque.
+Page **entièrement statique** → servie par le CDN, **indépendante de l'origine** : soutient
+plusieurs millions de visites/jour sans charge applicative (FR-017), pics absorbés au bord
+(FR-018). Mode dégradé naturel : la home reste servie même si DB/Redis/SES/app sont HS
+(SC-011). Aucune fonction dynamique par requête sur la route (pas de `cookies()`/`headers()`)
+pour garantir la cacheabilité totale. Idempotence sans objet (aucune écriture). Repli i18n
+si une clé manque.
 
 ### Definition of Done — engagement
 
@@ -185,6 +188,24 @@ Ordre vertical validé (héro **texte centré**, cf. Clarification spec 2026-06-
 ⑤ pourquoi 3 → ⑥ neutralité → ⑦ bandeau Loi 25 → ⑧ mention anti-contact → ⑨ CTA répété →
 ⑩ pied de page`. Un seul `<h1>` (héro) ; les sections portent des `<h2>` avec
 `aria-labelledby`. Héro texte-only → LCP = le H1, CLS nul, aucune dépendance image/025.
+
+## Stratégie d'échelle & magnétisme (plusieurs M visites/jour)
+
+- **Génération statique par langue** : `generateStaticParams` (fr, en) + rendu statique
+  (RSC sans API dynamique par requête). Vérifier qu'aucun `cookies()`/`headers()` n'est
+  appelé sur la route (cela opterait Next en rendu dynamique et casserait la cacheabilité).
+  L'accès « Espace conseiller » est un **simple lien statique** (aucune vérif de session sur
+  la home) — la personnalisation/auth reste hors de cette route.
+- **Cache CDN** : `Cache-Control` long + **revalidation à la demande** (revalidation
+  déclenchée lors d'un changement de copie/déploiement). Objectif : hit ratio ≥ 95 %,
+  origine non sollicitée par visiteur (FR-017/018, SC-010/011).
+- **Résilience** : la home survit à une panne d'origine (servie depuis le bord).
+- **Magnétisme SEO/GEO** : contenu sémantique citable (passages courts, titres clairs),
+  métadonnées + JSON-LD complets, image de partage social (FR-019). La home est l'entrée
+  phare ; l'arborescence SEO de masse (016-019/027) et la lecture GEO fine (019) sont des
+  features distinctes différées — ne pas les réimplémenter ici.
+- **Hors scope** : CDN/infra (CloudFront, invalidation) est déjà la cible constitution ;
+  013 garantit seulement que la home est *cacheable de bout en bout* et le documente.
 
 ## Réconciliations de copie (à traiter en implémentation, non bloquantes)
 

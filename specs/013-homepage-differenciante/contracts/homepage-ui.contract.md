@@ -52,3 +52,13 @@ automatisé (Vitest composant + Playwright/axe) et trace une exigence du spec.
 |---|---|---|
 | X1 | Réponse 200, pas de `noindex` | FR-013 |
 | X2 | Lien canonique présent par langue | FR-013 |
+
+## Échelle & cacheabilité (plusieurs M visites/jour)
+
+| Clause | Exigence | Réf |
+|---|---|---|
+| S1 | Route **générée statiquement** par langue (`generateStaticParams` fr/en) | FR-017, SC-010 |
+| S2 | **Aucune** fonction de rendu dynamique par requête sur la route (`cookies()`/`headers()`) | FR-017 |
+| S3 | En-tête `Cache-Control` long + revalidation à la demande (hit CDN ≥ 95 %) | FR-018, SC-010 |
+| S4 | Home servie même si l'origine applicative est HS (résilience CDN) | SC-011 |
+| S5 | Image de partage social (OG) + contenu citable GEO | FR-019 |
