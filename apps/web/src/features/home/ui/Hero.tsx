@@ -28,23 +28,25 @@ export function Hero({ urlLocale, title, subtitle, ctaLabel, freeLabel, trustLab
   return (
     <section
       aria-labelledby="hero-heading"
-      className="mx-auto flex max-w-3xl flex-col items-center px-4 py-16 text-center sm:py-24"
+      className="bg-gradient-to-b from-blue-50/60 via-white to-white"
     >
-      <h1
-        id="hero-heading"
-        className="text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl"
-      >
-        {title}
-      </h1>
-      <p className="mt-6 max-w-2xl text-pretty text-lg text-slate-600">{subtitle}</p>
-      <div className="mt-8">
-        <CtaDecrireVoyage urlLocale={urlLocale} label={ctaLabel} />
+      <div className="mx-auto flex max-w-3xl flex-col items-center px-4 py-20 text-center sm:py-28">
+        <h1
+          id="hero-heading"
+          className="text-balance text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl"
+        >
+          {title}
+        </h1>
+        <p className="mt-6 max-w-2xl text-pretty text-lg text-slate-600">{subtitle}</p>
+        <div className="mt-8">
+          <CtaDecrireVoyage urlLocale={urlLocale} label={ctaLabel} />
+        </div>
+        <p className="mt-3 text-sm text-slate-500">{freeLabel}</p>
+        <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-700">
+          <BadgeCheck aria-hidden="true" className="h-4 w-4 text-blue-700" />
+          {trustLabel}
+        </p>
       </div>
-      <p className="mt-3 text-sm text-slate-500">{freeLabel}</p>
-      <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-700">
-        <BadgeCheck aria-hidden="true" className="h-4 w-4 text-blue-700" />
-        {trustLabel}
-      </p>
     </section>
   );
 }
