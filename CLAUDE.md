@@ -117,24 +117,28 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/012-lead-notifications-state-machine/plan.md`](specs/012-lead-notifications-state-machine/plan.md)
-(Feature 012 roadmap — extension aval du module `matching` ; Tier 2 boucle
-économique cœur ; branche `012-lead-notifications-state-machine`). Consomme
-les 4 événements outbox de 011 sur le bus `matching.events`, crée une entité
-**Lead** par (conseiller vérifié × MatchingResultEntry), notifie chaque
-conseiller individuellement (un job BullMQ par destinataire, courriel FR-CA
-SES sans PII de contact), et pilote une **machine d'état de lead** append-only
-(`envoyé → vu → accepté → refusé → devis_envoyé → réservation_confirmée → perdu`)
-— fonction pure du domaine (TDD strict Principe VI). Anti-marketplace strict
-(aucune donnée transactionnelle), re-filtrage `verified` dynamique, cascade
-anonymisation Loi 25 (audit préservé), concurrence optimiste, idempotence
-at-least-once. Expose un port public `MatchingLeadQueryPort` + endpoints HTTP
-conseiller (consommés par 014) ; communication voyageur déléguée à 013/015.
+**Plan courant** : [`specs/013-homepage-differenciante/plan.md`](specs/013-homepage-differenciante/plan.md)
+(Feature roadmap **026** — page d'accueil publique différenciante ; module
+`SEO × matching` ; Tier 3 acquisition, priorisée hors séquence ; branche
+`013-homepage-differenciante`). Remplace le squelette de soft-launch
+(`apps/web/src/app/[locale]/page.tsx`) par une page voyageur de positionnement
+rendue **SSR/SSG**, qui traduit les 4 différenciateurs structurels (neutralité
+multi-réseaux, appariement algorithmique, vérification OPC/TICO, vie privée
+Loi 25) en messages explicites. **Contenu statique** piloté par i18n FR-CA —
+aucun appel matching en direct, aucune donnée persistée. **CTA unique** «
+Décrire mon voyage » → `/voyage/nouveau` (invariant intake = unique route de
+mise en relation) ; **zéro contact direct**, zéro conseiller cliquable
+(ADR-0002). Modèle = on présente **des conseillers (jusqu'à 3), pas des
+soumissions**. Slice front `features/home` (sections RSC pures) + builder
+JSON-LD pur testé (`Organization`+`WebSite`, sans `contactPoint`). Portes
+Lighthouse CI + axe-core (héritées de 005) étendues à `/` (Perf ≥ 90 / SEO ≥
+95 / A11y ≥ 95 ; LCP < 2,5 s, CLS < 0,1). Pas de nouvel ADR (couvert par
+ADR-0002).
 
 Pour le contexte technologique détaillé et la structure de répertoires de la
 feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
-`contracts/{http-endpoints,lead-query.port,bus-and-notifications}.md`, et
-`quickstart.md` du même répertoire `specs/012-lead-notifications-state-machine/`.
+`contracts/{homepage-ui,metadata-jsonld}.contract.md`, et `quickstart.md` du
+même répertoire `specs/013-homepage-differenciante/`.
 
 **Features précédentes mergées** (Tier 0 fermé) :
 - `001-conformite-module` (PR #1, squash `8592922`). Source de vérité pour
@@ -182,7 +186,19 @@ feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
   `MatchingQueryPort` public + `fsa-centroids.json` complet (1 643 FSA StatCan).
   Consommé par 012. Avant déploiement prod : validations staging (charge +
   migrations) restantes.
+- `012-lead-notifications-state-machine` (PR #24, squash `a521ac7`). Module
+  `matching` — feature 012 roadmap. Consomme les 4 événements outbox de 011 sur
+  le bus `matching.events`, crée une entité **Lead** par (conseiller vérifié ×
+  MatchingResultEntry), notifie chaque conseiller individuellement (un job
+  BullMQ par destinataire, courriel FR-CA SES sans PII), pilote une machine
+  d'état de lead append-only (ADR-0025, property-tests SC-003/FR-020),
+  supersession re-match + sweep réconciliation bus HS (ADR-0026), cascade
+  anonymisation Loi 25, concurrence optimiste, idempotence at-least-once.
+  Expose le port public `MatchingLeadQueryPort` + endpoints HTTP conseiller
+  (consommés par 014). Avant déploiement prod : tests intégration Testcontainers
+  + charge en staging restants.
 
 **Features en cours / à venir** :
-- `012-lead-notifications-state-machine` (cette branche) : voir *Plan courant* ci-dessus.
+- `013-homepage-differenciante` (cette branche, feature roadmap 026) : voir
+  *Plan courant* ci-dessus.
 <!-- SPECKIT END -->
