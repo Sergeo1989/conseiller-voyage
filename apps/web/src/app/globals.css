@@ -20,57 +20,67 @@
  * axe-core sur le commun dénominateur.
  */
 
-html,
-body {
-  margin: 0;
-  /* Vraie police de marque (Geist, self-hosted via next/font) au lieu du stack
-     système — repli système si la variable n'est pas chargée. */
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  color: #111827;
+/*
+ * Ces règles vivent dans le layer `base` : en CSS, les déclarations SANS layer
+ * priment sur celles des layers. Si on les laissait hors layer, `a { color }`
+ * écraserait les utilitaires Tailwind (`text-white`, `text-blue-700`…) du layer
+ * `utilities` — d'où des boutons texte bleu sur fond bleu. Dans `base`, les
+ * utilitaires (layer postérieur) l'emportent comme attendu.
+ */
+@layer base {
+  html,
+  body {
+    margin: 0;
+    /* Vraie police de marque (Geist, self-hosted via next/font) au lieu du stack
+       système — repli système si la variable n'est pas chargée. */
+    font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #111827;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  :focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  button:focus-visible,
+  a:focus-visible {
+    outline-offset: 3px;
+  }
+
+  button {
+    min-height: 44px;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  button:not(:disabled):hover {
+    filter: brightness(0.92);
+  }
+
+  a {
+    color: #2563eb;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
-button:focus-visible,
-a:focus-visible {
-  outline-offset: 3px;
-}
-
-button {
-  min-height: 44px;
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-button:not(:disabled):hover {
-  filter: brightness(0.92);
-}
-
-a {
-  color: #2563eb;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
+/* prefers-reduced-motion : hors layer + !important — l'accessibilité prime toujours. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

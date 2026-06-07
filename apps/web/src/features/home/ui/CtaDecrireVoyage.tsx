@@ -18,9 +18,9 @@ interface CtaDecrireVoyageProps {
 
 const DEFAULT_CLASSES =
   'inline-flex items-center justify-center rounded-lg bg-blue-700 px-6 py-3 ' +
-  'text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-800 ' +
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ' +
-  'focus-visible:outline-blue-700';
+  'text-base font-semibold text-white no-underline shadow-sm transition-colors ' +
+  'hover:bg-blue-800 hover:no-underline focus-visible:outline focus-visible:outline-2 ' +
+  'focus-visible:outline-offset-2 focus-visible:outline-blue-700';
 
 export function CtaDecrireVoyage({ urlLocale, label, className }: CtaDecrireVoyageProps) {
   return (
