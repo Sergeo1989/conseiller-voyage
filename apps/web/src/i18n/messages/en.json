@@ -23,6 +23,77 @@
       "certificates": "CCV (Quebec) and TICO (Ontario) certificates",
       "dataResidency": "Data hosted in Canada (Law 25)",
       "freeForTravelers": "Free for travelers, no obligation"
+    },
+    "commentCaMarche": {
+      "heading": "How it works",
+      "steps": [
+        {
+          "title": "Describe your trip",
+          "body": "A few minutes: destination, type of project, approximate dates, language."
+        },
+        {
+          "title": "We present up to 3 advisors",
+          "body": "Our matching picks the verified advisors most relevant to your project."
+        },
+        {
+          "title": "You talk and you choose",
+          "body": "You speak with them directly and decide. No fees, no obligation."
+        }
+      ]
+    },
+    "pourquoiTrois": {
+      "heading": "Why 3, and not a list",
+      "body": "A directory leaves you to sift through dozens of profiles. We present up to 3 verified advisors chosen for YOUR project — based on destination, trip type, language and region.",
+      "note": "Not a list to sort through yourself."
+    },
+    "neutralite": {
+      "heading": "Independent and neutral",
+      "body": "We present every verified advisor — independents and network members alike. No affiliation, no favoritism: our only interest is the right advisor for you."
+    },
+    "thematiques": {
+      "heading": "Whatever your trip",
+      "items": [
+        "Honeymoon",
+        "Family travel",
+        "Adventure and outdoors",
+        "Cruise",
+        "Europe",
+        "Asia and Japan"
+      ]
+    },
+    "faq": {
+      "heading": "Frequently asked questions",
+      "items": [
+        {
+          "question": "Is it free for travelers?",
+          "answer": "Yes, completely free and with no obligation. You describe your project, we present advisors — that's it."
+        },
+        {
+          "question": "How are advisors verified?",
+          "answer": "Every advisor presented holds the required authorizations (OPC in Quebec, TICO in Ontario). Verification is an eligibility requirement, not a marketing promise."
+        },
+        {
+          "question": "Why can't I contact an advisor directly?",
+          "answer": "Conseiller Voyage is matchmaking, not a directory of contact details. Describe your project and we present the right advisors."
+        },
+        {
+          "question": "How many advisors will I receive?",
+          "answer": "Up to 3, chosen for your project. Sometimes fewer, depending on your request and availability."
+        },
+        {
+          "question": "What happens to my data?",
+          "answer": "Your data stays in Canada. No contact details are shared without your consent (Law 25)."
+        }
+      ]
+    },
+    "loi25": {
+      "heading": "Your data stays in Canada",
+      "body": "Hosted in a Canadian region. No contact details shared without your consent."
+    },
+    "pasDeContact": {
+      "heading": "Why no direct contact?",
+      "body": "Conseiller Voyage is a qualified matchmaking service, not a directory of contact details. We present advisors suited to your project.",
+      "linkLabel": "Understand the model"
     }
   },
   "errors": {

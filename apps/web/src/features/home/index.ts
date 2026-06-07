@@ -1,5 +1,13 @@
-// T006 — Surface publique du slice `home` (convention VIII.a : couplage
-// inter-slice uniquement via cet index). Enrichi au fil des user stories.
+// Surface publique du slice `home` (convention VIII.a : couplage inter-slice
+// uniquement via cet index).
 
+export { BandeauLoi25 } from './ui/BandeauLoi25';
 export { CtaDecrireVoyage } from './ui/CtaDecrireVoyage';
 export { Hero } from './ui/Hero';
+export { MentionPasDeContact } from './ui/MentionPasDeContact';
+export { SectionCommentCaMarche } from './ui/SectionCommentCaMarche';
+export { SectionFaq } from './ui/SectionFaq';
+export { SectionNeutralite } from './ui/SectionNeutralite';
+export { SectionPourquoiTrois } from './ui/SectionPourquoiTrois';
+export { SectionThematiquesTeaser } from './ui/SectionThematiquesTeaser';
+export { TrustBannerOpcTico } from './ui/TrustBannerOpcTico';

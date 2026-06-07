@@ -39,7 +39,7 @@ Frontend `apps/web` (convention feature-slicing VIII.a) : route mince dans
 
 **⚠️ CRITIQUE** : aucune user story ne peut démarrer avant cette phase.
 
-- [ ] T004 Définir et réconcilier les clés i18n `home.*` FR-CA (hero.title mandaté, hero.subtitle, ctaPrimary = « Décrire mon voyage » [remplace « Décrire mon projet »], trust.{opcTicoBanner, freeForTravelers}, commentCaMarche.{heading,step1,step2,step3}, pourquoiTrois.{heading,step1,step2,step3,note}, neutralite.{heading,body}, thematiques.{heading,items[]}, faq.{heading,items[]={question,answer}}, loi25.{heading,body}, pasDeContact.{heading,body,link}, advisorAccess) dans `apps/web/src/i18n/messages/fr-CA.json` + stub EN dans `en.json`
+- [x] T004 Définir et réconcilier les clés i18n `home.*` FR-CA (hero.title mandaté, hero.subtitle, ctaPrimary = « Décrire mon voyage » [remplace « Décrire mon projet »], trust.{opcTicoBanner, freeForTravelers}, commentCaMarche.{heading,step1,step2,step3}, pourquoiTrois.{heading,step1,step2,step3,note}, neutralite.{heading,body}, thematiques.{heading,items[]}, faq.{heading,items[]={question,answer}}, loi25.{heading,body}, pasDeContact.{heading,body,link}, advisorAccess) dans `apps/web/src/i18n/messages/fr-CA.json` + stub EN dans `en.json`
 - [x] T005 Composant partagé `CtaDecrireVoyage` (lien `next/link` locale-aware vers `/<locale>/voyage/nouveau`, libellé via `home.ctaPrimary`) dans `apps/web/src/features/home/ui/CtaDecrireVoyage.tsx`
 - [x] T006 Surface publique du slice dans `apps/web/src/features/home/index.ts` (réexporte les composants de section au fil de leur création)
 
@@ -80,19 +80,19 @@ mention anti-contact et FAQ pointent/expliquent correctement ; aucune mécanique
 
 ### Tests (TDD — rouge AVANT vert)
 
-- [ ] T011 [P] [US2] Test RED présence sections + liens : commentCaMarche (3 étapes, sans devis), pourquoiTrois (« jusqu'à 3 »), neutralite, loi25, pasDeContact, bandeau OPC/TICO → `/comment-ca-marche`, FAQ (≥ 4 Q/R), teaser thématiques → intake (contrat U4–U8, U11–U14, I6) dans `apps/web/src/features/home/ui/__tests__/home-sections.test.tsx`
+- [x] T011 [P] [US2] Test RED présence sections + liens : commentCaMarche (3 étapes, sans devis), pourquoiTrois (« jusqu'à 3 »), neutralite, loi25, pasDeContact, bandeau OPC/TICO → `/comment-ca-marche`, FAQ (≥ 4 Q/R), teaser thématiques → intake (contrat U4–U8, U11–U14, I6) dans `apps/web/src/features/home/ui/__tests__/home-sections.test.tsx`
 
 ### Implémentation
 
-- [ ] T012 [P] [US2] Composant `SectionCommentCaMarche` (3 étapes : décrire → ≤3 conseillers vérifiés → échanger/choisir, SANS devis) dans `apps/web/src/features/home/ui/SectionCommentCaMarche.tsx`
-- [ ] T013 [P] [US2] Composant `TrustBannerOpcTico` (lien → `/<locale>/comment-ca-marche`) dans `apps/web/src/features/home/ui/TrustBannerOpcTico.tsx`
-- [ ] T014 [P] [US2] Composant `SectionPourquoiTrois` (note « pas une liste à trier », copie « jusqu'à 3 ») dans `apps/web/src/features/home/ui/SectionPourquoiTrois.tsx`
-- [ ] T015 [P] [US2] Composant `SectionNeutralite` (multi-réseaux, indépendants compris) dans `apps/web/src/features/home/ui/SectionNeutralite.tsx`
-- [ ] T016 [P] [US2] Composant `SectionThematiquesTeaser` (items → intake pré-rempli, jamais contact ; optionnel/dégradable) dans `apps/web/src/features/home/ui/SectionThematiquesTeaser.tsx`
-- [ ] T017 [P] [US2] Composant `SectionFaq` (≥ 4 Q/R, passages courts citables) dans `apps/web/src/features/home/ui/SectionFaq.tsx`
-- [ ] T018 [P] [US2] Composant `BandeauLoi25` (résidence des données + non-partage) dans `apps/web/src/features/home/ui/BandeauLoi25.tsx`
-- [ ] T019 [P] [US2] Composant `MentionPasDeContact` (lien → `/<locale>/comment-ca-marche`) dans `apps/web/src/features/home/ui/MentionPasDeContact.tsx`
-- [ ] T020 [US2] Composer toutes les sections dans l'ordre du squelette + CTA répété + `Footer` partagé + lien secondaire « Espace conseiller » dans `apps/web/src/app/[locale]/page.tsx` → rend T011 vert
+- [x] T012 [P] [US2] Composant `SectionCommentCaMarche` (3 étapes : décrire → ≤3 conseillers vérifiés → échanger/choisir, SANS devis) dans `apps/web/src/features/home/ui/SectionCommentCaMarche.tsx`
+- [x] T013 [P] [US2] Composant `TrustBannerOpcTico` (lien → `/<locale>/comment-ca-marche`) dans `apps/web/src/features/home/ui/TrustBannerOpcTico.tsx`
+- [x] T014 [P] [US2] Composant `SectionPourquoiTrois` (note « pas une liste à trier », copie « jusqu'à 3 ») dans `apps/web/src/features/home/ui/SectionPourquoiTrois.tsx`
+- [x] T015 [P] [US2] Composant `SectionNeutralite` (multi-réseaux, indépendants compris) dans `apps/web/src/features/home/ui/SectionNeutralite.tsx`
+- [x] T016 [P] [US2] Composant `SectionThematiquesTeaser` (items → intake pré-rempli, jamais contact ; optionnel/dégradable) dans `apps/web/src/features/home/ui/SectionThematiquesTeaser.tsx`
+- [x] T017 [P] [US2] Composant `SectionFaq` (≥ 4 Q/R, passages courts citables) dans `apps/web/src/features/home/ui/SectionFaq.tsx`
+- [x] T018 [P] [US2] Composant `BandeauLoi25` (résidence des données + non-partage) dans `apps/web/src/features/home/ui/BandeauLoi25.tsx`
+- [x] T019 [P] [US2] Composant `MentionPasDeContact` (lien → `/<locale>/comment-ca-marche`) dans `apps/web/src/features/home/ui/MentionPasDeContact.tsx`
+- [x] T020 [US2] Composer toutes les sections dans l'ordre du squelette + CTA répété + `Footer` partagé + lien secondaire « Espace conseiller » dans `apps/web/src/app/[locale]/page.tsx` → rend T011 vert
 
 **Checkpoint** : US1 + US2 — page de positionnement complète côté contenu.
 
