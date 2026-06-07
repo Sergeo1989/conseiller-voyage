@@ -17,6 +17,10 @@ automatisé (Vitest composant + Playwright/axe) et trace une exigence du spec.
 | U8 | Mention « pourquoi pas de contact direct » avec lien vers `/comment-ca-marche` | FR-006 |
 | U9 | CTA répété (même cible que U3, pas un second chemin) | FR-002 |
 | U10 | Pied de page (liens légaux + accès conseiller secondaire + langue) | FR-008, FR-015 |
+| U11 | Section « Comment ça marche » à 3 étapes, sans étape devis/comparaison | FR-020 |
+| U12 | Message « gratuit pour les voyageurs, sans engagement » dans le héro | FR-021 |
+| U13 | Section FAQ (≥ 4 Q/R, passages courts) | FR-022, SC-012 |
+| U14 | Teaser thématiques (si présent) : chaque entrée → intake, jamais contact | FR-023 |
 
 ## Invariants (absence / unicité) — garde-fous ADR-0002
 

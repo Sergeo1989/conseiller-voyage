@@ -16,7 +16,17 @@ home
 ├── ctaPrimary           # « Décrire mon voyage »  (réconcilie l'ancien « Décrire mon projet »)
 ├── trust
 │   ├── opcTicoBanner    # « Tous vérifiés OPC/TICO »  (libellé exact à confirmer — R3)
+│   ├── freeForTravelers # « Gratuit pour les voyageurs, sans engagement »  (héro, FR-021)
 │   └── dataResidency    # repris pour le bandeau Loi 25
+├── commentCaMarche      # FR-020 : section 3 étapes
+│   ├── heading          # « Comment ça marche »
+│   ├── step1 / step2 / step3   # décrire → présentation de ≤3 conseillers vérifiés → échanger/choisir
+├── thematiques          # FR-023 : teaser (optionnel) ; items → intake pré-rempli
+│   ├── heading
+│   └── items[]          # libellés de spécialités/destinations (liens vers l'intake)
+├── faq                  # FR-022 : questions fréquentes (passages courts citables)
+│   ├── heading
+│   └── items[]          # { question, answer } — alimente aussi le FAQPage JSON-LD
 ├── pourquoiTrois
 │   ├── heading          # « Pourquoi 3, et pas une liste »
 │   ├── step1 / step2 / step3   # « Vous décrivez… » / « On compare selon vos critères… » /
@@ -67,9 +77,23 @@ Deux nœuds, **sans** `contactPoint`/`telephone` (invariant ADR-0002, SC-007) :
 }
 ```
 
-**Signature** : `buildHomepageJsonLd(locale: string, baseUrl: string): object[]` — fonction
-pure, déterministe, sans I/O (testable, Principe VI). Le `baseUrl` provient de l'env public
-(pas de secret).
+```jsonc
+// @type FAQPage (FR-022) — construit depuis home.faq.items
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "<question>",
+      "acceptedAnswer": { "@type": "Answer", "text": "<réponse, passage court>" } }
+    // ... une entrée par Q/R
+  ]
+}
+```
+
+**Signatures** (fonctions pures, déterministes, sans I/O — testables, Principe VI ; `baseUrl`
+vient de l'env public, pas de secret) :
+- `buildHomepageJsonLd(locale: string, baseUrl: string): object[]` → `Organization` + `WebSite`.
+- `buildFaqJsonLd(faqItems: { question: string; answer: string }[]): object` → `FAQPage`.
 
 ## 3. État / transitions
 

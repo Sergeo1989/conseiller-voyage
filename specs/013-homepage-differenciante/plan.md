@@ -151,15 +151,19 @@ apps/web/src/
 │                                      #   (remplace le squelette de soft-launch)
 ├── features/home/
 │   ├── ui/
-│   │   ├── Hero.tsx                   # ② H1 + sous-titre + CTA primaire + micro-confiance
+│   │   ├── Hero.tsx                   # ② H1 + sous-titre + CTA + « gratuit/sans engagement » + micro-confiance
+│   │   ├── SectionCommentCaMarche.tsx # ③ 3 étapes (décrire → ≤3 conseillers → échanger), SANS devis
 │   │   ├── TrustBannerOpcTico.tsx     # ④ bandeau « Tous vérifiés OPC/TICO » → /comment-ca-marche
-│   │   ├── SectionPourquoiTrois.tsx   # ⑤ « Pourquoi 3, et pas une liste » (3 étapes)
+│   │   ├── SectionPourquoiTrois.tsx   # ⑤ « Pourquoi 3, et pas une liste »
 │   │   ├── SectionNeutralite.tsx      # ⑥ « Indépendant et neutre »
-│   │   ├── BandeauLoi25.tsx           # ⑦ résidence des données + non-partage
-│   │   ├── MentionPasDeContact.tsx    # ⑧ pédagogie anti-contact → /comment-ca-marche
-│   │   └── CtaDecrireVoyage.tsx       # ③/⑨ CTA réutilisable (lien vers /voyage/nouveau)
+│   │   ├── SectionThematiquesTeaser.tsx # ⑦ teaser thématiques → intake (optionnel, dégradable)
+│   │   ├── SectionFaq.tsx             # ⑧ FAQ (passages courts citables)
+│   │   ├── BandeauLoi25.tsx           # ⑨ résidence des données + non-partage
+│   │   ├── MentionPasDeContact.tsx    # ⑩ pédagogie anti-contact → /comment-ca-marche
+│   │   └── CtaDecrireVoyage.tsx       # ②/⑪ CTA réutilisable (lien vers /voyage/nouveau)
 │   ├── lib/
-│   │   └── homepage-jsonld.ts         # Builder PUR Organization + WebSite (testé, TDD)
+│   │   ├── homepage-jsonld.ts         # Builder PUR Organization + WebSite (testé, TDD)
+│   │   └── faq-jsonld.ts              # Builder PUR FAQPage depuis les Q/R i18n (testé, TDD)
 │   └── index.ts                       # Surface publique du slice (composants exportés)
 ├── i18n/messages/
 │   ├── fr-CA.json                     # namespace home.* étendu (source canonique)
@@ -169,8 +173,10 @@ apps/web/src/
 
 apps/web/  (tests + config)
 ├── src/features/home/lib/__tests__/homepage-jsonld.test.ts   # SC-007 (TDD rouge d'abord)
+├── src/features/home/lib/__tests__/faq-jsonld.test.ts        # SC-012 FAQPage (TDD rouge d'abord)
 ├── src/features/home/ui/__tests__/home-invariants.test.tsx   # SC-002 / SC-003 (TDD rouge d'abord)
-├── tests/a11y/home.spec.ts                                    # Playwright + axe @a11y (SC-006)
+├── src/features/home/ui/__tests__/home-sections.test.tsx     # US2 présence sections + FAQ
+├── test/a11y/home.spec.ts                                     # Playwright + axe @a11y (SC-006)
 └── lighthouserc.json                                          # + "http://localhost:3000/fr" (SC-004/005)
 ```
 
@@ -183,11 +189,15 @@ profond cross-feature). Si une 3ᵉ surface réutilise ce bloc, on promouvra le 
 
 ## Layout agréé (squelette)
 
-Ordre vertical validé (héro **texte centré**, cf. Clarification spec 2026-06-06) :
-`① en-tête sobre → ② héro (H1 + sous-titre + CTA + micro-confiance) → ④ bandeau OPC/TICO →
-⑤ pourquoi 3 → ⑥ neutralité → ⑦ bandeau Loi 25 → ⑧ mention anti-contact → ⑨ CTA répété →
-⑩ pied de page`. Un seul `<h1>` (héro) ; les sections portent des `<h2>` avec
-`aria-labelledby`. Héro texte-only → LCP = le H1, CLS nul, aucune dépendance image/025.
+Ordre vertical validé (héro **texte centré**, cf. Clarifications spec ; inspiration lead-gen
+soumissionrenovation.ca adaptée à la mise en relation) :
+`① en-tête sobre → ② héro (H1 + sous-titre + CTA + « gratuit, sans engagement » + micro-confiance) →
+③ Comment ça marche (3 étapes) → ④ bandeau OPC/TICO → ⑤ pourquoi 3 (différenciateur) →
+⑥ neutralité → ⑦ teaser thématiques (→ intake, optionnel) → ⑧ FAQ (+ FAQPage JSON-LD) →
+⑨ bandeau Loi 25 → ⑩ mention anti-contact → ⑪ CTA répété → ⑫ pied de page SEO`.
+Un seul `<h1>` (héro) ; les sections portent des `<h2>` avec `aria-labelledby`. Héro
+texte-only → LCP = le H1, CLS nul, aucune dépendance image/025. **Aucune mécanique de
+devis/soumission ni de contact direct** à aucun niveau (ADR-0002).
 
 ## Stratégie d'échelle & magnétisme (plusieurs M visites/jour)
 

@@ -39,7 +39,7 @@ Frontend `apps/web` (convention feature-slicing VIII.a) : route mince dans
 
 **⚠️ CRITIQUE** : aucune user story ne peut démarrer avant cette phase.
 
-- [ ] T004 Définir et réconcilier les clés i18n `home.*` FR-CA (hero.title mandaté, hero.subtitle, ctaPrimary = « Décrire mon voyage » [remplace « Décrire mon projet »], trust.opcTicoBanner, pourquoiTrois.{heading,step1,step2,step3,note}, neutralite.{heading,body}, loi25.{heading,body}, pasDeContact.{heading,body,link}, advisorAccess) dans `apps/web/src/i18n/messages/fr-CA.json` + stub EN dans `en.json`
+- [ ] T004 Définir et réconcilier les clés i18n `home.*` FR-CA (hero.title mandaté, hero.subtitle, ctaPrimary = « Décrire mon voyage » [remplace « Décrire mon projet »], trust.{opcTicoBanner, freeForTravelers}, commentCaMarche.{heading,step1,step2,step3}, pourquoiTrois.{heading,step1,step2,step3,note}, neutralite.{heading,body}, thematiques.{heading,items[]}, faq.{heading,items[]={question,answer}}, loi25.{heading,body}, pasDeContact.{heading,body,link}, advisorAccess) dans `apps/web/src/i18n/messages/fr-CA.json` + stub EN dans `en.json`
 - [ ] T005 Composant partagé `CtaDecrireVoyage` (lien `next/link` locale-aware vers `/<locale>/voyage/nouveau`, libellé via `home.ctaPrimary`) dans `apps/web/src/features/home/ui/CtaDecrireVoyage.tsx`
 - [ ] T006 Surface publique du slice dans `apps/web/src/features/home/index.ts` (réexporte les composants de section au fil de leur création)
 
@@ -61,7 +61,7 @@ remplace le squelette de soft-launch.
 
 ### Implémentation
 
-- [ ] T008 [US1] Composant `Hero` (RSC) : `<h1>` `home.hero.title`, sous-titre `home.hero.subtitle`, `<CtaDecrireVoyage>`, micro-confiance `home.trust.opcTicoBanner` ; aucune image (LCP = H1) dans `apps/web/src/features/home/ui/Hero.tsx`
+- [ ] T008 [US1] Composant `Hero` (RSC) : `<h1>` `home.hero.title`, sous-titre `home.hero.subtitle`, `<CtaDecrireVoyage>`, message « gratuit/sans engagement » `home.trust.freeForTravelers` (FR-021), micro-confiance `home.trust.opcTicoBanner` ; aucune image (LCP = H1) dans `apps/web/src/features/home/ui/Hero.tsx`
 - [ ] T009 [US1] Route mince `app/[locale]/page.tsx` : RSC statique rendant `<main>` + `Hero` (remplace le squelette inline-styles) dans `apps/web/src/app/[locale]/page.tsx` → rend T007 vert
 - [ ] T010 [US1] Vérifier le rendu **sans JavaScript** (composants RSC, CTA = `Link`) — contrôle manuel + assertion dans `home-invariants.test.tsx` (contrat J1, SC-009)
 
@@ -71,24 +71,28 @@ remplace le squelette de soft-launch.
 
 ## Phase 4: User Story 2 — Pourquoi le modèle est différent et digne de confiance (P2)
 
-**Goal**: sections de différenciation (pourquoi 3 / neutralité / OPC-TICO / Loi 25 /
-anti-contact) + CTA répété + pied de page.
+**Goal**: sections de différenciation + confiance, inspirées du lead-gen mais adaptées à la
+mise en relation : « Comment ça marche » (3 étapes), pourquoi 3, neutralité, OPC-TICO,
+Loi 25, anti-contact, FAQ, teaser thématiques + CTA répété + pied de page SEO.
 
-**Independent Test**: les 4 sections présentes avec leur contenu ; bandeau OPC/TICO et
-mention anti-contact pointent vers `/comment-ca-marche`.
+**Independent Test**: toutes les sections présentes avec leur contenu ; bandeau OPC/TICO,
+mention anti-contact et FAQ pointent/expliquent correctement ; aucune mécanique de devis.
 
 ### Tests (TDD — rouge AVANT vert)
 
-- [ ] T011 [P] [US2] Test RED présence sections + liens : pourquoiTrois (copie « jusqu'à 3 »), neutralite, loi25, pasDeContact, bandeau OPC/TICO → `/comment-ca-marche` (contrat U4–U8, I6) dans `apps/web/src/features/home/ui/__tests__/home-sections.test.tsx`
+- [ ] T011 [P] [US2] Test RED présence sections + liens : commentCaMarche (3 étapes, sans devis), pourquoiTrois (« jusqu'à 3 »), neutralite, loi25, pasDeContact, bandeau OPC/TICO → `/comment-ca-marche`, FAQ (≥ 4 Q/R), teaser thématiques → intake (contrat U4–U8, U11–U14, I6) dans `apps/web/src/features/home/ui/__tests__/home-sections.test.tsx`
 
 ### Implémentation
 
-- [ ] T012 [P] [US2] Composant `TrustBannerOpcTico` (lien → `/<locale>/comment-ca-marche`) dans `apps/web/src/features/home/ui/TrustBannerOpcTico.tsx`
-- [ ] T013 [P] [US2] Composant `SectionPourquoiTrois` (3 étapes, note « pas une liste à trier », copie « jusqu'à 3 ») dans `apps/web/src/features/home/ui/SectionPourquoiTrois.tsx`
-- [ ] T014 [P] [US2] Composant `SectionNeutralite` (multi-réseaux, indépendants compris) dans `apps/web/src/features/home/ui/SectionNeutralite.tsx`
-- [ ] T015 [P] [US2] Composant `BandeauLoi25` (résidence des données + non-partage) dans `apps/web/src/features/home/ui/BandeauLoi25.tsx`
-- [ ] T016 [P] [US2] Composant `MentionPasDeContact` (lien → `/<locale>/comment-ca-marche`) dans `apps/web/src/features/home/ui/MentionPasDeContact.tsx`
-- [ ] T017 [US2] Composer les sections + CTA répété (`CtaDecrireVoyage`) + `Footer` partagé + lien secondaire « Espace conseiller » (`home.advisorAccess`) dans `apps/web/src/app/[locale]/page.tsx` → rend T011 vert
+- [ ] T012 [P] [US2] Composant `SectionCommentCaMarche` (3 étapes : décrire → ≤3 conseillers vérifiés → échanger/choisir, SANS devis) dans `apps/web/src/features/home/ui/SectionCommentCaMarche.tsx`
+- [ ] T013 [P] [US2] Composant `TrustBannerOpcTico` (lien → `/<locale>/comment-ca-marche`) dans `apps/web/src/features/home/ui/TrustBannerOpcTico.tsx`
+- [ ] T014 [P] [US2] Composant `SectionPourquoiTrois` (note « pas une liste à trier », copie « jusqu'à 3 ») dans `apps/web/src/features/home/ui/SectionPourquoiTrois.tsx`
+- [ ] T015 [P] [US2] Composant `SectionNeutralite` (multi-réseaux, indépendants compris) dans `apps/web/src/features/home/ui/SectionNeutralite.tsx`
+- [ ] T016 [P] [US2] Composant `SectionThematiquesTeaser` (items → intake pré-rempli, jamais contact ; optionnel/dégradable) dans `apps/web/src/features/home/ui/SectionThematiquesTeaser.tsx`
+- [ ] T017 [P] [US2] Composant `SectionFaq` (≥ 4 Q/R, passages courts citables) dans `apps/web/src/features/home/ui/SectionFaq.tsx`
+- [ ] T018 [P] [US2] Composant `BandeauLoi25` (résidence des données + non-partage) dans `apps/web/src/features/home/ui/BandeauLoi25.tsx`
+- [ ] T019 [P] [US2] Composant `MentionPasDeContact` (lien → `/<locale>/comment-ca-marche`) dans `apps/web/src/features/home/ui/MentionPasDeContact.tsx`
+- [ ] T020 [US2] Composer toutes les sections dans l'ordre du squelette + CTA répété + `Footer` partagé + lien secondaire « Espace conseiller » dans `apps/web/src/app/[locale]/page.tsx` → rend T011 vert
 
 **Checkpoint** : US1 + US2 — page de positionnement complète côté contenu.
 
@@ -96,34 +100,37 @@ mention anti-contact pointent vers `/comment-ca-marche`.
 
 ## Phase 5: User Story 3 — Trouvable, rapide et accessible (P3)
 
-**Goal**: métadonnées + JSON-LD, budgets CWV, WCAG 2.1 AA.
+**Goal**: métadonnées + JSON-LD (Organization/WebSite + FAQPage), génération statique +
+cacheabilité (millions/jour), budgets CWV, WCAG 2.1 AA.
 
 **Independent Test**: Lighthouse (Perf≥90/SEO≥95/A11y≥95, LCP<2.5s, CLS<0.1) + axe (0
-violation) + JSON-LD valide sans `contactPoint`.
+violation) + JSON-LD valide (sans `contactPoint`) + FAQPage valide + home statique cacheable.
 
 ### Tests (TDD — rouge AVANT vert)
 
-- [ ] T018 [P] [US3] Test RED du builder JSON-LD pur : nœuds `Organization` + `WebSite`, `@context` schema.org, **absence** de `contactPoint`/`telephone`/`email`, pureté (contrat L1–L7, SC-007) dans `apps/web/src/features/home/lib/__tests__/homepage-jsonld.test.ts`
+- [ ] T021 [P] [US3] Test RED `buildHomepageJsonLd` : `Organization` + `WebSite`, `@context` schema.org, **absence** de `contactPoint`/`telephone`/`email`, pureté (contrat L1–L7, SC-007) dans `apps/web/src/features/home/lib/__tests__/homepage-jsonld.test.ts`
+- [ ] T022 [P] [US3] Test RED `buildFaqJsonLd` : `FAQPage` avec `Question`/`acceptedAnswer`, pureté (contrat L9–L11, SC-012) dans `apps/web/src/features/home/lib/__tests__/faq-jsonld.test.ts`
 
 ### Implémentation
 
-- [ ] T019 [US3] Fonction pure `buildHomepageJsonLd(locale, baseUrl)` dans `apps/web/src/features/home/lib/homepage-jsonld.ts` → rend T018 vert
-- [ ] T020 [US3] `generateMetadata` (title/description i18n, `alternates.canonical`, `openGraph`, `twitter`, `robots` indexable) + injection du `<script type="application/ld+json">` via `buildHomepageJsonLd` dans `apps/web/src/app/[locale]/page.tsx` (contrat M1–M6, L8)
-- [ ] T021 [P] [US3] Test a11y Playwright + axe-core tag `@a11y` sur `/fr` (0 violation sérieuse/critique, un seul `<h1>`, repères sémantiques, opérabilité clavier) dans `apps/web/tests/a11y/home.spec.ts`
-- [ ] T022 [US3] Valider la porte Lighthouse CI sur `/fr` (Perf≥90/SEO≥95/A11y≥95, LCP≤2500, CLS≤0.1) — exécuter `lhci` localement, ajuster si dépassement (contrat SC-004/005)
-- [ ] T023 [US3] **Garantir la cacheabilité à l'échelle** (plusieurs M visites/jour) : `generateStaticParams` (fr, en), rendu statique sans fonction dynamique par requête (aucun `cookies()`/`headers()` sur la route), `Cache-Control` long + revalidation à la demande dans `apps/web/src/app/[locale]/page.tsx` (contrat S1–S4, FR-017/018, SC-010/011)
-- [ ] T024 [P] [US3] **Magnétisme SEO/GEO** : image de partage social (OG) + contenu citable (passages courts, sémantique propre) ; vérifier la richesse des métadonnées dans `app/[locale]/page.tsx` + composants de section (contrat S5, FR-019)
+- [ ] T023 [US3] Fonction pure `buildHomepageJsonLd(locale, baseUrl)` dans `apps/web/src/features/home/lib/homepage-jsonld.ts` → rend T021 vert
+- [ ] T024 [US3] Fonction pure `buildFaqJsonLd(faqItems)` dans `apps/web/src/features/home/lib/faq-jsonld.ts` → rend T022 vert
+- [ ] T025 [US3] `generateMetadata` (title/description i18n, `alternates.canonical`, `openGraph`, `twitter`, `robots` indexable) + injection des `<script type="application/ld+json">` (homepage + FAQPage) dans `apps/web/src/app/[locale]/page.tsx` (contrat M1–M6, L8, L9)
+- [ ] T026 [P] [US3] Test a11y Playwright + axe-core tag `@a11y` sur `/fr` (0 violation sérieuse/critique, un seul `<h1>`, repères sémantiques, opérabilité clavier) dans `apps/web/test/a11y/home.spec.ts`
+- [ ] T027 [US3] Valider la porte Lighthouse CI sur `/fr` (Perf≥90/SEO≥95/A11y≥95, LCP≤2500, CLS≤0.1) — exécuter `lhci` localement, ajuster si dépassement (contrat SC-004/005)
+- [ ] T028 [US3] **Cacheabilité à l'échelle** (millions/jour) : `generateStaticParams` (fr, en), rendu statique sans fonction dynamique par requête (aucun `cookies()`/`headers()`), `Cache-Control` long + revalidation à la demande dans `apps/web/src/app/[locale]/page.tsx` (contrat S1–S4, FR-017/018, SC-010/011)
+- [ ] T029 [P] [US3] **Magnétisme SEO/GEO** : image de partage social (OG) + vérifier la citabilité (passages FAQ courts, sémantique propre) (contrat S5, FR-019)
 
-**Checkpoint** : les 3 stories fonctionnent ; portes a11y + perf vertes ; home statique cacheable au CDN.
+**Checkpoint** : les 3 stories fonctionnent ; a11y + perf vertes ; home statique cacheable ; FAQPage indexable.
 
 ---
 
 ## Phase 6: Polish & transverse
 
-- [ ] T025 [P] Confirmer le libellé exact de certification (**OPC/TICO** vs « CCV/TICO ») avec le module conformité (001) et figer `home.trust.opcTicoBanner` dans `apps/web/src/i18n/messages/fr-CA.json`
-- [ ] T026 [P] Compléter le stub EN des clés `home.*` (repli acceptable, complété en 024) dans `apps/web/src/i18n/messages/en.json`
-- [ ] T027 Exécuter `quickstart.md` (vérifications SC-001 à SC-011) et cocher la DoD constitution avant PR
-- [ ] T028 [P] Audit lecteur d'écran de la home (recommandé, Principe XI) — consigner le résultat dans le PR
+- [ ] T030 [P] Confirmer le libellé exact de certification (**OPC/TICO** vs « CCV/TICO ») avec le module conformité (001) et figer `home.trust.opcTicoBanner` dans `apps/web/src/i18n/messages/fr-CA.json`
+- [ ] T031 [P] Compléter le stub EN des clés `home.*` (repli acceptable, complété en 024) dans `apps/web/src/i18n/messages/en.json`
+- [ ] T032 Exécuter `quickstart.md` (vérifications SC-001 à SC-012) et cocher la DoD constitution avant PR
+- [ ] T033 [P] Audit lecteur d'écran de la home (recommandé, Principe XI) — consigner le résultat dans le PR
 
 ---
 
@@ -134,21 +141,21 @@ violation) + JSON-LD valide sans `contactPoint`.
 - **Setup (P1)** : aucune dépendance.
 - **Foundational (P2)** : dépend du Setup ; **bloque** toutes les user stories (i18n + CTA + surface).
 - **US1 (P3)** : dépend de Foundational. MVP.
-- **US2 (P4)** : dépend de Foundational ; partage `page.tsx` avec US1 (T017 étend T009).
-- **US3 (P5)** : dépend de Foundational ; T020 étend `page.tsx` (après T009/T017).
+- **US2 (P4)** : dépend de Foundational ; T020 compose `page.tsx` (étend T009).
+- **US3 (P5)** : dépend de Foundational ; T025/T028 étendent `page.tsx` (après T009/T020).
 - **Polish (P6)** : après les stories visées.
 
 ### Within Each User Story (TDD strict)
 
-- Le test rouge (`T007`, `T011`, `T018`) est committé AVANT son implémentation.
+- Les tests rouges (`T007`, `T011`, `T021`, `T022`) sont committés AVANT leur implémentation.
 - Composants de section avant la composition dans `page.tsx`.
 
 ### Parallel Opportunities
 
 - Setup : T001-T003 `[P]`.
-- US2 : composants de section T012-T016 `[P]` (fichiers distincts) ; T017 (compose `page.tsx`) après.
-- US3 : T018/T021 `[P]` (test pur + test a11y, fichiers distincts).
-- ⚠️ Sérialiser tout ce qui touche `apps/web/src/app/[locale]/page.tsx` (T009 → T017 → T020 → T023) : même fichier.
+- US2 : composants de section T012-T019 `[P]` (fichiers distincts) ; T020 (compose `page.tsx`) après.
+- US3 : T021/T022/T026 `[P]` (tests purs + test a11y, fichiers distincts).
+- ⚠️ Sérialiser tout ce qui touche `apps/web/src/app/[locale]/page.tsx` (T009 → T020 → T025 → T028) : même fichier.
 
 ---
 
@@ -168,11 +175,12 @@ MVP US1 → ajouter US2 (sections différenciation) → ajouter US3 (SEO/perf/a1
 ## Notes
 
 - `[P]` = fichiers différents, aucune dépendance sur une tâche non terminée.
-- TDD strict : T007/T011/T018 rouges avant vert (commits séparés visibles, Principe VI).
-- Anti-marketplace (ADR-0002) vérifié **par test** (T007/T011) : 0 contact, CTA unique.
+- TDD strict : T007/T011/T021/T022 rouges avant vert (commits séparés visibles, Principe VI).
+- Anti-marketplace (ADR-0002) vérifié **par test** (T007/T011) : 0 contact, 0 devis, CTA unique. « 3 conseillers », jamais « 3 soumissions ».
+- Inspiration lead-gen (soumissionrenovation.ca) adaptée : « Comment ça marche », FAQ + FAQPage, teaser thématiques — sans aucune mécanique de devis/contact.
 - Pas de migration, pas de nouvel ADR (couvert par ADR-0002), pas de Server Action.
-- Réconciliations de copie (CTA, OPC/TICO) traitées en T004/T023 — ne pas inventer le libellé légal.
+- Réconciliations de copie (CTA, OPC/TICO) traitées en T004/T030 — ne pas inventer le libellé légal.
 
-**Total tâches** : 28 (3 Setup + 3 Foundational + 4 US1 + 7 US2 + 7 US3 + 4 Polish).
+**Total tâches** : 33 (3 Setup + 3 Foundational + 4 US1 + 10 US2 + 9 US3 + 4 Polish).
 
 **Suite recommandée** : `/speckit.analyze` (cohérence spec/plan/tasks) puis `/speckit.implement`.

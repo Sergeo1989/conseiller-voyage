@@ -26,6 +26,9 @@ porte SEO ; l'image sociale fine peut arriver avec l'infra 017).
 | L6 | `url` pointe vers `<baseUrl>/<locale>` | FR-013 |
 | L7 | Fonction pure : même entrée → même sortie, aucun I/O | Principe VI |
 | L8 | Sérialisé dans un `<script type="application/ld+json">` unique et bien formé | FR-010 |
+| L9 | Nœud `@type: "FAQPage"` construit depuis `home.faq.items` (`buildFaqJsonLd`) | FR-022, SC-012 |
+| L10 | Chaque entrée FAQ = `Question` + `acceptedAnswer`/`Answer` (texte = passage court) | SC-012 |
+| L11 | `buildFaqJsonLd` est pure ; FAQPage valide sans erreur sur un validateur Schema.org | Principe VI, SC-012 |
 
 ## Validation
 

@@ -36,6 +36,7 @@ direct conseiller).
 - Q: Faut-il livrer un nouveau design system avec cette page ? → A: Non. La page réutilise les primitives existantes (`packages/ui` shadcn/Radix + Tailwind) ; la formalisation du design system reste la feature 025. Aucun blocage sur 025.
 - Q: Quel traitement visuel du héro ? → A: **Héro texte centré** (texte-only, sans image). Le LCP devient le H1 (pas d'image à charger), le CLS est nul et il n'y a aucune dépendance au design system (025). Choix le plus sûr pour la porte Lighthouse (Perf ≥ 90) et le plus fidèle au positionnement sobre. Le squelette de mise en page agréé (en-tête sobre → héro → « pourquoi 3 » → neutralité → bandeau Loi 25 → mention anti-contact → CTA répété → pied de page) est détaillé dans `plan.md`.
 - Q: Quel régime de trafic viser ? → A: **Plateforme « magnétique »** visant le **maximum de trafic organique** — potentiellement **plusieurs millions de visites par jour**. Conséquence directe sur la home : elle DOIT être **entièrement statique et servie par le CDN canadien**, sans aucune dépendance par requête à l'origine applicative (DB/Redis/SES), pour absorber les pics (campagnes, viralité) au bord sans dégradation. Le magnétisme repose sur un SEO/GEO maximal (contenu citable, métadonnées + balisage riches, partage social). La montée en charge du reste de la plateforme et l'arborescence SEO de masse relèvent des features SEO (016-019, 027) et infra (021), différées.
+- Q: Quel patron de page d'accueil suivre ? → A: S'inspirer des **plateformes lead-gen québécoises à fort trafic** (réf. soumissionrenovation.ca) qui convertissent et rankent très bien : héro à proposition de valeur forte + « gratuit, sans engagement », section **« Comment ça marche » en 3 étapes**, preuves de confiance (vérification), teaser de **thématiques** menant au formulaire, **FAQ** (excellente pour le SEO/GEO), footer riche en liens internes. **Adaptation impérative** : nous faisons de la **mise en relation client ↔ conseiller**, donc **aucune mécanique de soumission/devis**, aucune comparaison de prix, aucun contact direct d'un conseiller (ADR-0002). « 3 conseillers », jamais « 3 soumissions ». Les preuves sociales n'affichent que des **données réelles** (jamais de chiffres fabriqués). L'arborescence thématique/régionale complète relève de 018/027 (différée) ; la home n'en porte qu'un teaser vers l'intake.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -95,6 +96,10 @@ le bandeau confiance et la section « pourquoi pas de contact direct » renvoien
 3. **Given** la page chargée, **When** le visiteur lit la section neutralité, **Then** elle affirme l'indépendance multi-réseaux (conseillers indépendants inclus, aucune appartenance à un réseau captif).
 4. **Given** la page chargée, **When** le visiteur s'interroge sur ses données, **Then** un bandeau Loi 25 indique « Vos données restent au Canada. Aucun partage de vos coordonnées sans votre accord. ».
 5. **Given** la page chargée, **When** le visiteur se demande pourquoi il ne peut pas appeler un conseiller, **Then** une mention explicative renvoie vers `/comment-ca-marche` (modèle anti-marketplace).
+6. **Given** la page chargée, **When** le visiteur cherche le fonctionnement, **Then** une section « Comment ça marche » présente 3 étapes (décrire → présentation de jusqu'à 3 conseillers vérifiés → échanger/choisir), sans étape de devis/comparaison de prix.
+7. **Given** le héro, **When** le visiteur hésite sur le coût/l'engagement, **Then** le message « gratuit pour les voyageurs, sans engagement » est visible.
+8. **Given** la page chargée, **When** le visiteur a des questions, **Then** une section FAQ répond aux questions clés (gratuité, vérification, pas de contact direct, données) ; chaque réponse est un passage court et le balisage `FAQPage` est présent.
+9. **Given** un teaser de thématiques (si présent), **When** le visiteur clique une thématique, **Then** il est mené à l'intake (jamais au contact d'un conseiller).
 
 ---
 
@@ -158,6 +163,11 @@ HTTP indexable.
 - **FR-017**: La page DOIT être **rendue entièrement statique** (pré-générée par langue) et servie via le **CDN canadien**, **sans aucune dépendance par requête** à la DB/Redis/SES ni aux services applicatifs — afin de soutenir un trafic de l'ordre de **plusieurs millions de visites/jour** sans charge sur l'origine ni dégradation. Aucune fonction de rendu dynamique par requête (lecture de cookies/en-têtes par requête) ne doit être utilisée sur cette route.
 - **FR-018**: La page DOIT émettre une **politique de cache** permettant un **taux de hit CDN élevé** (TTL long + revalidation à la demande lorsque la copie change), de sorte que la quasi-totalité des requêtes soit servie au bord (edge).
 - **FR-019**: La page DOIT **maximiser la découvrabilité (magnétisme SEO + GEO)** : contenu sémantique **citable par les moteurs de recherche IA**, métadonnées + balisage structuré complets, image de partage social — pour attirer et convertir un trafic organique de masse. (Complète l'infra SEO 017 et la lecture GEO 019, différées.)
+- **FR-020**: La page DOIT comporter une section « **Comment ça marche** » en **3 étapes** (1. Vous décrivez votre voyage → 2. On vous présente jusqu'à 3 conseillers vérifiés faits pour vous → 3. Vous échangez et choisissez), inspirée des plateformes lead-gen, **sans aucune étape de soumission, de devis ou de comparaison de prix**.
+- **FR-021**: Le héro DOIT afficher un message de levée de friction « **gratuit pour les voyageurs, sans engagement** » (réutilise la clé `home.trust.freeForTravelers`).
+- **FR-022**: La page DOIT comporter une section **FAQ** (questions fréquentes : comment ça marche, est-ce gratuit, comment les conseillers sont-ils vérifiés, pourquoi pas de contact direct, mes données) ET le **balisage `FAQPage` JSON-LD** correspondant — pour la citabilité GEO et les résultats enrichis (magnétisme, FR-019).
+- **FR-023**: La page PEUT comporter un **teaser de thématiques de voyage** (spécialités/destinations) ; chaque entrée mène à l'**intake** (idéalement pré-rempli), **jamais** au contact d'un conseiller ni à une page de liste cliquable vers un contact (ADR-0002). L'arborescence complète relève de 018/027 (différée).
+- **FR-024**: Toute **preuve sociale** affichée (ex. nombre de conseillers vérifiés) DOIT reposer sur une **donnée réelle** (valeur statique au build ou mise en cache/revalidée, jamais par requête) ; **aucun chiffre fabriqué**. En l'absence de donnée fiable, l'élément est omis.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -179,6 +189,7 @@ HTTP indexable.
 - **SC-009**: La page d'accueil rend son contenu principal et son CTA fonctionnels **avec JavaScript désactivé** (preuve du rendu serveur/statique).
 - **SC-010**: La home soutient un trafic de l'ordre de **plusieurs millions de visites/jour** : **≥ 95 %** des requêtes servies depuis le cache CDN (edge), l'origine applicative **n'est pas sollicitée par requête** ; TTFB p95 (cache hit) **< 200 ms**. Vérifiable par la configuration (génération statique + `Cache-Control`) et un test de charge léger au bord.
 - **SC-011**: La page reste **servie même si l'origine applicative (DB/Redis/SES/app) est indisponible** (servie depuis le CDN), preuve de résilience à l'échelle.
+- **SC-012**: La section FAQ expose un balisage **`FAQPage` JSON-LD valide** (passe un validateur de données structurées, 0 erreur) et chaque réponse est un **passage court citable** (magnétisme GEO, FR-019/FR-022).
 
 ## Assumptions
 
@@ -191,3 +202,6 @@ HTTP indexable.
 - **Public et authentification** : la page d'accueil est publique et anonyme (aucune personnalisation, aucune session requise) ; l'accès conseiller/admin reste un lien secondaire discret.
 - **Remplacement du squelette** : cette feature remplace le squelette de soft-launch actuel (`/[locale]/page.tsx`) par la page de positionnement voyageur, en préservant l'accès conseiller/admin en secondaire.
 - **Échelle et magnétisme** : la home est conçue pour **plusieurs millions de visites/jour**, absorbées par le **CDN canadien (CloudFront ca-central-1)** ; comme elle est statique, l'origine applicative est quasi non sollicitée. Le magnétisme (attirer ce trafic) repose sur le SEO/GEO de la home + l'arborescence SEO de masse des features 016-019/027 (différées) — la home en est l'entrée phare, pas le seul levier.
+- **Inspiration lead-gen** : structure dérivée des plateformes lead-gen québécoises (réf. soumissionrenovation.ca), **adaptée à la mise en relation** (aucun devis/soumission, aucun contact direct, ADR-0002). « 3 conseillers », jamais « 3 soumissions ».
+- **Teaser thématiques** : la home n'embarque qu'un teaser menant à l'intake ; les pages thématiques/régionales complètes (spécialité × destination × FSA) relèvent de 018/027 (différées). Si non prêt, le teaser est omis (dégradation gracieuse).
+- **Preuves sociales** : uniquement des **données réelles** (ex. nombre de conseillers vérifiés via valeur build/cache, pas par requête) ; jamais de chiffre inventé. Les avis voyageurs sont post-MVP (Tier 5).
