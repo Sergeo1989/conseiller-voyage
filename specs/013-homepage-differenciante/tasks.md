@@ -92,6 +92,7 @@ mention anti-contact et FAQ pointent/expliquent correctement ; aucune mécanique
 - [x] T017 [P] [US2] Composant `SectionFaq` (≥ 4 Q/R, passages courts citables) dans `apps/web/src/features/home/ui/SectionFaq.tsx`
 - [x] T018 [P] [US2] Composant `BandeauLoi25` (résidence des données + non-partage) dans `apps/web/src/features/home/ui/BandeauLoi25.tsx`
 - [x] T019 [P] [US2] Composant `MentionPasDeContact` (lien → `/<locale>/comment-ca-marche`) dans `apps/web/src/features/home/ui/MentionPasDeContact.tsx`
+- [x] T019b [P] [US2] Composant `SectionAvantageConseiller` (FR-025 — côté humain : accompagnement, suivi pro, expertise, loin du bruit des comparateurs) dans `apps/web/src/features/home/ui/SectionAvantageConseiller.tsx`
 - [x] T020 [US2] Composer toutes les sections dans l'ordre du squelette + CTA répété + `Footer` partagé + lien secondaire « Espace conseiller » dans `apps/web/src/app/[locale]/page.tsx` → rend T011 vert
 
 **Checkpoint** : US1 + US2 — page de positionnement complète côté contenu.
@@ -108,18 +109,18 @@ violation) + JSON-LD valide (sans `contactPoint`) + FAQPage valide + home statiq
 
 ### Tests (TDD — rouge AVANT vert)
 
-- [ ] T021 [P] [US3] Test RED `buildHomepageJsonLd` : `Organization` + `WebSite`, `@context` schema.org, **absence** de `contactPoint`/`telephone`/`email`, pureté (contrat L1–L7, SC-007) dans `apps/web/src/features/home/lib/__tests__/homepage-jsonld.test.ts`
-- [ ] T022 [P] [US3] Test RED `buildFaqJsonLd` : `FAQPage` avec `Question`/`acceptedAnswer`, pureté (contrat L9–L11, SC-012) dans `apps/web/src/features/home/lib/__tests__/faq-jsonld.test.ts`
+- [x] T021 [P] [US3] Test RED `buildHomepageJsonLd` : `Organization` + `WebSite`, `@context` schema.org, **absence** de `contactPoint`/`telephone`/`email`, pureté (contrat L1–L7, SC-007) dans `apps/web/src/features/home/lib/__tests__/homepage-jsonld.test.ts`
+- [x] T022 [P] [US3] Test RED `buildFaqJsonLd` : `FAQPage` avec `Question`/`acceptedAnswer`, pureté (contrat L9–L11, SC-012) dans `apps/web/src/features/home/lib/__tests__/faq-jsonld.test.ts`
 
 ### Implémentation
 
-- [ ] T023 [US3] Fonction pure `buildHomepageJsonLd(locale, baseUrl)` dans `apps/web/src/features/home/lib/homepage-jsonld.ts` → rend T021 vert
-- [ ] T024 [US3] Fonction pure `buildFaqJsonLd(faqItems)` dans `apps/web/src/features/home/lib/faq-jsonld.ts` → rend T022 vert
-- [ ] T025 [US3] `generateMetadata` (title/description i18n, `alternates.canonical`, `openGraph`, `twitter`, `robots` indexable) + injection des `<script type="application/ld+json">` (homepage + FAQPage) dans `apps/web/src/app/[locale]/page.tsx` (contrat M1–M6, L8, L9)
-- [ ] T026 [P] [US3] Test a11y Playwright + axe-core tag `@a11y` sur `/fr` (0 violation sérieuse/critique, un seul `<h1>`, repères sémantiques, opérabilité clavier) dans `apps/web/test/a11y/home.spec.ts`
-- [ ] T027 [US3] Valider la porte Lighthouse CI sur `/fr` (Perf≥90/SEO≥95/A11y≥95, LCP≤2500, CLS≤0.1) — exécuter `lhci` localement, ajuster si dépassement (contrat SC-004/005)
-- [ ] T028 [US3] **Cacheabilité à l'échelle** (millions/jour) : `generateStaticParams` (fr, en), rendu statique sans fonction dynamique par requête (aucun `cookies()`/`headers()`), `Cache-Control` long + revalidation à la demande dans `apps/web/src/app/[locale]/page.tsx` (contrat S1–S4, FR-017/018, SC-010/011)
-- [ ] T029 [P] [US3] **Magnétisme SEO/GEO** : image de partage social (OG) + vérifier la citabilité (passages FAQ courts, sémantique propre) (contrat S5, FR-019)
+- [x] T023 [US3] Fonction pure `buildHomepageJsonLd(locale, baseUrl)` dans `apps/web/src/features/home/lib/homepage-jsonld.ts` → rend T021 vert
+- [x] T024 [US3] Fonction pure `buildFaqJsonLd(faqItems)` dans `apps/web/src/features/home/lib/faq-jsonld.ts` → rend T022 vert
+- [x] T025 [US3] `generateMetadata` (title/description i18n, `alternates.canonical`, `openGraph`, `twitter`, `robots` indexable) + injection des `<script type="application/ld+json">` (homepage + FAQPage) dans `apps/web/src/app/[locale]/page.tsx` (contrat M1–M6, L8, L9)
+- [x] T026 [P] [US3] Test a11y Playwright + axe-core tag `@a11y` sur `/fr` (0 violation sérieuse/critique, un seul `<h1>`, repères sémantiques, opérabilité clavier) dans `apps/web/test/a11y/home.spec.ts`
+- [x] T027 [US3] Valider la porte Lighthouse CI sur `/fr` (Perf≥90/SEO≥95/A11y≥95, LCP≤2500, CLS≤0.1) — exécuter `lhci` localement, ajuster si dépassement (contrat SC-004/005)
+- [x] T028 [US3] **Cacheabilité à l'échelle** (millions/jour) : `generateStaticParams` (fr, en), rendu statique sans fonction dynamique par requête (aucun `cookies()`/`headers()`), `Cache-Control` long + revalidation à la demande dans `apps/web/src/app/[locale]/page.tsx` (contrat S1–S4, FR-017/018, SC-010/011)
+- [~] T029 [P] [US3] **Magnétisme SEO/GEO** : métadonnées OpenGraph/Twitter + citabilité (passages FAQ courts) FAITS ; **image OG dédiée** (`opengraph-image`) reste à produire (polish/025) (contrat S5, FR-019)
 
 **Checkpoint** : les 3 stories fonctionnent ; a11y + perf vertes ; home statique cacheable ; FAQPage indexable.
 

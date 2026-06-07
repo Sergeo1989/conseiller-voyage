@@ -14,6 +14,10 @@
       "title": "Décrivez votre voyage. On vous présente les 3 conseillers vérifiés faits pour vous.",
       "subtitle": "Indépendant de tout réseau. Aucun frais de plus qu'en ligne."
     },
+    "meta": {
+      "title": "Conseiller Voyage — Décrivez votre voyage, on vous présente les bons conseillers",
+      "description": "Service québécois indépendant : décrivez votre projet et recevez jusqu'à 3 conseillers en voyages vérifiés (OPC/TICO) faits pour vous. Gratuit, sans engagement."
+    },
     "ctaPrimary": "Décrire mon voyage",
     "ctaSecondary": "Voir comment ça marche",
     "advisorAccess": "Espace conseiller",
@@ -38,6 +42,28 @@
         {
           "title": "Vous échangez et vous choisissez",
           "body": "Vous discutez directement avec eux et décidez. Sans frais, sans engagement."
+        }
+      ]
+    },
+    "avantageConseiller": {
+      "heading": "Pourquoi un conseiller, et pas juste un site de réservation",
+      "intro": "Réserver en ligne, c'est vous, seul, face à des centaines d'options. Un conseiller, c'est un professionnel qui prend en charge votre projet — le côté humain en plus.",
+      "points": [
+        {
+          "title": "Un accompagnement humain",
+          "body": "Une vraie personne comprend votre projet, vos envies et vos contraintes, et vous guide à chaque étape."
+        },
+        {
+          "title": "Un suivi par un pro",
+          "body": "Avant, pendant et après : un conseiller qui reste joignable si un imprévu survient en voyage."
+        },
+        {
+          "title": "Loin du bruit des comparateurs",
+          "body": "Pas des dizaines d'onglets ni de prix à décortiquer. Vous restez concentré sur votre voyage, pas sur des outils."
+        },
+        {
+          "title": "Une expertise personnalisée",
+          "body": "Des recommandations sur mesure qu'aucun moteur de réservation en ligne ne peut offrir."
         }
       ]
     },

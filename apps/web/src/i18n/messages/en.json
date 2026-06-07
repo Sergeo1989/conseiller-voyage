@@ -14,6 +14,10 @@
       "title": "Describe your trip. We present the 3 verified advisors that fit you.",
       "subtitle": "Independent of any network. No extra cost compared to booking online."
     },
+    "meta": {
+      "title": "Conseiller Voyage — Describe your trip, we present the right advisors",
+      "description": "Independent Quebec service: describe your project and get up to 3 verified travel advisors (OPC/TICO) matched for you. Free, no obligation."
+    },
     "ctaPrimary": "Describe my trip",
     "ctaSecondary": "See how it works",
     "advisorAccess": "Advisor space",
@@ -38,6 +42,28 @@
         {
           "title": "You talk and you choose",
           "body": "You speak with them directly and decide. No fees, no obligation."
+        }
+      ]
+    },
+    "avantageConseiller": {
+      "heading": "Why an advisor, and not just a booking site",
+      "intro": "Booking online means you, alone, facing hundreds of options. An advisor is a professional who takes charge of your project — the human touch on top.",
+      "points": [
+        {
+          "title": "Human guidance",
+          "body": "A real person understands your project, your wishes and your constraints, and guides you at every step."
+        },
+        {
+          "title": "Follow-up by a pro",
+          "body": "Before, during and after: an advisor who stays reachable if something unexpected happens during your trip."
+        },
+        {
+          "title": "Away from comparison noise",
+          "body": "No dozens of tabs or prices to dissect. You stay focused on your trip, not on tools."
+        },
+        {
+          "title": "Personalized expertise",
+          "body": "Tailored recommendations no online booking engine can offer."
         }
       ]
     },
