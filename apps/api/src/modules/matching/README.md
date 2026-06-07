@@ -13,6 +13,48 @@ Fonction pure du domaine (Principe VI TDD obligatoire) qui calcule le top 3 cons
 
 > Aucune UI livrée dans 011 — la lecture côté voyageur arrivera en feature 015.
 
+## Leads — notifications conseiller + machine d'état (feature 012)
+
+Extension **aval** du module `matching` (même module premier niveau, Principe V).
+012 **consomme** les 4 événements publiés par 011 sur le bus `matching.events`,
+crée une entité **Lead** par (conseiller vérifié × MatchingResultEntry), notifie
+chaque conseiller individuellement (un job BullMQ par destinataire, courriel
+FR-CA SES sans PII de contact) et pilote une **machine d'état de lead**
+append-only `envoye → vu → accepte → refuse → devis_envoye → reservation_confirmee → perdu`
+(fonction pure du domaine, TDD strict Principe VI).
+
+**Rôle** : transformer un matching calculé en opportunités traçables côté
+conseiller. Anti-marketplace strict (aucune donnée transactionnelle, ADR-0002),
+re-filtrage `verified` dynamique, cascade anonymisation Loi 25 (audit préservé),
+concurrence optimiste, idempotence at-least-once.
+
+**Événements consommés** (canal Redis pub/sub `MATCHING_PUBSUB_CHANNEL`) :
+
+| Événement | Action 012 |
+|---|---|
+| `voyageur.brief.matched` / `partially_matched` | 1 lead + 1 notification par conseiller vérifié ; supersession des leads de l'ancien MR (`perdu`, motif `re-matched`) |
+| `voyageur.brief.unmatched` | trace seule, aucun lead/notification |
+| `voyageur.brief.all_matches_revoked` | aucun conseiller notifié, leads → `perdu` ; alerte admin réutilise le mécanisme 008/011 |
+
+**Endpoints conseiller** (`/api/matching/conseiller`, `AuthGuard` +
+`RoleGuard @RequireRole('conseiller')`) : `GET /leads`, `GET /leads/:id`
+(auto-`vu`), `POST /leads/:id/{accept,refuse,quote-sent,booking-confirmed,lost}`.
+Consommés par 014 (dashboard).
+
+**Port public** : `MATCHING_LEAD_QUERY_PORT` (lecture seule, exporté pour 014/015).
+
+**Dépendances** : `conformite` (001, `CONFORMITE_QUERY_PORT` re-filtrage verified),
+`identité` (006/007, AuthGuard + résolution adresse conseiller), `@cv/email-templates`
+(`lead-received.tsx`) + SES (ADR-0006).
+
+**Migrations** : `2026XXXX_init_lead` (tables `leads`, `lead_transitions`,
+`lead_notification_outbox`, `consumed_matching_events`) + `2026XXXX_lead_transitions_append_only`
+(trigger) + `2026XXXX_lead_anonymisation_cascade` (trigger brief anonymisé → `briefId = NULL`).
+
+**ADRs** : [ADR-0025](../../../../docs/adr/0025-lead-state-machine.md) (machine d'état
+pure) + [ADR-0026](../../../../docs/adr/0026-lead-bus-consumption-reconciliation.md)
+(consommation bus + sweep de réconciliation).
+
 ## Architecture (Principe VIII — 4 couches)
 
 ```text

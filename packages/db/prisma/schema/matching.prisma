@@ -20,9 +20,9 @@
 // =====================================================================
 
 enum MatchingStatus {
-  ok      // top 3 complet
+  ok // top 3 complet
   partial // 1 ou 2 entries
-  empty   // 0 entries
+  empty // 0 entries
 }
 
 enum MatchingAuditEventType {
@@ -40,6 +40,53 @@ enum MatchingOutboxEventType {
   voyageur_brief_partially_matched
   voyageur_brief_unmatched
   voyageur_brief_all_matches_revoked
+}
+
+// ---------------------------------------------------------------------
+// Enums feature 012 — leads (notifications conseiller + machine d'état)
+// ---------------------------------------------------------------------
+
+/// Machine d'état du lead (ADR-0025). Valeurs ASCII snake_case (les libellés
+/// accentués FR-CA vivent dans l'i18n d'affichage). Terminaux : refuse,
+/// reservation_confirmee, perdu.
+enum LeadState {
+  envoye
+  vu
+  accepte
+  refuse
+  devis_envoye
+  reservation_confirmee
+  perdu
+}
+
+/// Déclencheurs de transition (data-model §LeadAction).
+enum LeadAction {
+  marquer_vu
+  accepter
+  refuser
+  marquer_devis_envoye
+  marquer_reservation_confirmee
+  marquer_perdu
+  clore_systeme
+}
+
+/// Acteur d'une transition.
+enum LeadTransitionActor {
+  conseiller
+  systeme
+}
+
+/// Canal d'acheminement de la notification conseiller (extensible).
+enum LeadNotificationChannel {
+  email
+}
+
+/// Statut d'acheminement de la notification conseiller.
+enum LeadNotificationStatus {
+  pending
+  sent
+  failed
+  skipped_unverified
 }
 
 // =====================================================================
@@ -69,6 +116,7 @@ model MatchingResult {
   createdAt                    DateTime       @default(now())
 
   entries MatchingResultEntry[]
+  leads   Lead[]
 
   // Index de file admin US5 extension de 008 (alertes WARN partial/empty)
   @@index([status, computedAt(sort: Desc)])
@@ -135,4 +183,104 @@ model MatchingOutboxEntry {
   // Scan worker oldest-first
   @@index([createdAt(sort: Asc)])
   @@map("matching_outbox_entries")
+}
+
+// =====================================================================
+// Feature 012 — Leads (notifications conseiller + machine d'état)
+// =====================================================================
+
+/// Lead — opportunité d'un conseiller sur un matching donné. Un lead par
+/// couple (conseiller × MatchingResult) — UNIQUE garantit l'idempotence
+/// (FR-003). `briefId` neutralisé (NULL) à l'anonymisation Loi 25 (cascade
+/// trigger T009) ; `lead_transitions` jamais touché (audit préservé).
+model Lead {
+  id String @id @default(uuid()) @db.Uuid
+
+  matchingResultId            String         @db.Uuid
+  matchingResult              MatchingResult @relation(fields: [matchingResultId], references: [id], onDelete: Restrict)
+  matchingResultEntryPosition Int            @db.SmallInt
+
+  conseillerId String  @db.Uuid
+  // briefId nullable post-anonymisation Loi 25 (trigger cascade T009).
+  briefId      String? @db.Uuid
+
+  // État dénormalisé (guard concurrence optimiste). Mis à jour
+  // transactionnellement avec l'insert de transition (ADR-0025).
+  currentState LeadState @default(envoye)
+
+  scoreFinal  Decimal? @db.Decimal(5, 4)
+  boosted     Boolean  @default(false)
+  // Motif système (`re-matched`, `all_matches_revoked`) si clôture auto.
+  closeReason String?  @db.VarChar(64)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transitions   LeadTransition[]
+  notifications LeadNotificationOutbox[]
+
+  // Idempotence FR-003 : 1 lead par (conseiller × matchingResult).
+  @@unique([conseillerId, matchingResultId])
+  @@index([briefId])
+  // Sweeps / métriques par état.
+  @@index([currentState])
+  // Liste "mes leads" dashboard conseiller (014).
+  @@index([conseillerId, createdAt(sort: Desc)])
+  @@map("leads")
+}
+
+/// LeadTransition — historique immuable (append-only, trigger T008) des
+/// changements d'état. `fromState` NULL pour la création initiale (→ envoye).
+model LeadTransition {
+  id     String @id @default(uuid()) @db.Uuid
+  leadId String @db.Uuid
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Restrict)
+
+  fromState  LeadState?
+  toState    LeadState
+  action     LeadAction
+  actor      LeadTransitionActor
+  // conseillerId si actor=conseiller ; null si systeme.
+  actorId    String?             @db.Uuid
+  // Motif (≤ 500 chars) — jamais de PII.
+  reason     String?             @db.VarChar(500)
+  occurredAt DateTime
+
+  @@index([leadId, occurredAt(sort: Asc)])
+  @@map("lead_transitions")
+}
+
+/// LeadNotificationOutbox — notification conseiller à acheminer (un par
+/// destinataire, Principe X). L'adresse n'est jamais stockée : résolue au
+/// moment de l'envoi via le module identité.
+model LeadNotificationOutbox {
+  id     String @id @default(uuid()) @db.Uuid
+  leadId String @db.Uuid
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Restrict)
+
+  conseillerId   String @db.Uuid
+  // UNIQUE = `lead:{conseillerId}:{matchingResultId}` (idempotence FR-003).
+  idempotencyKey String @unique @db.VarChar(255)
+
+  channel   LeadNotificationChannel @default(email)
+  status    LeadNotificationStatus  @default(pending)
+  attempts  Int                     @default(0)
+  lastError String?                 @db.Text
+
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+
+  // Scan worker des notifications à envoyer.
+  @@index([status, createdAt(sort: Asc)])
+  @@map("lead_notification_outbox")
+}
+
+/// ConsumedMatchingEvent — trace d'idempotence des événements bus déjà
+/// traités (dédup at-least-once, ADR-0026).
+model ConsumedMatchingEvent {
+  idempotencyKey String   @id @db.VarChar(255)
+  eventName      String   @db.VarChar(64)
+  consumedAt     DateTime @default(now())
+
+  @@map("consumed_matching_events")
 }

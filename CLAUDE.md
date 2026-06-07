@@ -117,22 +117,24 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/008-matching-scoring/plan.md`](specs/008-matching-scoring/plan.md)
-(Module matching — feature 011 roadmap, Tier 2 boucle économique cœur ;
-branche `008-matching-scoring`). Fonction pure domaine (TDD strict Principe VI)
-qui calcule top 3 conseillers vérifiés pour un brief via 4 axes pondérés
-(destination 0.35 / géo Haversine FSA 0.25 / spécialité 0.25 / familiarité 0.15)
-+ filtre dur langue + boost ≤ +10 % sur cookie `cv_suggested` (007).
-Plafond 3 strict (SC-003 invariant), idempotence par briefId,
-append-only Loi 25, 4 événements outbox distincts
-(`voyageur.brief.matched|partially_matched|unmatched|all_matches_revoked`)
-consommés par feature 012 (notifications) et l'extension US5 du dashboard
-admin de 008. Aucune UI livrée dans 011 (lecture voyageur arrivera en 015).
+**Plan courant** : [`specs/012-lead-notifications-state-machine/plan.md`](specs/012-lead-notifications-state-machine/plan.md)
+(Feature 012 roadmap — extension aval du module `matching` ; Tier 2 boucle
+économique cœur ; branche `012-lead-notifications-state-machine`). Consomme
+les 4 événements outbox de 011 sur le bus `matching.events`, crée une entité
+**Lead** par (conseiller vérifié × MatchingResultEntry), notifie chaque
+conseiller individuellement (un job BullMQ par destinataire, courriel FR-CA
+SES sans PII de contact), et pilote une **machine d'état de lead** append-only
+(`envoyé → vu → accepté → refusé → devis_envoyé → réservation_confirmée → perdu`)
+— fonction pure du domaine (TDD strict Principe VI). Anti-marketplace strict
+(aucune donnée transactionnelle), re-filtrage `verified` dynamique, cascade
+anonymisation Loi 25 (audit préservé), concurrence optimiste, idempotence
+at-least-once. Expose un port public `MatchingLeadQueryPort` + endpoints HTTP
+conseiller (consommés par 014) ; communication voyageur déléguée à 013/015.
 
 Pour le contexte technologique détaillé et la structure de répertoires de la
 feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
-`contracts/{matching-query.port,http-endpoints,outbox-events}.md`, et
-`quickstart.md` du même répertoire `specs/008-matching-scoring/`.
+`contracts/{http-endpoints,lead-query.port,bus-and-notifications}.md`, et
+`quickstart.md` du même répertoire `specs/012-lead-notifications-state-machine/`.
 
 **Features précédentes mergées** (Tier 0 fermé) :
 - `001-conformite-module` (PR #1, squash `8592922`). Source de vérité pour
@@ -171,7 +173,16 @@ feature courante, lire ce plan ainsi que `research.md`, `data-model.md`,
   global, file admin briefs non-matchés + push manuel). 3 ADRs (0017 audit
   table séparée, 0018 magic-link random DB, 0019 disposable emails list).
   Publie outbox `voyageur.brief.activated` consommée par 011 matching.
+- `008-matching-scoring` = **feature 011 matching** (PR #21 squash `a854c81` +
+  satellite T093 PR #23 squash `e2e598c`). Module `matching` : scoring top 3
+  conseillers vérifiés (4 axes pondérés + filtre langue + boost cookie), plafond
+  3 strict, idempotence briefId, append-only Loi 25, 4 événements outbox
+  (`voyageur.brief.matched|partially_matched|unmatched|all_matches_revoked`)
+  drainés vers le bus Redis `matching.events` (T093). ADRs 0020-0024.
+  `MatchingQueryPort` public + `fsa-centroids.json` complet (1 643 FSA StatCan).
+  Consommé par 012. Avant déploiement prod : validations staging (charge +
+  migrations) restantes.
 
 **Features en cours / à venir** :
-- `008-matching-scoring` (cette branche) : voir *Plan courant* ci-dessus.
+- `012-lead-notifications-state-machine` (cette branche) : voir *Plan courant* ci-dessus.
 <!-- SPECKIT END -->

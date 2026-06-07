@@ -6,7 +6,7 @@ entrée numérotée est destinée à devenir une spec détaillée via
 (ajouts, repriorisations, suppressions) ; chaque modification est
 référencée par commit.
 
-**Dernière mise à jour** : 2026-05-27 (soir — feature 007 phases 1-10 + tests intégration + UI admin web + e2e Playwright + CI a11y/Lighthouse bloquante)
+**Dernière mise à jour** : 2026-06-06 (ajout contexte concurrentiel + features 026 page d'accueil différenciante et 027 SEO programmatique d'intention)
 
 > **Note de numérotation** : les IDs de cette roadmap (001, 002, …) sont des
 > identifiants logiques de feature. Les dossiers de spec sous `specs/`
@@ -31,6 +31,37 @@ features de cette roadmap :
 
 Toute feature qui transgresse l'un de ces deux invariants doit être
 rejetée à la revue, quelle que soit la pression commerciale.
+
+---
+
+## Contexte concurrentiel (2026-06-06)
+
+Analyse du paysage québécois pour cadrer le positionnement (features 026-027).
+Trois types d'acteurs, **pas un seul** :
+
+| Acteur | Modèle | Faille exploitable |
+|---|---|---|
+| **monvoyagemonagence.ca** (Voyages en Direct) | Vitrine *éducative* d'un réseau captif | Cible « pourquoi un conseiller », pas « trouver LE bon conseiller » ; SEO dépendant de la marque |
+| **Club Voyages / Jaimonvoyage** | **Annuaire à facettes** (filtrer par ville, langue, spécialité, destination) | L'utilisateur fait le tri lui-même (recherche) ; réseaux captifs aussi |
+| **OPC** (pes.opc.gouv.qc.ca) | Registre officiel des certifiés | Source de vérité de la vérification, mais aucun parcours de mise en relation |
+
+**Nos différenciateurs structurels** (réels mais invisibles en surface — d'où
+026-027) :
+
+1. **Neutralité multi-réseaux** vs réseau captif : on matche tout conseiller
+   `verified`, indépendants compris, sans appartenance à un réseau.
+2. **Appariement algorithmique à partir d'un brief** vs annuaire à facettes :
+   on présente les **3 meilleurs pour CE voyageur** (axes de scoring 011), eux
+   livrent une liste à trier.
+3. **Vérification OPC/TICO imposée en couche DB** (Principe I) comme argument de
+   confiance visible, pas seulement une promesse marketing.
+4. **Vie privée par conception (Loi 25)** : données au Canada, notifications
+   conseiller sans PII de contact.
+
+⚠️ Le danger : une page d'accueil « parlez à un conseiller humain » est un
+**clone appauvri** de la vitrine captive. La différenciation doit être traduite
+en messages explicites (026) et en arborescence SEO d'intention (027), sinon le
+meilleur moteur reste derrière une promesse banalisée.
 
 ---
 
@@ -115,7 +146,7 @@ Reste pour merger 005 vers `main` :
 | 009 | Intake — enrichissement LLM (reformulation, extraction d'intentions) | préqualification | M | ⏳ | 008, ADR fournisseur LLM |
 | 010 | Intake — soumission + magic-link de suivi voyageur | préqualification × identité | S | ⏳ | 003, 008 |
 | 011 | Matching — scoring conseiller × brief (pur, TDD obligatoire) | matching | M | 🟡 livré branche `008-matching-scoring` (PR #21, US1-US3 + polish) | 001, 008. 3 US + Phase 6 polish (métriques OTel, dashboard, runbooks, ADRs 0020-0024 acceptés, CLI anti-PII, `fsa-centroids.json` complet 1 643 FSA StatCan). Avant merge prod : valider charge + migrations en staging ; T093 (drain `matching_outbox`→bus) en PR satellite Mode B (ADR-0024 §E3). |
-| 012 | Matching — notifications + machine d'état de lead | matching | M | ⏳ | 003, 011 |
+| 012 | Matching — notifications + machine d'état de lead | matching | M | 🟡 livré branche `012-lead-notifications-state-machine` (US1-US3 + polish) | 003, 011. 3 US + Phase 6 polish. Consomme les 4 events bus 011 → leads + notifications conseiller (1 job BullMQ/destinataire, SES FR-CA sans PII), machine d'état pure append-only (ADR-0025, property-tests SC-003/FR-020), supersession re-match, sweep réconciliation (ADR-0026), cascade anonymisation Loi 25, concurrence optimiste, port public `MatchingLeadQueryPort` + endpoints HTTP conseiller. ADRs 0025-0026 acceptés. Avant merge prod : tests d'intégration Testcontainers + charge en staging (stubs documentés, convention 011). |
 | 013 | Conversation conseiller ↔ voyageur (post-acceptation) | matching | M | ⏳ | 011, 012 |
 | 014 | Tableau de bord conseiller (mes leads, conversations) | matching × identité | M | ⏳ | 005, 012, 013 |
 | 015 | Espace voyageur post-intake (mes 3 conseillers, suivi) | matching | M | ⏳ | 010, 012, 013 |
@@ -146,6 +177,8 @@ Reste pour merger 005 vers `main` :
 | 017 | Schemas JSON-LD + sitemaps dynamiques + hreflang | SEO | S | ⏳ | 016 |
 | 018 | Pages d'atterrissage par thématique de voyage (FR-CA) | SEO | M | ⏳ | 016, 017 |
 | 019 | GEO / AI search readiness (llms.txt, citabilité passages) | SEO | S | ⏳ | 016-018 |
+| 026 | Page d'accueil — positionnement différenciant (neutralité, matching, confiance OPC/TICO, Loi 25) | SEO × matching | M | ⏳ | 011, 017 |
+| 027 | SEO programmatique d'intention (arborescence FSA × spécialité × destination × langue) | SEO | L | ⏳ | 011, 016, 017, 018 |
 
 **Contraintes spécifiques à 016 (pages publiques individuelles)** — application [ADR-0002](adr/0002-pas-de-cta-contact-direct.md) :
 
@@ -158,6 +191,23 @@ Reste pour merger 005 vers `main` :
 
 - Listing de conseillers vérifiés (avec filtres province / spécialité / langue), mais chaque carte renvoie à la page profil 016, jamais à un contact direct.
 - Optionnel : un CTA « Décrire mon projet de voyage [thématique] » qui pré-remplit le brief avec la thématique.
+
+**Contraintes spécifiques à 026 (page d'accueil différenciante)** — traduire les différenciateurs structurels en messages (cf. *Contexte concurrentiel*) :
+
+- **H1 = promesse de neutralité + appariement**, pas la marque : « Décrivez votre voyage. On vous présente les 3 conseillers vérifiés faits pour vous. » Sous-titre : « Indépendant de tout réseau. Aucun frais de plus qu'en ligne. »
+- **CTA principal = le brief** (« Décrire mon voyage » → `/intake`), jamais « demander une soumission » (signale qu'on travaille *pour* le voyageur). Respecte l'invariant intake-unique-route + ADR-0002.
+- Section « Pourquoi 3, et pas une liste » qui explicite le matching (critères → appariement axes 011 → 3 conseillers choisis) — ce que l'annuaire ne peut pas dire.
+- Bandeau confiance « Tous vérifiés OPC/TICO » lié à `/comment-ca-marche` : rend visible la garde `verified` (Principe I).
+- Section « Indépendant et neutre » + bandeau Loi 25 (« Vos données restent au Canada. Aucun partage de vos coordonnées sans votre accord. »).
+- **Aucun CTA de contact direct**, aucune liste de conseillers cliquables vers un contact (ADR-0002).
+
+**Contraintes spécifiques à 027 (SEO programmatique d'intention)** — capter l'intention longue-traîne que les annuaires et la vitrine captive négligent :
+
+- Arborescence dérivée des **axes de scoring 011** : `destination × spécialité × langue × région FSA` (1 643 FSA StatCan déjà disponibles via `fsa-centroids.json`). Cible p. ex. « conseiller voyage spécialiste Japon Montréal », « agent de voyage lune de miel Québec ».
+- **Garde-fou thin-content / index bloat OBLIGATOIRE (Principe XII)** : une page n'est générée et indexable que si elle porte une valeur unique réelle (conseillers réellement appariables sur la combinaison + données locales réelles). Combinaisons vides → `noindex` ou non générées. Cf. skill `seo-programmatic` à mobiliser en phase plan.
+- Chaque carte renvoie à la page profil 016 puis à l'intake ; **jamais** de contact direct (ADR-0002). CTA « Décrire mon projet [destination/spécialité] » pré-remplit le brief.
+- Schémas JSON-LD (`Service` / `LocalBusiness` pour les pages régionales) sans `contactPoint` ni `telephone`.
+- Scope **L** : à scinder en 2-3 specs (p. ex. pages régionales FSA, pages spécialité × destination, automatisation du maillage interne).
 
 **Contraintes performance (constitution, *Patrons d'exécution*) sur tout le Tier 3** :
 
@@ -270,8 +320,8 @@ cas via un `/speckit.specify` quand le moment vient.
 | **3** | 009, 010, 011, 024 | Enrichissement LLM, magic-link, scoring matching, infra i18n. |
 | **4** | 012, 013, 007 | Notifs + état de lead, conversation, facturation récurrence. |
 | **5** | 014, 015, 020 | Dashboards conseiller, voyageur, admin. |
-| **6** | 016, 017, 021 | Premières pages publiques SEO + observabilité centrale (drainera aussi métriques `cv_active_admins_total` posées par 002a). |
-| **7** | 018, 019, 022, 023 | Pages thématiques, GEO/AI, retention sweep, effacement Loi 25. |
+| **6** | 016, 017, 021, 026 | Premières pages publiques SEO + observabilité centrale (drainera aussi métriques `cv_active_admins_total` posées par 002a) + page d'accueil différenciante (dès que 011 + 017 prêts). |
+| **7** | 018, 019, 022, 023, 027 | Pages thématiques, GEO/AI, retention sweep, effacement Loi 25, SEO programmatique d'intention (FSA × spécialité). |
 | **8** | 025 | Design system formalisé (peut démarrer plus tôt si capacité). |
 | **post** | Tier 5 selon traction | Au cas par cas. |
 
