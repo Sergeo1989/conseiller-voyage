@@ -21,20 +21,24 @@ export function SectionFaq({ heading, items }: SectionFaqProps) {
         <h2 id="faq-heading" className="text-2xl font-bold text-slate-900 sm:text-3xl">
           {heading}
         </h2>
-        <dl className="mt-8 divide-y divide-slate-200 border-t border-slate-200">
+        {/* Conteneur <div> (pas <dl>) : un <dl> ne peut contenir directement que
+            des <dt>/<dd> — y mettre des <details> viole axe `definition-list`
+            (serious) et baisse le score a11y Lighthouse. Le balisage sémantique
+            Q/R est porté par le FAQPage JSON-LD (page.tsx). */}
+        <div className="mt-8 divide-y divide-slate-200 border-t border-slate-200">
           {items.map((item) => (
             <details key={item.question} className="group py-4">
               <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-slate-900">
-                <dt>{item.question}</dt>
+                <span>{item.question}</span>
                 <ChevronDown
                   aria-hidden="true"
                   className="ml-4 h-5 w-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180"
                 />
               </summary>
-              <dd className="mt-2 text-slate-600">{item.answer}</dd>
+              <p className="mt-2 text-slate-600">{item.answer}</p>
             </details>
           ))}
-        </dl>
+        </div>
       </div>
     </section>
   );
