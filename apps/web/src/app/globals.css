@@ -78,6 +78,13 @@
   a:hover {
     text-decoration: underline;
   }
+
+  /* Signature de marque : serif d'affichage sur les grands titres (H1/H2).
+     Les titres de cartes (H3) restent en sans (Geist) pour la lisibilité. */
+  h1,
+  h2 {
+    font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  }
 }
 
 /* prefers-reduced-motion : hors layer + !important — l'accessibilité prime toujours. */
