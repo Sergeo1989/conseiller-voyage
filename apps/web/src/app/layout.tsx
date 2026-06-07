@@ -9,12 +9,13 @@
 // Les styles globaux d'accessibilité sont importés via globals.css —
 // Next.js les inline dans son <head> auto-généré.
 
+import { GeistSans } from 'geist/font/sans';
 import type { ReactNode } from 'react';
 import './globals.css';
 
 export default function RootLayout({ children }: { children: ReactNode }): ReactNode {
   return (
-    <html lang="fr-CA" suppressHydrationWarning>
+    <html lang="fr-CA" className={GeistSans.variable} suppressHydrationWarning>
       <body suppressHydrationWarning>{children}</body>
     </html>
   );

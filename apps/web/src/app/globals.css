@@ -23,7 +23,10 @@
 html,
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Vraie police de marque (Geist, self-hosted via next/font) au lieu du stack
+     système — repli système si la variable n'est pas chargée. */
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
   font-size: 16px;
   line-height: 1.5;
   color: #111827;
