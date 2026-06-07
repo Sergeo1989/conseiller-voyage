@@ -6,7 +6,7 @@ entrée numérotée est destinée à devenir une spec détaillée via
 (ajouts, repriorisations, suppressions) ; chaque modification est
 référencée par commit.
 
-**Dernière mise à jour** : 2026-06-06 (ajout contexte concurrentiel + features 026 page d'accueil différenciante et 027 SEO programmatique d'intention)
+**Dernière mise à jour** : 2026-06-06 (012 notifications/état de lead mergé → PR #24 squash `a521ac7` ; 026 page d'accueil différenciante priorisée et engagée en spec — branche `013-homepage-differenciante`, hors séquence Sprint 6)
 
 > **Note de numérotation** : les IDs de cette roadmap (001, 002, …) sont des
 > identifiants logiques de feature. Les dossiers de spec sous `specs/`
@@ -146,7 +146,7 @@ Reste pour merger 005 vers `main` :
 | 009 | Intake — enrichissement LLM (reformulation, extraction d'intentions) | préqualification | M | ⏳ | 008, ADR fournisseur LLM |
 | 010 | Intake — soumission + magic-link de suivi voyageur | préqualification × identité | S | ⏳ | 003, 008 |
 | 011 | Matching — scoring conseiller × brief (pur, TDD obligatoire) | matching | M | 🟡 livré branche `008-matching-scoring` (PR #21, US1-US3 + polish) | 001, 008. 3 US + Phase 6 polish (métriques OTel, dashboard, runbooks, ADRs 0020-0024 acceptés, CLI anti-PII, `fsa-centroids.json` complet 1 643 FSA StatCan). Avant merge prod : valider charge + migrations en staging ; T093 (drain `matching_outbox`→bus) en PR satellite Mode B (ADR-0024 §E3). |
-| 012 | Matching — notifications + machine d'état de lead | matching | M | 🟡 livré branche `012-lead-notifications-state-machine` (US1-US3 + polish) | 003, 011. 3 US + Phase 6 polish. Consomme les 4 events bus 011 → leads + notifications conseiller (1 job BullMQ/destinataire, SES FR-CA sans PII), machine d'état pure append-only (ADR-0025, property-tests SC-003/FR-020), supersession re-match, sweep réconciliation (ADR-0026), cascade anonymisation Loi 25, concurrence optimiste, port public `MatchingLeadQueryPort` + endpoints HTTP conseiller. ADRs 0025-0026 acceptés. Avant merge prod : tests d'intégration Testcontainers + charge en staging (stubs documentés, convention 011). |
+| 012 | Matching — notifications + machine d'état de lead | matching | M | ✅ mergé (PR #24, squash `a521ac7`) | 003, 011. 3 US + Phase 6 polish. Consomme les 4 events bus 011 → leads + notifications conseiller (1 job BullMQ/destinataire, SES FR-CA sans PII), machine d'état pure append-only (ADR-0025, property-tests SC-003/FR-020), supersession re-match, sweep réconciliation (ADR-0026), cascade anonymisation Loi 25, concurrence optimiste, port public `MatchingLeadQueryPort` + endpoints HTTP conseiller. ADRs 0025-0026 acceptés. Avant merge prod : tests d'intégration Testcontainers + charge en staging (stubs documentés, convention 011). |
 | 013 | Conversation conseiller ↔ voyageur (post-acceptation) | matching | M | ⏳ | 011, 012 |
 | 014 | Tableau de bord conseiller (mes leads, conversations) | matching × identité | M | ⏳ | 005, 012, 013 |
 | 015 | Espace voyageur post-intake (mes 3 conseillers, suivi) | matching | M | ⏳ | 010, 012, 013 |
@@ -177,7 +177,7 @@ Reste pour merger 005 vers `main` :
 | 017 | Schemas JSON-LD + sitemaps dynamiques + hreflang | SEO | S | ⏳ | 016 |
 | 018 | Pages d'atterrissage par thématique de voyage (FR-CA) | SEO | M | ⏳ | 016, 017 |
 | 019 | GEO / AI search readiness (llms.txt, citabilité passages) | SEO | S | ⏳ | 016-018 |
-| 026 | Page d'accueil — positionnement différenciant (neutralité, matching, confiance OPC/TICO, Loi 25) | SEO × matching | M | ⏳ | 011, 017 |
+| 026 | Page d'accueil — positionnement différenciant (neutralité, matching, confiance OPC/TICO, Loi 25) | SEO × matching | M | 🟡 spec en cours (branche `013-homepage-differenciante`, priorisée hors Sprint 6) | 011 ✅, 004 ✅, 008 ✅ ; 017 ⏳ partiel (JSON-LD homepage auto-contenu, infra sitemaps/hreflang complète différée) |
 | 027 | SEO programmatique d'intention (arborescence FSA × spécialité × destination × langue) | SEO | L | ⏳ | 011, 016, 017, 018 |
 
 **Contraintes spécifiques à 016 (pages publiques individuelles)** — application [ADR-0002](adr/0002-pas-de-cta-contact-direct.md) :
