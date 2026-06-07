@@ -18,7 +18,7 @@ export function SectionFaq({ heading, items }: SectionFaqProps) {
   return (
     <section aria-labelledby="faq-heading" className="bg-slate-50">
       <div className="mx-auto max-w-3xl px-4 py-16">
-        <h2 id="faq-heading" className="text-center text-2xl font-bold text-slate-900 sm:text-3xl">
+        <h2 id="faq-heading" className="text-2xl font-bold text-slate-900 sm:text-3xl">
           {heading}
         </h2>
         <dl className="mt-8 divide-y divide-slate-200 border-t border-slate-200">

@@ -10,7 +10,7 @@ interface SectionPourquoiTroisProps {
 
 export function SectionPourquoiTrois({ heading, body, note }: SectionPourquoiTroisProps) {
   return (
-    <section aria-labelledby="p3-heading" className="mx-auto max-w-3xl px-4 py-16 text-center">
+    <section aria-labelledby="p3-heading" className="mx-auto max-w-3xl px-4 py-16">
       <h2 id="p3-heading" className="text-2xl font-bold text-slate-900 sm:text-3xl">
         {heading}
       </h2>

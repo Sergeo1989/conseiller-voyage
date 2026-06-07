@@ -26,7 +26,7 @@ export function SectionAvantageConseiller({
 }: SectionAvantageConseillerProps) {
   return (
     <section aria-labelledby="avantage-heading" className="mx-auto max-w-5xl px-4 py-16">
-      <div className="mx-auto max-w-3xl text-center">
+      <div className="max-w-3xl">
         <h2 id="avantage-heading" className="text-2xl font-bold text-slate-900 sm:text-3xl">
           {heading}
         </h2>

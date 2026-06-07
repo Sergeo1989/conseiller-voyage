@@ -9,7 +9,7 @@ interface SectionNeutraliteProps {
 export function SectionNeutralite({ heading, body }: SectionNeutraliteProps) {
   return (
     <section aria-labelledby="neutralite-heading" className="bg-slate-50">
-      <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+      <div className="mx-auto max-w-3xl px-4 py-16">
         <h2 id="neutralite-heading" className="text-2xl font-bold text-slate-900 sm:text-3xl">
           {heading}
         </h2>
