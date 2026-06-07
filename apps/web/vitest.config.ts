@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -11,6 +12,14 @@ import { defineConfig } from 'vitest/config';
  * (dépendance résolue uniquement dans le runtime Playwright).
  */
 export default defineConfig({
+  // Transforme le JSX des tests de composants (.tsx) via le runtime automatique
+  // (react/jsx-runtime) — pas besoin d'importer React dans chaque fichier.
+  esbuild: { jsx: 'automatic' },
+  resolve: {
+    // Alias `@/` → ./src, aligné sur tsconfig "paths". Nécessaire pour les
+    // tests unitaires de composants (Vitest n'hérite pas des paths tsconfig).
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
   test: {
     globals: false,
     environment: 'node',

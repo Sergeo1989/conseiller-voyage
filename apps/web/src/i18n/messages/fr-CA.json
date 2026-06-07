@@ -10,13 +10,19 @@
     "login": "Connexion"
   },
   "home": {
-    "ctaPrimary": "Décrire mon projet",
+    "hero": {
+      "title": "Décrivez votre voyage. On vous présente les 3 conseillers vérifiés faits pour vous.",
+      "subtitle": "Indépendant de tout réseau. Aucun frais de plus qu'en ligne."
+    },
+    "ctaPrimary": "Décrire mon voyage",
     "ctaSecondary": "Voir comment ça marche",
+    "advisorAccess": "Espace conseiller",
     "trust": {
       "verifiedAdvisors": "{count, plural, =0 {Aucun conseiller vérifié pour l'instant} =1 {1 conseiller vérifié} other {# conseillers vérifiés}}",
+      "opcTicoBanner": "Tous vérifiés OPC/TICO",
       "certificates": "Certificats CCV (Québec) et TICO (Ontario)",
       "dataResidency": "Données hébergées au Canada (Loi 25)",
-      "freeForTravelers": "Gratuit pour les voyageurs"
+      "freeForTravelers": "Gratuit pour les voyageurs, sans engagement"
     }
   },
   "errors": {

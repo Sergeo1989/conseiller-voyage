@@ -10,13 +10,19 @@
     "login": "Sign in"
   },
   "home": {
-    "ctaPrimary": "Describe my project",
+    "hero": {
+      "title": "Describe your trip. We present the 3 verified advisors that fit you.",
+      "subtitle": "Independent of any network. No extra cost compared to booking online."
+    },
+    "ctaPrimary": "Describe my trip",
     "ctaSecondary": "See how it works",
+    "advisorAccess": "Advisor space",
     "trust": {
       "verifiedAdvisors": "{count, plural, =0 {No verified advisors yet} =1 {1 verified advisor} other {# verified advisors}}",
+      "opcTicoBanner": "All OPC/TICO verified",
       "certificates": "CCV (Quebec) and TICO (Ontario) certificates",
       "dataResidency": "Data hosted in Canada (Law 25)",
-      "freeForTravelers": "Free for travelers"
+      "freeForTravelers": "Free for travelers, no obligation"
     }
   },
   "errors": {
