@@ -5,6 +5,7 @@
 // Reçoit le segment d'URL de langue déjà résolu (pas d'accès i18n ici) afin de
 // rester trivialement testable.
 
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 interface CtaDecrireVoyageProps {
@@ -17,7 +18,7 @@ interface CtaDecrireVoyageProps {
 }
 
 const DEFAULT_CLASSES =
-  'inline-flex items-center justify-center rounded-lg bg-blue-700 px-6 py-3 ' +
+  'group inline-flex items-center justify-center rounded-lg bg-blue-700 px-6 py-3 ' +
   'text-base font-semibold text-white no-underline shadow-sm transition-colors ' +
   'hover:bg-blue-800 hover:no-underline focus-visible:outline focus-visible:outline-2 ' +
   'focus-visible:outline-offset-2 focus-visible:outline-blue-700';
@@ -26,6 +27,10 @@ export function CtaDecrireVoyage({ urlLocale, label, className }: CtaDecrireVoya
   return (
     <Link href={`/${urlLocale}/voyage/nouveau`} className={className ?? DEFAULT_CLASSES}>
       {label}
+      <ArrowRight
+        aria-hidden="true"
+        className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5"
+      />
     </Link>
   );
 }
