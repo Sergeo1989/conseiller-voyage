@@ -9,6 +9,7 @@
 
 export * from './branded-ids';
 export * from './contracts';
+export * from './conversation-branded-ids';
 export * from './event-names';
 export * from './lead-branded-ids';
 export * from './lead-query.port';

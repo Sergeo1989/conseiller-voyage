@@ -29,8 +29,8 @@ UI minimale `apps/web/src/features/conversation/`.
 
 ## Phase 1: Setup (infrastructure partagée)
 
-- [ ] T001 [P] Schéma Prisma : modèles `Conversation`, `ConversationMessage`, `ConversationAttachment`, `ConversationNotificationOutbox`, `ConsumedConversationEvent` + enums (`ConversationParticipant`, `ConversationNotifStatus`) — **aucun champ transactionnel** — dans `packages/db/prisma/schema/matching.prisma`
-- [ ] T002 [P] Branded ids `ConversationId`/`MessageId`/`AttachmentId` dans `packages/shared/src/matching/conversation-branded-ids.ts` + réexport `packages/shared/src/matching/index.ts`
+- [x] T001 [P] Schéma Prisma : modèles `Conversation`, `ConversationMessage`, `ConversationAttachment`, `ConversationNotificationOutbox`, `ConsumedConversationEvent` + enums (`ConversationParticipant`, `ConversationNotifStatus`) — **aucun champ transactionnel** — dans `packages/db/prisma/schema/matching.prisma`
+- [x] T002 [P] Branded ids `ConversationId`/`MessageId`/`AttachmentId` dans `packages/shared/src/matching/conversation-branded-ids.ts` + réexport `packages/shared/src/matching/index.ts`
 - [ ] T003 Migration Prisma (`migrate dev`) pour les tables conversation dans `packages/db/prisma/migrations/`
 
 ---
@@ -39,8 +39,8 @@ UI minimale `apps/web/src/features/conversation/`.
 
 **⚠️ CRITIQUE** : aucune user story avant cette phase.
 
-- [ ] T004 [P] **RED** domaine : tests purs `conversation-policy` (`canWrite(leadState, verifie)`, `validateMessage(body)`, `validateAttachment(mime,size)`, `isMember`) dans `apps/api/src/modules/matching/domain/services/__tests__/conversation-policy.test.ts`
-- [ ] T005 **GREEN** domaine : `conversation-policy.ts` (pur) + VO `message-body.vo.ts` + `attachment-meta.vo.ts` dans `apps/api/src/modules/matching/domain/` → rend T004 vert
+- [x] T004 [P] **RED** domaine : tests purs `conversation-policy` (`canWrite(leadState, verifie)`, `validateMessage(body)`, `validateAttachment(mime,size)`, `isMember`) dans `apps/api/src/modules/matching/domain/services/__tests__/conversation-policy.test.ts`
+- [x] T005 **GREEN** domaine : `conversation-policy.ts` (pur) + VO `message-body.vo.ts` + `attachment-meta.vo.ts` dans `apps/api/src/modules/matching/domain/` → rend T004 vert
 - [ ] T006 [P] Entités domaine `conversation.entity.ts` + `conversation-message.entity.ts` (invariants) dans `apps/api/src/modules/matching/domain/entities/`
 - [ ] T007 Ports applicatifs (`conversation-repo`, `attachment-storage`, `conversation-notification-outbox`, `conversation-mailer`, `lead-eligibility-reader` [adapte `MatchingLeadQueryPort`], `conseiller-verification-reader` [adapte `ConformiteQueryPort`]) + `ports/index.ts` dans `apps/api/src/modules/matching/application/ports/`
 - [ ] T008 Fakes de test in-memory (repo / storage / outbox / lead+verif readers) dans `apps/api/src/modules/matching/application/__tests__/_conversation-fakes.ts`

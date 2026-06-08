@@ -284,3 +284,110 @@ model ConsumedMatchingEvent {
 
   @@map("consumed_matching_events")
 }
+
+// =====================================================================
+// Feature 014 — Conversation conseiller ↔ voyageur (post-acceptation)
+// ANTI-MARKETPLACE (ADR-0002) : AUCUN champ montant/prix/paiement/réservation.
+// Un devis est UNIQUEMENT une ConversationAttachment opaque (binaire sur S3).
+// =====================================================================
+
+/// Auteur d'un message / destinataire d'une notification de conversation.
+enum ConversationParticipant {
+  conseiller
+  voyageur
+}
+
+/// Statut d'acheminement d'une notification de message.
+enum ConversationNotifStatus {
+  pending
+  sent
+  failed
+}
+
+/// Conversation — fil entre un conseiller et le voyageur d'un lead ACCEPTÉ.
+/// Un fil par lead (le lead identifie déjà le couple conseiller × brief).
+/// Pas de relation Prisma vers Lead (découplage, cf. pattern audit no-FK du module).
+model Conversation {
+  id           String  @id @default(uuid()) @db.Uuid
+  leadId       String  @unique @db.Uuid
+  conseillerId String  @db.Uuid
+  briefId      String? @db.Uuid // null si brief anonymisé (Loi 25)
+  voyageurRef  String? @db.VarChar(255) // référence voyageur (neutralisable Loi 25)
+
+  openedAt      DateTime  @default(now())
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  messages ConversationMessage[]
+
+  @@index([conseillerId])
+  @@index([briefId])
+  @@map("conversations")
+}
+
+/// Message d'une conversation (texte ; body null après anonymisation Loi 25).
+model ConversationMessage {
+  id             String                  @id @default(uuid()) @db.Uuid
+  conversationId String                  @db.Uuid
+  conversation   Conversation            @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author         ConversationParticipant
+  body           String?                 @db.Text
+  idempotencyKey String                  @db.VarChar(255)
+  createdAt      DateTime                @default(now())
+
+  attachments   ConversationAttachment[]
+  notifications ConversationNotificationOutbox[]
+
+  @@unique([conversationId, idempotencyKey]) // idempotence d'envoi (FR-004)
+  @@index([conversationId, createdAt(sort: Asc)])
+  @@map("conversation_messages")
+}
+
+/// Pièce jointe — métadonnées seulement (binaire sur S3 ca-central-1).
+/// AUCUN montant / champ transactionnel (ADR-0002).
+model ConversationAttachment {
+  id        String              @id @default(uuid()) @db.Uuid
+  messageId String              @db.Uuid
+  message   ConversationMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  fileName  String @db.VarChar(255)
+  mimeType  String @db.VarChar(127)
+  sizeBytes Int
+  s3Key     String @db.VarChar(512)
+  status    String @default("pending_upload") @db.VarChar(32) // pending_upload | ready
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime? // suppression Loi 25 (objet S3 supprimé, métadonnées d'audit conservées)
+
+  @@index([messageId])
+  @@map("conversation_attachments")
+}
+
+/// Outbox de notification — 1 entrée par destinataire (FR-003), drainée vers SES (003).
+model ConversationNotificationOutbox {
+  id        String              @id @default(uuid()) @db.Uuid
+  messageId String              @db.Uuid
+  message   ConversationMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  recipient      ConversationParticipant
+  idempotencyKey String                  @unique @db.VarChar(255)
+  status         ConversationNotifStatus @default(pending)
+  attempts       Int                     @default(0)
+  lastError      String?                 @db.Text
+
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+
+  @@unique([messageId, recipient]) // 1 notif/destinataire (FR-003)
+  @@index([status, createdAt(sort: Asc)])
+  @@map("conversation_notification_outbox")
+}
+
+/// Trace d'idempotence des événements consommés (ouverture de fil à l'acceptation).
+model ConsumedConversationEvent {
+  idempotencyKey String   @id @db.VarChar(255)
+  consumedAt     DateTime @default(now())
+
+  @@map("consumed_conversation_events")
+}
