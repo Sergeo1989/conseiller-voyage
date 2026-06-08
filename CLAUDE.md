@@ -117,25 +117,24 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/014-conversation-conseiller-voyageur/plan.md`](specs/014-conversation-conseiller-voyageur/plan.md)
-(Feature roadmap **013** — conversation conseiller ↔ voyageur post-acceptation ;
-module `matching` ; Tier 2 boucle économique cœur ; branche
-`014-conversation-conseiller-voyageur`). Ouvre un **fil** par couple (conseiller ×
-lead `accepté`) : messages texte + **pièces jointes** (devis PDF transmis tels
-quels, **S3 ca-central-1**, URL signées) ; **une notification par destinataire**
-(outbox + BullMQ → SES via 003) ; éligibilité d'écriture **lue** via
-`MatchingLeadQueryPort` (012) + conformité (001) — la machine d'état n'est **pas**
-ré-implémentée ; cascade **anonymisation Loi 25** (audit préservé) ; **idempotence**
-d'envoi ; **cloisonnement** des fils. **Anti-marketplace strict** (ADR-0002) :
-zéro montant/paiement/lien de réservation, devis = fichier opaque, mention
-permanente, règlement hors plateforme. Expose un **port public**
-`ConversationQueryPort` (consommé par 014/015) + endpoints HTTP + **UI minimale**.
-Domaine pur testé TDD (`canWrite`, `validateMessage`, `validateAttachment`).
-ADR-0027 (pièces jointes anti-transaction + URL signées) à rédiger.
+**Plan courant** : [`specs/015-dashboard-conseiller/plan.md`](specs/015-dashboard-conseiller/plan.md)
+(Feature roadmap **014** — tableau de bord conseiller ; modules `matching` × `identité` ;
+Tier 2 ; branche `015-dashboard-conseiller`). **Couche interface/présentation** réunissant
+*Mes leads* (liste + détail + actions de transition de 012) et *Mes conversations*
+(liste + fil + envoi + pièces jointes de 013). Lecture **exclusivement** via les endpoints
+HTTP conseiller existants (012/013) et les ports publics `MatchingLeadQueryPort` (012) +
+`ConversationQueryPort` (013) — **aucune** logique métier ré-implémentée, **aucune** nouvelle
+table/machine d'état. **Anti-marketplace strict** (ADR-0002) : 0 montant/paiement/réservation
+affiché, devis = fichier opaque, mention permanente de neutralité. **Loi 25** : 0 PII de
+contact (résumé non nominatif). **Cloisonnement** RBAC (un conseiller ne voit que ses
+leads/fils). Front **VIII.a** : route group `(conseiller)` (déjà protégé auth 006 + CGU 004 +
+vérifié 001), slices `features/leads` (nouveau) + `features/conversation` (réutilisé de 013),
+Server Actions par verbe, RSC + TanStack Query, i18n FR-CA/EN, a11y AA. **Seul ajout backend** :
+endpoint `GET /api/matching/conseiller/conversations` exposant `ConversationQueryPort.listForConseiller`.
 
 Pour le contexte détaillé, lire ce plan ainsi que `research.md`, `data-model.md`,
-`contracts/{conversation-query.port,http-endpoints,notifications-and-storage}.md`,
-et `quickstart.md` du même répertoire `specs/014-conversation-conseiller-voyageur/`.
+`contracts/{http-endpoints,ui-routes-actions}.md`, et `quickstart.md` du même répertoire
+`specs/015-dashboard-conseiller/`.
 
 **Features précédentes mergées** (Tier 0 fermé) :
 - `001-conformite-module` (PR #1, squash `8592922`). Source de vérité pour
@@ -202,8 +201,18 @@ et `quickstart.md` du même répertoire `specs/014-conversation-conseiller-voyag
   (corrige `import.meta` des packages `@cv/*`), lucide-react ; typo serif Fraunces +
   Geist sans. Règles globales dans `@layer base` (cascade Tailwind). Reste post-MVP :
   image OG, ratification libellés OPC/TICO, audit lecteur d'écran.
+- `014-conversation-conseiller-voyageur` = **feature 013 roadmap** (PR #26, squash `2f375f8`).
+  Module `matching` — conversation post-acceptation. Ouvre un **fil** par couple (conseiller ×
+  lead `accepté`) : messages texte + **pièces jointes** (devis PDF, **S3 ca-central-1**, URL
+  signées courtes) ; **1 notification/destinataire** (outbox + BullMQ → SES via 003, template
+  FR-CA sans PII) ; éligibilité d'écriture **lue** via `MatchingLeadQueryPort` (012) +
+  conformité (001) ; cascade **anonymisation Loi 25** (audit préservé) ; idempotence ;
+  cloisonnement. **Anti-marketplace** (ADR-0002, invariant testé). Expose le **port public**
+  `ConversationQueryPort` (consommé par 014/015) + endpoints HTTP conseiller + UI minimale
+  (slice `features/conversation`). Déclencheur d'ouverture = hook in-process sur la transition
+  `accepté` (012). ADR-0027. Côté voyageur déféré à 015. Avant prod : intégration Testcontainers
+  + charge staging.
 
 **Features en cours / à venir** :
-- `014-conversation-conseiller-voyageur` (cette branche, feature roadmap 013) :
-  voir *Plan courant* ci-dessus.
+- `015-dashboard-conseiller` (cette branche, feature roadmap 014) : voir *Plan courant* ci-dessus.
 <!-- SPECKIT END -->
