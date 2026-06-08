@@ -41,9 +41,9 @@ UI minimale `apps/web/src/features/conversation/`.
 
 - [x] T004 [P] **RED** domaine : tests purs `conversation-policy` (`canWrite(leadState, verifie)`, `validateMessage(body)`, `validateAttachment(mime,size)`, `isMember`) dans `apps/api/src/modules/matching/domain/services/__tests__/conversation-policy.test.ts`
 - [x] T005 **GREEN** domaine : `conversation-policy.ts` (pur) + VO `message-body.vo.ts` + `attachment-meta.vo.ts` dans `apps/api/src/modules/matching/domain/` → rend T004 vert
-- [ ] T006 [P] Entités domaine `conversation.entity.ts` + `conversation-message.entity.ts` (invariants) dans `apps/api/src/modules/matching/domain/entities/`
-- [ ] T007 Ports applicatifs (`conversation-repo`, `attachment-storage`, `conversation-notification-outbox`, `conversation-mailer`, `lead-eligibility-reader` [adapte `MatchingLeadQueryPort`], `conseiller-verification-reader` [adapte `ConformiteQueryPort`]) + `ports/index.ts` dans `apps/api/src/modules/matching/application/ports/`
-- [ ] T008 Fakes de test in-memory (repo / storage / outbox / lead+verif readers) dans `apps/api/src/modules/matching/application/__tests__/_conversation-fakes.ts`
+- [x] T006 [P] Entités domaine `conversation.entity.ts` + `conversation-message.entity.ts` (invariants) dans `apps/api/src/modules/matching/domain/entities/`
+- [x] T007 Ports applicatifs (`conversation-repo`, `attachment-storage`, `conversation-notification-outbox`, `conversation-mailer`, `lead-eligibility-reader` [adapte `MatchingLeadQueryPort`], `conseiller-verification-reader` [adapte `ConformiteQueryPort`]) + `ports/index.ts` dans `apps/api/src/modules/matching/application/ports/`
+- [x] T008 Fakes de test in-memory (repo / storage / outbox / lead+verif readers) dans `apps/api/src/modules/matching/application/__tests__/_conversation-fakes.ts`
 
 **Checkpoint** : schéma + domaine pur + ports + fakes prêts.
 
@@ -59,14 +59,14 @@ vers le destinataire ; rejouer (même clé) → pas de doublon ; tenter sur lead
 
 ### Tests (TDD — rouge AVANT vert)
 
-- [ ] T009 [P] [US1] **RED** `SendMessage` use case : autorisation membre, `canWrite`, idempotence (dedup), **1 entrée d'outbox par destinataire** (via fakes) dans `apps/api/src/modules/matching/application/use-cases/__tests__/send-message.use-case.test.ts`
-- [ ] T010 [P] [US1] **RED** `OpenConversationOnLeadAccepted` : idempotent, **1 fil par lead** dans `.../__tests__/open-conversation-on-accept.use-case.test.ts`
+- [x] T009 [P] [US1] **RED** `SendMessage` use case : autorisation membre, `canWrite`, idempotence (dedup), **1 entrée d'outbox par destinataire** (via fakes) dans `apps/api/src/modules/matching/application/use-cases/__tests__/send-message.use-case.test.ts`
+- [x] T010 [P] [US1] **RED** `OpenConversationOnLeadAccepted` : idempotent, **1 fil par lead** dans `.../__tests__/open-conversation-on-accept.use-case.test.ts`
 
 ### Implémentation
 
-- [ ] T011 [US1] `OpenConversationOnLeadAccepted` use case dans `apps/api/src/modules/matching/application/use-cases/open-conversation-on-accept.use-case.ts` → rend T010 vert
-- [ ] T012 [US1] `SendMessage` use case (lit éligibilité lead + vérifié, valide, persiste, crée outbox 1/destinataire) dans `.../use-cases/send-message.use-case.ts` → rend T009 vert
-- [ ] T013 [US1] `ListConversationMessages` use case (pagination ordonnée, autorisation membre) dans `.../use-cases/list-messages.use-case.ts`
+- [x] T011 [US1] `OpenConversationOnLeadAccepted` use case dans `apps/api/src/modules/matching/application/use-cases/open-conversation-on-accept.use-case.ts` → rend T010 vert
+- [x] T012 [US1] `SendMessage` use case (lit éligibilité lead + vérifié, valide, persiste, crée outbox 1/destinataire) dans `.../use-cases/send-message.use-case.ts` → rend T009 vert
+- [x] T013 [US1] `ListConversationMessages` use case (pagination ordonnée, autorisation membre) dans `.../use-cases/list-messages.use-case.ts`
 - [ ] T014 [P] [US1] Adapter `PrismaConversationRepository` dans `apps/api/src/modules/matching/infrastructure/prisma-conversation-repository.ts`
 - [ ] T015 [P] [US1] Adapter `PrismaConversationNotificationOutbox` dans `.../infrastructure/prisma-conversation-notification-outbox.ts`
 - [ ] T016 [US1] Consumer `lead-accepted` (ouvre le fil, idempotent) + wiring DI dans `.../infrastructure/jobs/lead-accepted.consumer.ts` + `matching.module.ts`

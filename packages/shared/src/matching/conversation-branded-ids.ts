@@ -3,6 +3,9 @@
 
 import { z } from 'zod';
 
+/** Auteur d'un message / destinataire d'une notification (aligné enum Prisma). */
+export type ConversationParticipant = 'conseiller' | 'voyageur';
+
 const uuidSchema = z.string().uuid();
 
 export const ConversationIdSchema = uuidSchema.brand<'ConversationId'>();
