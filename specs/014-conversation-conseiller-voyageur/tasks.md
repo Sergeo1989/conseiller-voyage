@@ -31,7 +31,7 @@ UI minimale `apps/web/src/features/conversation/`.
 
 - [x] T001 [P] Schéma Prisma : modèles `Conversation`, `ConversationMessage`, `ConversationAttachment`, `ConversationNotificationOutbox`, `ConsumedConversationEvent` + enums (`ConversationParticipant`, `ConversationNotifStatus`) — **aucun champ transactionnel** — dans `packages/db/prisma/schema/matching.prisma`
 - [x] T002 [P] Branded ids `ConversationId`/`MessageId`/`AttachmentId` dans `packages/shared/src/matching/conversation-branded-ids.ts` + réexport `packages/shared/src/matching/index.ts`
-- [ ] T003 Migration Prisma (`migrate dev`) pour les tables conversation dans `packages/db/prisma/migrations/`
+- [x] T003 Migration Prisma (`migrate dev`) pour les tables conversation dans `packages/db/prisma/migrations/`
 
 ---
 
@@ -72,7 +72,7 @@ vers le destinataire ; rejouer (même clé) → pas de doublon ; tenter sur lead
 - [ ] T016 [US1] Consumer `lead-accepted` (ouvre le fil, idempotent) + wiring DI dans `.../infrastructure/jobs/lead-accepted.consumer.ts` + `matching.module.ts`
 - [ ] T017 [US1] Job BullMQ `conversation-notification` (1/destinataire) + `SesConversationMailer` + template react-email (FR-CA, sans PII de contenu) dans `.../infrastructure/jobs/conversation-notification.job.ts` + `.../infrastructure/ses-conversation-mailer.ts`
 - [ ] T018 [US1] Contrôleurs HTTP conseiller + voyageur (GET fils, GET messages, POST message **idempotent**) dans `.../interface/http/{conseiller,voyageur}-conversation.controller.ts` + wiring module
-- [ ] T019 [US1] Test intégration Testcontainers (Postgres+Redis) : envoi + ordre + 1 notif/destinataire + idempotence + refus pas-avant-acceptation + cloisonnement dans `apps/api/test/integration/matching/conversation-messaging.integration.test.ts`
+- [x] T019 [US1] Test intégration Testcontainers (Postgres+Redis) : envoi + ordre + 1 notif/destinataire + idempotence + refus pas-avant-acceptation + cloisonnement dans `apps/api/test/integration/matching/conversation-messaging.integration.test.ts`
 
 **Checkpoint** : MVP — conseiller et voyageur dialoguent, anti-spam + idempotence garantis.
 
