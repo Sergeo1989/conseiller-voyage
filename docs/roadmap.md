@@ -6,7 +6,7 @@ entrée numérotée est destinée à devenir une spec détaillée via
 (ajouts, repriorisations, suppressions) ; chaque modification est
 référencée par commit.
 
-**Dernière mise à jour** : 2026-06-07 (026 page d'accueil mergée → PR #25 squash `d67b34a`, + Tailwind v4 / Turbopack activés ; 013 conversation conseiller↔voyageur engagée en spec — branche `014-conversation-conseiller-voyageur`)
+**Dernière mise à jour** : 2026-06-08 (013 conversation conseiller↔voyageur **implémentée** — 39/39 tâches, US1+US2+US3+Polish, branche `014-conversation-conseiller-voyageur`, PR ouverte ; validations staging restantes. Antérieur : 026 page d'accueil mergée → PR #25 squash `d67b34a`, Tailwind v4 / Turbopack activés)
 
 > **Note de numérotation** : les IDs de cette roadmap (001, 002, …) sont des
 > identifiants logiques de feature. Les dossiers de spec sous `specs/`
@@ -147,7 +147,7 @@ Reste pour merger 005 vers `main` :
 | 010 | Intake — soumission + magic-link de suivi voyageur | préqualification × identité | S | ⏳ | 003, 008 |
 | 011 | Matching — scoring conseiller × brief (pur, TDD obligatoire) | matching | M | 🟡 livré branche `008-matching-scoring` (PR #21, US1-US3 + polish) | 001, 008. 3 US + Phase 6 polish (métriques OTel, dashboard, runbooks, ADRs 0020-0024 acceptés, CLI anti-PII, `fsa-centroids.json` complet 1 643 FSA StatCan). Avant merge prod : valider charge + migrations en staging ; T093 (drain `matching_outbox`→bus) en PR satellite Mode B (ADR-0024 §E3). |
 | 012 | Matching — notifications + machine d'état de lead | matching | M | ✅ mergé (PR #24, squash `a521ac7`) | 003, 011. 3 US + Phase 6 polish. Consomme les 4 events bus 011 → leads + notifications conseiller (1 job BullMQ/destinataire, SES FR-CA sans PII), machine d'état pure append-only (ADR-0025, property-tests SC-003/FR-020), supersession re-match, sweep réconciliation (ADR-0026), cascade anonymisation Loi 25, concurrence optimiste, port public `MatchingLeadQueryPort` + endpoints HTTP conseiller. ADRs 0025-0026 acceptés. Avant merge prod : tests d'intégration Testcontainers + charge en staging (stubs documentés, convention 011). |
-| 013 | Conversation conseiller ↔ voyageur (post-acceptation) | matching | M | 🟡 spec en cours (branche `014-conversation-conseiller-voyageur`) | 011 ✅, 012 ✅, 003 ✅ |
+| 013 | Conversation conseiller ↔ voyageur (post-acceptation) | matching | M | 🟢 implémentée (39/39 tâches ; branche `014-conversation-conseiller-voyageur`, PR ouverte) — validations staging restantes | 011 ✅, 012 ✅, 003 ✅ |
 | 014 | Tableau de bord conseiller (mes leads, conversations) | matching × identité | M | ⏳ | 005, 012, 013 |
 | 015 | Espace voyageur post-intake (mes 3 conseillers, suivi) | matching | M | ⏳ | 010, 012, 013 |
 
