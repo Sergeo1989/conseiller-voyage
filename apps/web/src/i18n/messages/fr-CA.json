@@ -553,5 +553,23 @@
         "ctaUrl": "{baseUrl}/{locale}/conseiller/profil"
       }
     }
+  },
+  "conversation": {
+    "antiTransaction": "La plateforme ne participe pas à la transaction. Toute soumission et tout paiement se font directement entre vous et le conseiller.",
+    "threadTitle": "Conversation",
+    "emptyMessages": "Aucun message pour le moment.",
+    "readOnly": "Cette conversation est en lecture seule.",
+    "composerLabel": "Votre message",
+    "composerPlaceholder": "Écrivez votre message…",
+    "send": "Envoyer",
+    "sending": "Envoi…",
+    "attachmentUnavailable": "Pièce jointe indisponible",
+    "download": "Télécharger",
+    "you": "Vous",
+    "advisor": "Conseiller",
+    "traveler": "Voyageur",
+    "sendError": "Échec de l’envoi. Réessayez.",
+    "messageTooLong": "Message trop long (4000 caractères max).",
+    "messageEmpty": "Le message ne peut pas être vide."
   }
 }

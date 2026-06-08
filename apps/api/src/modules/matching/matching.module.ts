@@ -11,7 +11,11 @@
 //   - useClass pour les adapters (injection directe DI)
 
 import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
-import { MATCHING_LEAD_QUERY_PORT, MATCHING_QUERY_PORT } from '@cv/shared/matching';
+import {
+  CONVERSATION_QUERY_PORT,
+  MATCHING_LEAD_QUERY_PORT,
+  MATCHING_QUERY_PORT,
+} from '@cv/shared/matching';
 import { BullModule } from '@nestjs/bullmq';
 import { Module, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
@@ -23,10 +27,16 @@ import { BullMqModule } from '../../queue/bullmq.module';
 import { ConformiteModule } from '../conformite/interface/conformite.module';
 import { IdentiteModule } from '../identite/identite.module';
 import {
+  ATTACHMENT_STORAGE,
   BRIEF_SNAPSHOT_READER,
   CONSEILLER_IDENTITY_RESOLVER,
   CONSEILLER_SNAPSHOT_READER,
   CONSUMED_EVENT_STORE,
+  CONVERSATION_METRICS_RECORDER,
+  CONVERSATION_NOTIFICATION_MAILER,
+  CONVERSATION_NOTIFICATION_OUTBOX,
+  CONVERSATION_OPENER,
+  CONVERSATION_REPO,
   FSA_CENTROID_READER,
   LEAD_BRIEF_SUMMARY_READER,
   LEAD_METRICS_RECORDER,
@@ -42,18 +52,31 @@ import {
   MATCHING_RESULT_WRITER,
   REDIS_REMATCH_LOCK,
 } from './application/ports';
+import { AnonymizeConversationLoi25UseCase } from './application/use-cases/anonymize-conversation-loi25.use-case';
 import { ConsumeMatchingEventUseCase } from './application/use-cases/consume-matching-event.use-case';
+import { CreateAttachmentUploadUseCase } from './application/use-cases/create-attachment-upload.use-case';
 import { DetectAllMatchesRevokedUseCase } from './application/use-cases/detect-all-matches-revoked.use-case';
+import { FinalizeAttachmentUseCase } from './application/use-cases/finalize-attachment.use-case';
+import { GetAttachmentUrlUseCase } from './application/use-cases/get-attachment-url.use-case';
+import { ListConversationMessagesUseCase } from './application/use-cases/list-messages.use-case';
+import { OpenConversationOnLeadAcceptedUseCase } from './application/use-cases/open-conversation-on-accept.use-case';
 import { PerformMatchingUseCase } from './application/use-cases/perform-matching.use-case';
 import { QueryMatchingResultUseCase } from './application/use-cases/query-matching-result.use-case';
 import { ReconcileLeadsUseCase } from './application/use-cases/reconcile-leads.use-case';
 import { RecordLeadTransitionUseCase } from './application/use-cases/record-lead-transition.use-case';
+import { SendMessageUseCase } from './application/use-cases/send-message.use-case';
 import { TriggerRematchUseCase } from './application/use-cases/trigger-rematch.use-case';
 import { ViewLeadUseCase } from './application/use-cases/view-lead.use-case';
 import { WeightsConfig } from './domain/value-objects/weights-config.vo';
 import { EmbeddedFsaCentroidReader } from './infrastructure/embedded-fsa-centroid-reader';
 import { AllMatchesRevokedScheduler } from './infrastructure/jobs/all-matches-revoked.scheduler';
 import { BriefActivatedConsumer } from './infrastructure/jobs/brief-activated.consumer';
+import {
+  CONVERSATION_NOTIFICATIONS_QUEUE,
+  ConversationNotificationDispatcher,
+  ConversationNotificationSender,
+  ConversationNotificationWorker,
+} from './infrastructure/jobs/conversation-notification.job';
 import {
   LEAD_NOTIFICATIONS_QUEUE,
   LeadNotificationDispatcher,
@@ -63,12 +86,17 @@ import {
 import { LeadReconciliationScheduler } from './infrastructure/jobs/lead-reconciliation.scheduler';
 import { MatchingEventsConsumer } from './infrastructure/jobs/matching-events.consumer';
 import { MatchingOutboxPublisherJob } from './infrastructure/jobs/matching-outbox-publisher.job';
+import { LeadAcceptedConversationOpener } from './infrastructure/lead-accepted-conversation-opener';
+import { OtelConversationMetricsRecorder } from './infrastructure/otel-conversation-metrics-recorder';
 import { OtelLeadMetricsRecorder } from './infrastructure/otel-lead-metrics-recorder';
 import { OtelMetricsRecorder } from './infrastructure/otel-metrics-recorder';
 import { PrismaBriefSnapshotReader } from './infrastructure/prisma-brief-snapshot-reader';
 import { PrismaConseillerIdentityResolver } from './infrastructure/prisma-conseiller-identity-resolver';
 import { PrismaConseillerSnapshotReader } from './infrastructure/prisma-conseiller-snapshot-reader';
 import { PrismaConsumedEventStore } from './infrastructure/prisma-consumed-event-store';
+import { PrismaConversationNotificationOutbox } from './infrastructure/prisma-conversation-notification-outbox';
+import { PrismaConversationQueryAdapter } from './infrastructure/prisma-conversation-query-adapter';
+import { PrismaConversationRepository } from './infrastructure/prisma-conversation-repository';
 import { PrismaLeadBriefSummaryReader } from './infrastructure/prisma-lead-brief-summary-reader';
 import { PrismaLeadNotificationOutbox } from './infrastructure/prisma-lead-notification-outbox';
 import { PrismaLeadQueryAdapter } from './infrastructure/prisma-lead-query-adapter';
@@ -79,8 +107,11 @@ import { PrismaMatchingQueryAdapter } from './infrastructure/prisma-matching-que
 import { PrismaMatchingResultRepository } from './infrastructure/prisma-matching-result-repository';
 import { RedisMatchingEventPublisher } from './infrastructure/redis-matching-event-publisher';
 import { RedisRematchLockAdapter } from './infrastructure/redis-rematch-lock';
+import { S3AttachmentStorage } from './infrastructure/s3-attachment-storage';
+import { SesConversationMailer } from './infrastructure/ses-conversation-mailer';
 import { SesLeadNotificationMailer } from './infrastructure/ses-lead-notification-mailer';
 import { AdminMatchingController } from './interface/http/admin-matching.controller';
+import { ConseillerConversationController } from './interface/http/conseiller-conversation.controller';
 import { ConseillerLeadController } from './interface/http/conseiller-lead.controller';
 
 /** Intervalle de drain de l'outbox matching (5 s prod, 30 s dev). */
@@ -96,8 +127,14 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     ConformiteModule,
     // Queue notifications conseiller (012) — un job par destinataire.
     BullModule.registerQueue({ name: LEAD_NOTIFICATIONS_QUEUE }),
+    // Queue notifications conversation (013) — un job par destinataire.
+    BullModule.registerQueue({ name: CONVERSATION_NOTIFICATIONS_QUEUE }),
   ],
-  controllers: [AdminMatchingController, ConseillerLeadController],
+  controllers: [
+    AdminMatchingController,
+    ConseillerLeadController,
+    ConseillerConversationController,
+  ],
   providers: [
     // ---------------------------------------------------------------
     // Communs — Clock + UuidGenerator (singleton dans tout le module)
@@ -362,14 +399,24 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
         LEAD_WRITER,
         CONFORMITE_QUERY_PORT,
         LEAD_METRICS_RECORDER,
+        CONVERSATION_OPENER,
       ],
-      useFactory: (clock, uuid, leadReader, leadWriter, conformiteQuery, metrics) => ({
+      useFactory: (
         clock,
         uuid,
         leadReader,
         leadWriter,
         conformiteQuery,
         metrics,
+        conversationOpener,
+      ) => ({
+        clock,
+        uuid,
+        leadReader,
+        leadWriter,
+        conformiteQuery,
+        metrics,
+        conversationOpener,
       }),
     },
     {
@@ -415,18 +462,107 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     LeadNotificationSender,
     LeadNotificationWorker,
     MatchingEventsConsumer,
+
+    // ---------------------------------------------------------------
+    // Feature 013 — Conversation conseiller ↔ voyageur (US1)
+    // Adapters → ports + use cases (ouverture, envoi, lecture).
+    // ---------------------------------------------------------------
+    PrismaConversationRepository,
+    { provide: CONVERSATION_REPO, useExisting: PrismaConversationRepository },
+
+    PrismaConversationNotificationOutbox,
+    {
+      provide: CONVERSATION_NOTIFICATION_OUTBOX,
+      useExisting: PrismaConversationNotificationOutbox,
+    },
+
+    OtelConversationMetricsRecorder,
+    { provide: CONVERSATION_METRICS_RECORDER, useExisting: OtelConversationMetricsRecorder },
+    {
+      provide: OpenConversationOnLeadAcceptedUseCase,
+      inject: [CLOCK, UUID_GENERATOR, CONVERSATION_REPO, CONVERSATION_METRICS_RECORDER],
+      useFactory: (clock, uuid, repo, metrics) =>
+        new OpenConversationOnLeadAcceptedUseCase({ clock, uuid, repo, metrics }),
+    },
+    {
+      provide: SendMessageUseCase,
+      inject: [
+        CLOCK,
+        UUID_GENERATOR,
+        CONVERSATION_REPO,
+        CONVERSATION_NOTIFICATION_OUTBOX,
+        LEAD_READER,
+        CONFORMITE_QUERY_PORT,
+        CONVERSATION_METRICS_RECORDER,
+      ],
+      useFactory: (clock, uuid, repo, outbox, leadReader, conformiteQuery, metrics) =>
+        new SendMessageUseCase({ clock, uuid, repo, outbox, leadReader, conformiteQuery, metrics }),
+    },
+    {
+      provide: ListConversationMessagesUseCase,
+      inject: [CONVERSATION_REPO],
+      useFactory: (repo) => new ListConversationMessagesUseCase({ repo }),
+    },
+
+    // T016 — ouverture du fil déclenchée par l'acceptation d'un lead (FR-001).
+    // Adaptateur in-process consommé par RecordLeadTransitionUseCase.
+    LeadAcceptedConversationOpener,
+    { provide: CONVERSATION_OPENER, useExisting: LeadAcceptedConversationOpener },
+
+    // T017 — notifications conversation (1 job/destinataire) : mailer SES +
+    // dispatcher/sender/worker BullMQ. Drain périodique via OnModuleInit.
+    SesConversationMailer,
+    { provide: CONVERSATION_NOTIFICATION_MAILER, useExisting: SesConversationMailer },
+    ConversationNotificationDispatcher,
+    ConversationNotificationSender,
+    ConversationNotificationWorker,
+
+    // T024 — pièces jointes (US2) : stockage S3 ca-central-1 + use cases.
+    S3AttachmentStorage,
+    { provide: ATTACHMENT_STORAGE, useExisting: S3AttachmentStorage },
+    {
+      provide: CreateAttachmentUploadUseCase,
+      inject: [UUID_GENERATOR, CONVERSATION_REPO, ATTACHMENT_STORAGE],
+      useFactory: (uuid, repo, storage) =>
+        new CreateAttachmentUploadUseCase({ uuid, repo, storage }),
+    },
+    {
+      provide: FinalizeAttachmentUseCase,
+      inject: [CONVERSATION_REPO, CONVERSATION_METRICS_RECORDER],
+      useFactory: (repo, metrics) => new FinalizeAttachmentUseCase({ repo, metrics }),
+    },
+    {
+      provide: GetAttachmentUrlUseCase,
+      inject: [CONVERSATION_REPO, ATTACHMENT_STORAGE],
+      useFactory: (repo, storage) => new GetAttachmentUrlUseCase({ repo, storage }),
+    },
+
+    // T029 — cascade d'anonymisation Loi 25 (corps → null, pièces jointes S3
+    // supprimées, refs voyageur neutralisées ; audit préservé, idempotent).
+    {
+      provide: AnonymizeConversationLoi25UseCase,
+      inject: [CLOCK, CONVERSATION_REPO, ATTACHMENT_STORAGE],
+      useFactory: (clock, repo, storage) =>
+        new AnonymizeConversationLoi25UseCase({ clock, repo, storage }),
+    },
+
+    // T032 — port public ConversationQueryPort (lecture seule, 014/015).
+    PrismaConversationQueryAdapter,
+    { provide: CONVERSATION_QUERY_PORT, useExisting: PrismaConversationQueryAdapter },
   ],
-  exports: [MATCHING_QUERY_PORT, MATCHING_LEAD_QUERY_PORT],
+  exports: [MATCHING_QUERY_PORT, MATCHING_LEAD_QUERY_PORT, CONVERSATION_QUERY_PORT],
 })
 export class MatchingModule implements OnModuleInit, OnModuleDestroy {
   private outboxInterval?: NodeJS.Timeout;
   private leadDispatchInterval?: NodeJS.Timeout;
   private leadReconcileInterval?: NodeJS.Timeout;
+  private conversationDispatchInterval?: NodeJS.Timeout;
 
   constructor(
     private readonly outboxJob: MatchingOutboxPublisherJob,
     private readonly leadDispatcher: LeadNotificationDispatcher,
     private readonly leadReconciliation: LeadReconciliationScheduler,
+    private readonly conversationDispatcher: ConversationNotificationDispatcher,
   ) {}
 
   onModuleInit(): void {
@@ -447,11 +583,18 @@ export class MatchingModule implements OnModuleInit, OnModuleDestroy {
     this.leadReconcileInterval = setInterval(() => {
       void this.leadReconciliation.sweep();
     }, LEAD_RECONCILE_INTERVAL_MS);
+
+    // Dispatch des notifications conversation pending (013) — même cadence que
+    // les notifications conseiller ; un job BullMQ par destinataire.
+    this.conversationDispatchInterval = setInterval(() => {
+      void this.conversationDispatcher.dispatchPending();
+    }, OUTBOX_DRAIN_INTERVAL_MS);
   }
 
   onModuleDestroy(): void {
     if (this.outboxInterval) clearInterval(this.outboxInterval);
     if (this.leadDispatchInterval) clearInterval(this.leadDispatchInterval);
     if (this.leadReconcileInterval) clearInterval(this.leadReconcileInterval);
+    if (this.conversationDispatchInterval) clearInterval(this.conversationDispatchInterval);
   }
 }

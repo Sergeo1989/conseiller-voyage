@@ -14,6 +14,7 @@ import type { Clock } from '../../../../common/ports/clock.port';
 import type { UuidGenerator } from '../../../../common/ports/uuid-generator.port';
 import { applyLeadTransition } from '../../domain/services/apply-lead-transition';
 import {
+  type ConversationOpener,
   type LeadMetricsRecorder,
   type LeadReader,
   type LeadWriter,
@@ -36,6 +37,11 @@ export interface RecordLeadTransitionDeps {
   readonly conformiteQuery: ConformiteQueryPort;
   /** Optionnel — no-op par défaut (tests). */
   readonly metrics?: LeadMetricsRecorder;
+  /**
+   * Optionnel (013, T016) — ouvre le fil de conversation lorsque la transition
+   * mène à `accepté` (FR-001). Best-effort : un échec n'annule pas la transition.
+   */
+  readonly conversationOpener?: ConversationOpener;
 }
 
 export interface RecordLeadTransitionInput {
@@ -91,6 +97,29 @@ export class RecordLeadTransitionUseCase {
     });
     if (appended.kind === 'conflict') return { kind: 'conflict' };
     (this.deps.metrics ?? noopLeadMetricsRecorder).recordLeadTransition(outcome.toState);
+
+    if (outcome.toState === 'accepte') {
+      await this.openConversationOnAccept(lead.id, input.conseillerId, lead.briefId);
+    }
+
     return { kind: 'applied', newState: outcome.toState };
+  }
+
+  /**
+   * T016 (013, FR-001) — l'acceptation ouvre le fil de conversation. Idempotent
+   * (un fil par lead) et best-effort : la transition est déjà persistée, un échec
+   * d'ouverture ne doit pas la faire échouer (POST /open + sweep = filets).
+   */
+  private async openConversationOnAccept(
+    leadId: string,
+    conseillerId: string,
+    briefId: string | null,
+  ): Promise<void> {
+    if (!this.deps.conversationOpener) return;
+    try {
+      await this.deps.conversationOpener.openForAcceptedLead({ leadId, conseillerId, briefId });
+    } catch {
+      // Avalé volontairement — relogué par l'adaptateur.
+    }
   }
 }

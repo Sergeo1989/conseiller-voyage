@@ -410,5 +410,23 @@
       "ctaUrl": "{baseUrl}/{locale}/conseiller/conformite/soumettre",
       "footer": "Conseiller Voyage — all your data is hosted in Canada (Law 25)."
     }
+  },
+  "conversation": {
+    "antiTransaction": "The platform does not take part in the transaction. Any quote and any payment happen directly between you and the advisor.",
+    "threadTitle": "Conversation",
+    "emptyMessages": "No messages yet.",
+    "readOnly": "This conversation is read-only.",
+    "composerLabel": "Your message",
+    "composerPlaceholder": "Write your message…",
+    "send": "Send",
+    "sending": "Sending…",
+    "attachmentUnavailable": "Attachment unavailable",
+    "download": "Download",
+    "you": "You",
+    "advisor": "Advisor",
+    "traveler": "Traveler",
+    "sendError": "Sending failed. Please try again.",
+    "messageTooLong": "Message too long (4000 characters max).",
+    "messageEmpty": "The message cannot be empty."
   }
 }

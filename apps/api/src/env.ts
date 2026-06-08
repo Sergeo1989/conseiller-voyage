@@ -27,6 +27,10 @@ const EnvSchema = z
     AWS_S3_ENDPOINT: z.string().url().optional(),
     AWS_S3_BUCKET_CONFORMITE: z.string().default('cv-conformite-dev'),
 
+    // Feature 013 — bucket pièces jointes de conversation (devis PDF, images).
+    // ca-central-1 (ADR-0001) ; objets privés, accès via URL signée courte.
+    AWS_S3_BUCKET_CONVERSATIONS: z.string().default('cv-conversations-dev'),
+
     // Feature 007 — bucket photos profil + CloudFront OAC (cf. R2 / M7)
     AWS_S3_BUCKET_PROFILES: z.string().default('cv-profiles-photos-dev'),
     AWS_KMS_PROFILES_KEY_ID: z.string().optional(),
