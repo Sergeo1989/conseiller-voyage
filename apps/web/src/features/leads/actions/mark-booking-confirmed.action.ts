@@ -6,7 +6,7 @@ import type { ActionResult } from '@/shared/lib/result';
 import type { LeadView } from '../schemas/lead';
 import { callLeadTransition } from './_transition.helper';
 
-export function markBookingConfirmedAction(input: {
+export async function markBookingConfirmedAction(input: {
   leadId: string;
   locale: string;
 }): Promise<ActionResult<LeadView>> {
