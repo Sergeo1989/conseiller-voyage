@@ -3,10 +3,16 @@
 // Idempotent : finaliser une pièce déjà `ready` reste un succès.
 
 import type { ConversationParticipant } from '@cv/shared/matching';
-import type { ConversationRepo } from '../ports';
+import {
+  type ConversationMetricsRecorder,
+  type ConversationRepo,
+  noopConversationMetricsRecorder,
+} from '../ports';
 
 export interface FinalizeAttachmentDeps {
   readonly repo: ConversationRepo;
+  /** Optionnel — no-op par défaut (tests). */
+  readonly metrics?: ConversationMetricsRecorder;
 }
 
 export interface FinalizeAttachmentInput {
@@ -34,7 +40,10 @@ export class FinalizeAttachmentUseCase {
         : conv.voyageurRef === input.requesterRef;
     if (!isMember) return { kind: 'forbidden_not_member' };
 
-    if (att.status !== 'ready') await this.deps.repo.finalizeAttachment(att.id);
+    if (att.status !== 'ready') {
+      await this.deps.repo.finalizeAttachment(att.id);
+      (this.deps.metrics ?? noopConversationMetricsRecorder).recordAttachmentReady();
+    }
     return { kind: 'finalized' };
   }
 }

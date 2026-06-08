@@ -32,6 +32,7 @@ import {
   CONSEILLER_IDENTITY_RESOLVER,
   CONSEILLER_SNAPSHOT_READER,
   CONSUMED_EVENT_STORE,
+  CONVERSATION_METRICS_RECORDER,
   CONVERSATION_NOTIFICATION_MAILER,
   CONVERSATION_NOTIFICATION_OUTBOX,
   CONVERSATION_OPENER,
@@ -86,6 +87,7 @@ import { LeadReconciliationScheduler } from './infrastructure/jobs/lead-reconcil
 import { MatchingEventsConsumer } from './infrastructure/jobs/matching-events.consumer';
 import { MatchingOutboxPublisherJob } from './infrastructure/jobs/matching-outbox-publisher.job';
 import { LeadAcceptedConversationOpener } from './infrastructure/lead-accepted-conversation-opener';
+import { OtelConversationMetricsRecorder } from './infrastructure/otel-conversation-metrics-recorder';
 import { OtelLeadMetricsRecorder } from './infrastructure/otel-lead-metrics-recorder';
 import { OtelMetricsRecorder } from './infrastructure/otel-metrics-recorder';
 import { PrismaBriefSnapshotReader } from './infrastructure/prisma-brief-snapshot-reader';
@@ -474,11 +476,13 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
       useExisting: PrismaConversationNotificationOutbox,
     },
 
+    OtelConversationMetricsRecorder,
+    { provide: CONVERSATION_METRICS_RECORDER, useExisting: OtelConversationMetricsRecorder },
     {
       provide: OpenConversationOnLeadAcceptedUseCase,
-      inject: [CLOCK, UUID_GENERATOR, CONVERSATION_REPO],
-      useFactory: (clock, uuid, repo) =>
-        new OpenConversationOnLeadAcceptedUseCase({ clock, uuid, repo }),
+      inject: [CLOCK, UUID_GENERATOR, CONVERSATION_REPO, CONVERSATION_METRICS_RECORDER],
+      useFactory: (clock, uuid, repo, metrics) =>
+        new OpenConversationOnLeadAcceptedUseCase({ clock, uuid, repo, metrics }),
     },
     {
       provide: SendMessageUseCase,
@@ -489,9 +493,10 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
         CONVERSATION_NOTIFICATION_OUTBOX,
         LEAD_READER,
         CONFORMITE_QUERY_PORT,
+        CONVERSATION_METRICS_RECORDER,
       ],
-      useFactory: (clock, uuid, repo, outbox, leadReader, conformiteQuery) =>
-        new SendMessageUseCase({ clock, uuid, repo, outbox, leadReader, conformiteQuery }),
+      useFactory: (clock, uuid, repo, outbox, leadReader, conformiteQuery, metrics) =>
+        new SendMessageUseCase({ clock, uuid, repo, outbox, leadReader, conformiteQuery, metrics }),
     },
     {
       provide: ListConversationMessagesUseCase,
@@ -523,8 +528,8 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     },
     {
       provide: FinalizeAttachmentUseCase,
-      inject: [CONVERSATION_REPO],
-      useFactory: (repo) => new FinalizeAttachmentUseCase({ repo }),
+      inject: [CONVERSATION_REPO, CONVERSATION_METRICS_RECORDER],
+      useFactory: (repo, metrics) => new FinalizeAttachmentUseCase({ repo, metrics }),
     },
     {
       provide: GetAttachmentUrlUseCase,

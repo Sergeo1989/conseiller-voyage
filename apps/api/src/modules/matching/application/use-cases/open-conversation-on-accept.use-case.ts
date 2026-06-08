@@ -5,12 +5,18 @@
 
 import type { Clock } from '../../../../common/ports/clock.port';
 import type { UuidGenerator } from '../../../../common/ports/uuid-generator.port';
-import type { ConversationRepo } from '../ports';
+import {
+  type ConversationMetricsRecorder,
+  type ConversationRepo,
+  noopConversationMetricsRecorder,
+} from '../ports';
 
 export interface OpenConversationDeps {
   readonly clock: Clock;
   readonly uuid: UuidGenerator;
   readonly repo: ConversationRepo;
+  /** Optionnel — no-op par défaut (tests). */
+  readonly metrics?: ConversationMetricsRecorder;
 }
 
 export interface OpenConversationInput {
@@ -39,8 +45,10 @@ export class OpenConversationOnLeadAcceptedUseCase {
       voyageurRef: input.voyageurRef,
       openedAt: this.deps.clock.now(),
     });
-    return res.kind === 'created'
-      ? { kind: 'opened', conversationId: res.conversationId }
-      : { kind: 'already_open', conversationId: res.conversationId };
+    if (res.kind === 'created') {
+      (this.deps.metrics ?? noopConversationMetricsRecorder).recordConversationOpened();
+      return { kind: 'opened', conversationId: res.conversationId };
+    }
+    return { kind: 'already_open', conversationId: res.conversationId };
   }
 }

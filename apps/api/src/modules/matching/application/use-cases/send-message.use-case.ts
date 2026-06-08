@@ -12,7 +12,13 @@ import type { Clock } from '../../../../common/ports/clock.port';
 import type { UuidGenerator } from '../../../../common/ports/uuid-generator.port';
 import { Conversation } from '../../domain/entities/conversation.entity';
 import { canWrite, validateMessage } from '../../domain/services/conversation-policy';
-import type { ConversationNotificationOutbox, ConversationRepo, LeadReader } from '../ports';
+import {
+  type ConversationMetricsRecorder,
+  type ConversationNotificationOutbox,
+  type ConversationRepo,
+  type LeadReader,
+  noopConversationMetricsRecorder,
+} from '../ports';
 
 export interface SendMessageDeps {
   readonly clock: Clock;
@@ -21,6 +27,8 @@ export interface SendMessageDeps {
   readonly outbox: ConversationNotificationOutbox;
   readonly leadReader: LeadReader;
   readonly conformiteQuery: ConformiteQueryPort;
+  /** Optionnel — no-op par défaut (tests). */
+  readonly metrics?: ConversationMetricsRecorder;
 }
 
 export interface SendMessageInput {
@@ -89,6 +97,7 @@ export class SendMessageUseCase {
       createdAt: this.deps.clock.now(),
     });
 
+    (this.deps.metrics ?? noopConversationMetricsRecorder).recordMessageSent();
     return { kind: 'sent', messageId: append.messageId };
   }
 }
