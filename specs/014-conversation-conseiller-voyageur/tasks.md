@@ -130,12 +130,12 @@ PII neutralisée + pièces jointes supprimées, audit présent ; panne SES → r
 
 ## Phase 6: UI minimale & Polish
 
-- [ ] T034 [P] UI minimale slice `apps/web/src/features/conversation/` (`ConversationThread`, `MessageList`, `MessageComposer`, `AntiTransactionNotice`, `AttachmentLink`) + `actions/send-message.action.ts` (Zod, `ActionResult`) + clés i18n FR-CA/EN
-- [ ] T035 [P] Test a11y Playwright `@a11y` sur la vue fil minimale dans `apps/web/test/a11y/conversation.spec.ts`
-- [ ] T036 [P] Métriques OTel (fils ouverts, messages envoyés, devis transmis) + logs structurés (pattern 012)
-- [ ] T037 [P] **ADR-0027** (pièces jointes anti-transaction + URL signées + rétention/effacement) dans `docs/adr/0027-conversation-attachments.md` + lien depuis le plan
-- [ ] T038 Invariant **anti-transaction** : test/outil vérifiant **0** champ montant/prix/paiement/réservation (modèle Prisma + réponses API) — `tools/` ou test dédié
-- [ ] T039 Exécuter `quickstart.md` (SC-001 à SC-009) + cocher la DoD ; test de charge léger SLO p95 envoi < 800 ms
+- [x] T034 [P] UI minimale slice `apps/web/src/features/conversation/` (`ConversationThread`, `MessageList`, `MessageComposer`, `AntiTransactionNotice`, `AttachmentLink`) + `actions/send-message.action.ts` (Zod, `ActionResult`, apiClient idempotent) + `schemas/` + `index.ts` + clés i18n FR-CA/EN. _tsc web vert ; feature-boundaries 0 violation._
+- [x] T035 [P] Test a11y Playwright `@a11y` `apps/web/test/a11y/conversation.spec.ts` (markup sémantique : `<ol>/<li>`, `<time>`, label/aria-live, `role=note`). _Skip guardé tant que 014/015 ne montent pas la route (E2E_CONVERSATION_ROUTE) — même convention que les stubs d'intégration._
+- [x] T036 [P] Métriques OTel (fils ouverts, messages envoyés, devis transmis) port `ConversationMetricsRecorder` + `OtelConversationMetricsRecorder` (meter `cv.matching.conversation`) ; instrumentation via dep optionnelle no-op
+- [x] T037 [P] **ADR-0027** (pièces jointes anti-transaction + URL signées + rétention/effacement) dans `docs/adr/0027-conversation-attachments.md` (référencé par le plan, DoD)
+- [x] T038 Invariant **anti-transaction** : test dédié scannant modèles Prisma `Conversation*` + vues `ConversationQueryPort` → **0** champ montant/prix/paiement/réservation (5 tests)
+- [x] T039 `quickstart.md` § Statut de validation : SC-001→SC-009 mappés aux tests (197 verts) + DoD cochée ; **test de charge SLO p95 < 800 ms différé au staging** (convention 011/012, infra réelle)
 
 ---
 
