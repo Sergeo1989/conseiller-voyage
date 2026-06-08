@@ -427,6 +427,64 @@
     "traveler": "Traveler",
     "sendError": "Sending failed. Please try again.",
     "messageTooLong": "Message too long (4000 characters max).",
-    "messageEmpty": "The message cannot be empty."
+    "messageEmpty": "The message cannot be empty.",
+    "listTitle": "My conversations",
+    "listEmpty": "No conversations yet.",
+    "lastMessage": "Last message",
+    "active": "Active",
+    "readOnlyBadge": "Read-only",
+    "open": "Open"
+  },
+  "leads": {
+    "title": "My leads",
+    "subtitle": "Travel projects matching your profile.",
+    "empty": "No leads yet.",
+    "position": "Match {n}/3",
+    "openConversation": "Open conversation",
+    "backToList": "Back to my leads",
+    "briefTitle": "Project overview",
+    "destinations": "Destinations",
+    "periode": "Timeframe",
+    "type": "Project type",
+    "noBrief": "Overview unavailable (anonymized).",
+    "historyTitle": "History",
+    "by": {
+      "conseiller": "you",
+      "systeme": "system"
+    },
+    "status": {
+      "envoye": "Sent",
+      "vu": "Seen",
+      "accepte": "Accepted",
+      "refuse": "Declined",
+      "devis_envoye": "Quote sent",
+      "reservation_confirmee": "Booking confirmed",
+      "perdu": "Lost"
+    },
+    "action": {
+      "accept": "Accept",
+      "refuse": "Decline",
+      "quote-sent": "Mark quote sent",
+      "booking-confirmed": "Mark booking confirmed",
+      "lost": "Mark lost"
+    },
+    "confirmRefuse": "Decline this lead? This is final.",
+    "confirmLost": "Mark this lead as lost? This is final.",
+    "reasonLabel": "Reason (optional)",
+    "reasonPlaceholder": "Specify the reason…",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "working": "Working…",
+    "error": {
+      "CONFLICT": "The lead state changed. Refresh the page.",
+      "INVALID_TRANSITION": "Action not possible from the current state.",
+      "FORBIDDEN": "Action not allowed (verified status required).",
+      "ACTION_ERROR": "Action unavailable right now. Try again."
+    }
+  },
+  "dashboard": {
+    "leadsWidget": "My leads",
+    "conversationsWidget": "My conversations",
+    "view": "View"
   }
 }

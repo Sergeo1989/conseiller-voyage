@@ -76,7 +76,22 @@ export default async function DashboardPage({ params }: PageProps) {
           locale={urlLocale}
         />
         <WidgetProfil profil={profil} locale={urlLocale} />
-        <WidgetPlaceholder title="Mes leads" message="Bientôt disponible — feature 012." />
+        <Link
+          href={`/${urlLocale}/conseiller/leads`}
+          className="rounded-lg border border-slate-200 bg-white p-5 transition hover:border-blue-400 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <h2 className="text-lg font-semibold text-slate-900">Mes leads</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Consulter les projets de voyage qui correspondent à votre profil.
+          </p>
+        </Link>
+        <Link
+          href={`/${urlLocale}/conseiller/conversations`}
+          className="rounded-lg border border-slate-200 bg-white p-5 transition hover:border-blue-400 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <h2 className="text-lg font-semibold text-slate-900">Mes conversations</h2>
+          <p className="mt-1 text-sm text-slate-600">Échanger avec les voyageurs accompagnés.</p>
+        </Link>
         <WidgetPlaceholder title="Mon abonnement" message="Bientôt disponible — feature 006-007." />
       </div>
     </main>

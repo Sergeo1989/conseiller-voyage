@@ -570,6 +570,64 @@
     "traveler": "Voyageur",
     "sendError": "Échec de l’envoi. Réessayez.",
     "messageTooLong": "Message trop long (4000 caractères max).",
-    "messageEmpty": "Le message ne peut pas être vide."
+    "messageEmpty": "Le message ne peut pas être vide.",
+    "listTitle": "Mes conversations",
+    "listEmpty": "Aucune conversation pour le moment.",
+    "lastMessage": "Dernier message",
+    "active": "Active",
+    "readOnlyBadge": "Lecture seule",
+    "open": "Ouvrir"
+  },
+  "leads": {
+    "title": "Mes leads",
+    "subtitle": "Les projets de voyage qui correspondent à votre profil.",
+    "empty": "Aucun lead pour le moment.",
+    "position": "Proposition {n}/3",
+    "openConversation": "Ouvrir la conversation",
+    "backToList": "Retour à mes leads",
+    "briefTitle": "Aperçu du projet",
+    "destinations": "Destinations",
+    "periode": "Période",
+    "type": "Type de projet",
+    "noBrief": "Aperçu indisponible (anonymisé).",
+    "historyTitle": "Historique",
+    "by": {
+      "conseiller": "vous",
+      "systeme": "système"
+    },
+    "status": {
+      "envoye": "Envoyé",
+      "vu": "Vu",
+      "accepte": "Accepté",
+      "refuse": "Refusé",
+      "devis_envoye": "Devis envoyé",
+      "reservation_confirmee": "Réservation confirmée",
+      "perdu": "Perdu"
+    },
+    "action": {
+      "accept": "Accepter",
+      "refuse": "Refuser",
+      "quote-sent": "Marquer devis envoyé",
+      "booking-confirmed": "Marquer réservation confirmée",
+      "lost": "Marquer perdu"
+    },
+    "confirmRefuse": "Refuser ce lead ? Cette action est définitive.",
+    "confirmLost": "Marquer ce lead comme perdu ? Cette action est définitive.",
+    "reasonLabel": "Raison (facultatif)",
+    "reasonPlaceholder": "Précisez la raison…",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "working": "En cours…",
+    "error": {
+      "CONFLICT": "L’état du lead a changé. Rafraîchissez la page.",
+      "INVALID_TRANSITION": "Action impossible depuis l’état actuel.",
+      "FORBIDDEN": "Action non autorisée (statut vérifié requis).",
+      "ACTION_ERROR": "Action impossible pour le moment. Réessayez."
+    }
+  },
+  "dashboard": {
+    "leadsWidget": "Mes leads",
+    "conversationsWidget": "Mes conversations",
+    "view": "Consulter"
   }
 }

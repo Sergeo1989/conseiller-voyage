@@ -7,6 +7,7 @@
 //
 // Le côté voyageur (auth via espace voyageur) relève de 015 — non livré ici.
 
+import { CONVERSATION_QUERY_PORT, type ConversationQueryPort } from '@cv/shared/matching';
 import {
   BadRequestException,
   Body,
@@ -40,7 +41,6 @@ import {
 import { CreateAttachmentUploadUseCase } from '../../application/use-cases/create-attachment-upload.use-case';
 import { FinalizeAttachmentUseCase } from '../../application/use-cases/finalize-attachment.use-case';
 import { GetAttachmentUrlUseCase } from '../../application/use-cases/get-attachment-url.use-case';
-import { ListConversationMessagesUseCase } from '../../application/use-cases/list-messages.use-case';
 import { OpenConversationOnLeadAcceptedUseCase } from '../../application/use-cases/open-conversation-on-accept.use-case';
 import { SendMessageUseCase } from '../../application/use-cases/send-message.use-case';
 import { canWrite } from '../../domain/services/conversation-policy';
@@ -67,11 +67,20 @@ const CreateAttachmentBodySchema = z.object({
 });
 type CreateAttachmentBody = z.infer<typeof CreateAttachmentBodySchema>;
 
+interface AttachmentResponse {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  available: boolean;
+}
+
 interface MessageResponse {
   id: string;
   author: 'conseiller' | 'voyageur';
   body: string | null;
   createdAt: string;
+  attachments: AttachmentResponse[];
 }
 
 @ApiTags('matching-conseiller-conversation')
@@ -83,8 +92,6 @@ export class ConseillerConversationController {
     @Inject(OpenConversationOnLeadAcceptedUseCase)
     private readonly openConversation: OpenConversationOnLeadAcceptedUseCase,
     @Inject(SendMessageUseCase) private readonly sendMessage: SendMessageUseCase,
-    @Inject(ListConversationMessagesUseCase)
-    private readonly listMessages: ListConversationMessagesUseCase,
     @Inject(LEAD_READER) private readonly leadReader: LeadReader,
     @Inject(CONSEILLER_IDENTITY_RESOLVER)
     private readonly identityResolver: ConseillerIdentityResolver,
@@ -94,7 +101,48 @@ export class ConseillerConversationController {
     private readonly finalizeAttachment: FinalizeAttachmentUseCase,
     @Inject(GetAttachmentUrlUseCase)
     private readonly getAttachmentUrl: GetAttachmentUrlUseCase,
+    @Inject(CONVERSATION_QUERY_PORT)
+    private readonly conversationQuery: ConversationQueryPort,
   ) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Liste paginée de mes fils de conversation (dashboard 014)' })
+  async listConversations(
+    @Req() req: AuthenticatedReq,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<{
+    items: Array<{
+      id: string;
+      leadId: string;
+      writable: boolean;
+      lastMessageAt: string | null;
+      openedAt: string;
+    }>;
+    page: number;
+    pageSize: number;
+    total: number;
+  }> {
+    const conseillerId = await this.requireConseillerId(req);
+    const pageNum = Math.max(1, Number.parseInt(page ?? '1', 10) || 1);
+    const size = Math.min(100, Math.max(1, Number.parseInt(pageSize ?? '20', 10) || 20));
+    const result = await this.conversationQuery.listForConseiller(conseillerId, {
+      page: pageNum,
+      pageSize: size,
+    });
+    return {
+      items: result.items.map((c) => ({
+        id: c.id,
+        leadId: c.leadId,
+        writable: c.writable,
+        lastMessageAt: c.lastMessageAt ? c.lastMessageAt.toISOString() : null,
+        openedAt: c.openedAt.toISOString(),
+      })),
+      page: result.page,
+      pageSize: result.pageSize,
+      total: result.total,
+    };
+  }
 
   @Post('open')
   @HttpCode(HttpStatus.OK)
@@ -124,32 +172,63 @@ export class ConseillerConversationController {
   }
 
   @Get(':conversationId/messages')
-  @ApiOperation({ summary: 'Messages d’un fil (pagination chronologique)' })
+  @ApiOperation({
+    summary: 'Fil : entête conversation (writable) + messages ordonnés + pièces jointes',
+  })
   async messages(
     @Req() req: AuthenticatedReq,
     @Param('conversationId', new ParseUUIDPipe({ version: '4' })) conversationId: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
-  ): Promise<{ items: MessageResponse[]; total: number }> {
+  ): Promise<{
+    conversation: {
+      id: string;
+      leadId: string;
+      writable: boolean;
+      openedAt: string;
+      lastMessageAt: string | null;
+    };
+    items: MessageResponse[];
+    page: number;
+    pageSize: number;
+    total: number;
+  }> {
     const conseillerId = await this.requireConseillerId(req);
     const pageNum = Math.max(1, Number.parseInt(page ?? '1', 10) || 1);
     const size = Math.min(100, Math.max(1, Number.parseInt(pageSize ?? '50', 10) || 50));
-    const result = await this.listMessages.execute({
+    // Vue de lecture enrichie (entête `writable` + pièces jointes) via le port public.
+    const result = await this.conversationQuery.getMessages(
       conversationId,
-      requester: 'conseiller',
-      requesterRef: conseillerId,
-      page: pageNum,
-      pageSize: size,
-    });
-    if (result.kind === 'not_found') throw new NotFoundException('Fil introuvable.');
-    if (result.kind === 'forbidden_not_member') throw new ForbiddenException('Accès refusé.');
+      'conseiller',
+      conseillerId,
+      { page: pageNum, pageSize: size },
+    );
+    if (!result) throw new NotFoundException('Fil introuvable ou accès refusé.');
     return {
+      conversation: {
+        id: result.conversation.id,
+        leadId: result.conversation.leadId,
+        writable: result.conversation.writable,
+        openedAt: result.conversation.openedAt.toISOString(),
+        lastMessageAt: result.conversation.lastMessageAt
+          ? result.conversation.lastMessageAt.toISOString()
+          : null,
+      },
       items: result.items.map((m) => ({
         id: m.id,
         author: m.author,
         body: m.body,
         createdAt: m.createdAt.toISOString(),
+        attachments: m.attachments.map((a) => ({
+          id: a.id,
+          fileName: a.fileName,
+          mimeType: a.mimeType,
+          sizeBytes: a.sizeBytes,
+          available: a.available,
+        })),
       })),
+      page: result.page,
+      pageSize: result.pageSize,
       total: result.total,
     };
   }
