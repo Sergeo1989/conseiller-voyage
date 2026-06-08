@@ -67,8 +67,8 @@ vers le destinataire ; rejouer (même clé) → pas de doublon ; tenter sur lead
 - [x] T011 [US1] `OpenConversationOnLeadAccepted` use case dans `apps/api/src/modules/matching/application/use-cases/open-conversation-on-accept.use-case.ts` → rend T010 vert
 - [x] T012 [US1] `SendMessage` use case (lit éligibilité lead + vérifié, valide, persiste, crée outbox 1/destinataire) dans `.../use-cases/send-message.use-case.ts` → rend T009 vert
 - [x] T013 [US1] `ListConversationMessages` use case (pagination ordonnée, autorisation membre) dans `.../use-cases/list-messages.use-case.ts`
-- [ ] T014 [P] [US1] Adapter `PrismaConversationRepository` dans `apps/api/src/modules/matching/infrastructure/prisma-conversation-repository.ts`
-- [ ] T015 [P] [US1] Adapter `PrismaConversationNotificationOutbox` dans `.../infrastructure/prisma-conversation-notification-outbox.ts`
+- [x] T014 [P] [US1] Adapter `PrismaConversationRepository` dans `apps/api/src/modules/matching/infrastructure/prisma-conversation-repository.ts`
+- [x] T015 [P] [US1] Adapter `PrismaConversationNotificationOutbox` dans `.../infrastructure/prisma-conversation-notification-outbox.ts`
 - [ ] T016 [US1] Consumer `lead-accepted` (ouvre le fil, idempotent) + wiring DI dans `.../infrastructure/jobs/lead-accepted.consumer.ts` + `matching.module.ts`
 - [ ] T017 [US1] Job BullMQ `conversation-notification` (1/destinataire) + `SesConversationMailer` + template react-email (FR-CA, sans PII de contenu) dans `.../infrastructure/jobs/conversation-notification.job.ts` + `.../infrastructure/ses-conversation-mailer.ts`
 - [ ] T018 [US1] Contrôleurs HTTP conseiller + voyageur (GET fils, GET messages, POST message **idempotent**) dans `.../interface/http/{conseiller,voyageur}-conversation.controller.ts` + wiring module
