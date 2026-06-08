@@ -98,6 +98,12 @@ export interface ConversationRepo {
   listAttachmentsByConversation(conversationId: string): Promise<ReadonlyArray<AttachmentRecord>>;
   /** Marque supprimée (objet S3 effacé par ailleurs) — métadonnées d'audit conservées. */
   markAttachmentDeleted(id: string, at: Date): Promise<void>;
+
+  // --- Anonymisation Loi 25 (US3) — neutralise la PII, conserve l'audit ---
+  /** Met à `null` le corps des messages encore renseignés ; renvoie le nombre neutralisé. */
+  anonymizeMessageBodies(conversationId: string): Promise<number>;
+  /** Neutralise les références voyageur du fil (`briefId`, `voyageurRef` → null). */
+  neutralizeConversationRefs(conversationId: string): Promise<void>;
 }
 
 export const CONVERSATION_REPO = Symbol.for('ConversationRepo');

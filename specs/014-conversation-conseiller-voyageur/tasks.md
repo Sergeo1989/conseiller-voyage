@@ -113,16 +113,16 @@ PII neutralisée + pièces jointes supprimées, audit présent ; panne SES → r
 
 ### Tests (TDD — rouge AVANT vert)
 
-- [ ] T027 [P] [US3] **RED** re-filtrage `verified` (conseiller révoqué → écriture refusée) + lead `refusé`/`perdu` → lecture seule dans `.../use-cases/__tests__/send-message.authz.test.ts`
-- [ ] T028 [P] [US3] **RED** anonymisation Loi 25 : corps PII → null + pièces jointes supprimées (S3), **audit préservé**, idempotent dans `.../use-cases/__tests__/anonymize-conversation.use-case.test.ts`
+- [x] T027 [P] [US3] **RED**/vert re-filtrage `verified` dynamique (conseiller révoqué → refusé) + lead `refusé`/`perdu` → lecture seule (4 tests) dans `.../use-cases/__tests__/send-message.authz.test.ts`
+- [x] T028 [P] [US3] **RED**/vert anonymisation Loi 25 : corps PII → null + pièces jointes supprimées (S3), **audit préservé**, idempotent (3 tests) dans `.../use-cases/__tests__/anonymize-conversation.use-case.test.ts`
 
 ### Implémentation
 
-- [ ] T029 [US3] `AnonymizeConversationLoi25` use case (neutralise messages PII + supprime objets S3, conserve métadonnées d'audit) dans `.../use-cases/anonymize-conversation-loi25.use-case.ts` → rend T028 vert
-- [ ] T030 [US3] Renforcement `SendMessage` : re-filtrage `verified` dynamique + statut d'écriture **dérivé** (`canWrite`) du lead lu via `MatchingLeadQueryPort` → rend T027 vert
-- [ ] T031 [US3] Résilience notification : retry outbox + reprise SES (au moins une fois, sans doublon perçu) dans le job + outbox
-- [ ] T032 [US3] **Port public** `ConversationQueryPort` (types + token) dans `packages/shared/src/matching/conversation-query.port.ts` + adapter `PrismaConversationQueryAdapter` dans `apps/api/.../infrastructure/prisma-conversation-query-adapter.ts` + export shared (consommé par 014/015)
-- [ ] T033 [US3] Test intégration : verified-révoqué + cascade Loi 25 + résilience notif dans `apps/api/test/integration/matching/conversation-resilience.integration.test.ts`
+- [x] T029 [US3] `AnonymizeConversationLoi25` use case (corps → null, objets S3 supprimés best-effort + `deletedAt`, refs voyageur neutralisées ; audit préservé, idempotent) dans `.../use-cases/anonymize-conversation-loi25.use-case.ts` + méthodes repo + adaptateur Prisma
+- [x] T030 [US3] Renforcement `SendMessage` : **déjà satisfait par T012** — re-filtrage `verified` interrogé à chaque envoi (`conformiteQuery.getVerificationStatus`) + statut d'écriture dérivé `canWrite(état lead, vérifié)`. Couverture durcie ajoutée par T027.
+- [x] T031 [US3] Résilience notification : **par conception** — job BullMQ idempotent (`jobId = notificationId`), re-throw SES → backoff/retry, dispatcher périodique re-scanne les `pending` (reprise sans doublon, `markSent/markFailed`).
+- [x] T032 [US3] **Port public** `ConversationQueryPort` (types + token `CONVERSATION_QUERY_PORT`) dans `packages/shared/src/matching/conversation-query.port.ts` + adapter `PrismaConversationQueryAdapter` (writable dérivé) + export shared + export module (consommé par 014/015)
+- [x] T033 [US3] Test intégration (stub staging/LocalStack) : verified-révoqué + cascade Loi 25 + résilience notif dans `apps/api/test/integration/matching/conversation-resilience.integration.test.ts`
 
 **Checkpoint** : flux durci (conformité, vie privée, résilience) ; port public prêt pour 014/015.
 

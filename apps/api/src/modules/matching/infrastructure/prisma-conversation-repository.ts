@@ -218,4 +218,21 @@ export class PrismaConversationRepository implements ConversationRepo {
   async markAttachmentDeleted(id: string, at: Date): Promise<void> {
     await prisma.conversationAttachment.update({ where: { id }, data: { deletedAt: at } });
   }
+
+  // --- Anonymisation Loi 25 (US3) ---
+
+  async anonymizeMessageBodies(conversationId: string): Promise<number> {
+    const res = await prisma.conversationMessage.updateMany({
+      where: { conversationId, body: { not: null } },
+      data: { body: null },
+    });
+    return res.count;
+  }
+
+  async neutralizeConversationRefs(conversationId: string): Promise<void> {
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { briefId: null, voyageurRef: null },
+    });
+  }
 }

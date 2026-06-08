@@ -27,9 +27,17 @@ interface StoredMessage {
   readonly id: string;
   readonly conversationId: string;
   readonly author: ConversationParticipant;
-  readonly body: string | null;
+  body: string | null;
   readonly idempotencyKey: string;
   readonly createdAt: Date;
+}
+
+interface StoredConversation {
+  readonly id: string;
+  readonly leadId: string;
+  readonly conseillerId: string;
+  briefId: string | null;
+  voyageurRef: string | null;
 }
 
 interface StoredAttachment {
@@ -45,7 +53,7 @@ interface StoredAttachment {
 }
 
 export class FakeConversationRepo implements ConversationRepo {
-  readonly conversations: ConversationRecord[] = [];
+  readonly conversations: StoredConversation[] = [];
   readonly messages: StoredMessage[] = [];
   readonly attachments: StoredAttachment[] = [];
   readonly lastMessageAt = new Map<string, Date>();
@@ -147,6 +155,25 @@ export class FakeConversationRepo implements ConversationRepo {
   async markAttachmentDeleted(id: string, at: Date): Promise<void> {
     const a = this.attachments.find((x) => x.id === id);
     if (a) a.deletedAt = at;
+  }
+
+  async anonymizeMessageBodies(conversationId: string): Promise<number> {
+    let count = 0;
+    for (const m of this.messages) {
+      if (m.conversationId === conversationId && m.body !== null) {
+        m.body = null;
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  async neutralizeConversationRefs(conversationId: string): Promise<void> {
+    const c = this.conversations.find((x) => x.id === conversationId);
+    if (c) {
+      c.briefId = null;
+      c.voyageurRef = null;
+    }
   }
 }
 

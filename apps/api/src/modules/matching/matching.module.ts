@@ -11,7 +11,11 @@
 //   - useClass pour les adapters (injection directe DI)
 
 import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
-import { MATCHING_LEAD_QUERY_PORT, MATCHING_QUERY_PORT } from '@cv/shared/matching';
+import {
+  CONVERSATION_QUERY_PORT,
+  MATCHING_LEAD_QUERY_PORT,
+  MATCHING_QUERY_PORT,
+} from '@cv/shared/matching';
 import { BullModule } from '@nestjs/bullmq';
 import { Module, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
@@ -47,6 +51,7 @@ import {
   MATCHING_RESULT_WRITER,
   REDIS_REMATCH_LOCK,
 } from './application/ports';
+import { AnonymizeConversationLoi25UseCase } from './application/use-cases/anonymize-conversation-loi25.use-case';
 import { ConsumeMatchingEventUseCase } from './application/use-cases/consume-matching-event.use-case';
 import { CreateAttachmentUploadUseCase } from './application/use-cases/create-attachment-upload.use-case';
 import { DetectAllMatchesRevokedUseCase } from './application/use-cases/detect-all-matches-revoked.use-case';
@@ -88,6 +93,7 @@ import { PrismaConseillerIdentityResolver } from './infrastructure/prisma-consei
 import { PrismaConseillerSnapshotReader } from './infrastructure/prisma-conseiller-snapshot-reader';
 import { PrismaConsumedEventStore } from './infrastructure/prisma-consumed-event-store';
 import { PrismaConversationNotificationOutbox } from './infrastructure/prisma-conversation-notification-outbox';
+import { PrismaConversationQueryAdapter } from './infrastructure/prisma-conversation-query-adapter';
 import { PrismaConversationRepository } from './infrastructure/prisma-conversation-repository';
 import { PrismaLeadBriefSummaryReader } from './infrastructure/prisma-lead-brief-summary-reader';
 import { PrismaLeadNotificationOutbox } from './infrastructure/prisma-lead-notification-outbox';
@@ -525,8 +531,21 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
       inject: [CONVERSATION_REPO, ATTACHMENT_STORAGE],
       useFactory: (repo, storage) => new GetAttachmentUrlUseCase({ repo, storage }),
     },
+
+    // T029 — cascade d'anonymisation Loi 25 (corps → null, pièces jointes S3
+    // supprimées, refs voyageur neutralisées ; audit préservé, idempotent).
+    {
+      provide: AnonymizeConversationLoi25UseCase,
+      inject: [CLOCK, CONVERSATION_REPO, ATTACHMENT_STORAGE],
+      useFactory: (clock, repo, storage) =>
+        new AnonymizeConversationLoi25UseCase({ clock, repo, storage }),
+    },
+
+    // T032 — port public ConversationQueryPort (lecture seule, 014/015).
+    PrismaConversationQueryAdapter,
+    { provide: CONVERSATION_QUERY_PORT, useExisting: PrismaConversationQueryAdapter },
   ],
-  exports: [MATCHING_QUERY_PORT, MATCHING_LEAD_QUERY_PORT],
+  exports: [MATCHING_QUERY_PORT, MATCHING_LEAD_QUERY_PORT, CONVERSATION_QUERY_PORT],
 })
 export class MatchingModule implements OnModuleInit, OnModuleDestroy {
   private outboxInterval?: NodeJS.Timeout;
