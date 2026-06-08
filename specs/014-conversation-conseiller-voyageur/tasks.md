@@ -88,16 +88,16 @@ transactionnel** dans modèle/réponses.
 
 ### Tests (TDD — rouge AVANT vert)
 
-- [ ] T020 [P] [US2] **RED** flux pièces jointes : `validateAttachment` (refus type/poids) + `CreateAttachmentUpload`/`FinalizeAttachment`/`GetAttachmentUrl` (via fakes) dans `.../use-cases/__tests__/attachments.use-case.test.ts`
+- [x] T020 [P] [US2] **RED**/vert flux pièces jointes : `validateAttachment` (refus type/poids/vide) + `CreateAttachmentUpload`/`FinalizeAttachment`/`GetAttachmentUrl` (via fakes, 7 tests) dans `.../use-cases/__tests__/attachments.use-case.test.ts`
 
 ### Implémentation
 
-- [ ] T021 [US2] `CreateAttachmentUpload` use case (valide, crée `PENDING_UPLOAD`, demande URL pré-signée) dans `.../use-cases/create-attachment-upload.use-case.ts` → rend T020 (partie) vert
-- [ ] T022 [US2] `FinalizeAttachment` use case (`READY`, rattache au message) dans `.../use-cases/finalize-attachment.use-case.ts`
-- [ ] T023 [US2] `GetAttachmentUrl` use case (URL signée courte, autorisation membre + disponible) dans `.../use-cases/get-attachment-url.use-case.ts`
-- [ ] T024 [P] [US2] Adapter `S3AttachmentStorage` (ca-central-1 ADR-0001 ; URL pré-signée d'upload + URL signée de lecture) dans `.../infrastructure/s3-attachment-storage.ts`
-- [ ] T025 [US2] Endpoints pièces jointes (POST upload, POST finalize, GET url) dans les contrôleurs + mention anti-transaction (contrat) ; wiring
-- [ ] T026 [US2] Test intégration : upload PDF tel quel + lecture URL signée + **invariant 0 champ montant/paiement** dans `apps/api/test/integration/matching/conversation-attachments.integration.test.ts`
+- [x] T021 [US2] `CreateAttachmentUpload` use case (valide, crée `pending_upload`, URL PUT pré-signée, autorisation membre) dans `.../use-cases/create-attachment-upload.use-case.ts`
+- [x] T022 [US2] `FinalizeAttachment` use case (`ready`, idempotent, autorisation membre) dans `.../use-cases/finalize-attachment.use-case.ts`
+- [x] T023 [US2] `GetAttachmentUrl` use case (URL GET signée courte, membre + `ready` + non supprimé) dans `.../use-cases/get-attachment-url.use-case.ts`
+- [x] T024 [P] [US2] Adapter `S3AttachmentStorage` (ca-central-1 ADR-0001 ; presign PUT/GET + delete, LocalStack-compatible) dans `.../infrastructure/s3-attachment-storage.ts` + port `AttachmentStorage` + bucket `AWS_S3_BUCKET_CONVERSATIONS`
+- [x] T025 [US2] Endpoints pièces jointes conseiller (POST `:id/attachments`, POST `.../finalize`, GET `.../url`) + mention anti-transaction dans la réponse + wiring module
+- [x] T026 [US2] Test intégration (stub staging/LocalStack) : upload + lecture signée + invariant 0 champ transactionnel dans `apps/api/test/integration/matching/conversation-attachments.integration.test.ts`
 
 **Checkpoint** : US1 + US2 — devis transmissible comme fichier opaque, hors transaction.
 

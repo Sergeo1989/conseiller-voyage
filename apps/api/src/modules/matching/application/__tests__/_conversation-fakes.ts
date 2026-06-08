@@ -6,16 +6,21 @@ import type { ConversationParticipant } from '@cv/shared/matching';
 import type {
   AppendMessageInput,
   AppendMessageResult,
+  AttachmentRecord,
+  AttachmentStorage,
   ConversationNotificationOutbox,
   ConversationRecord,
   ConversationRepo,
+  CreateAttachmentInput,
   CreateConversationInput,
   CreateConversationResult,
   EnqueueConversationNotifInput,
   EnqueueConversationNotifResult,
   ListMessagesResult,
   MessageRecord,
+  MessageRef,
   PendingConversationNotif,
+  PresignedUrl,
 } from '../ports';
 
 interface StoredMessage {
@@ -27,9 +32,22 @@ interface StoredMessage {
   readonly createdAt: Date;
 }
 
+interface StoredAttachment {
+  id: string;
+  messageId: string;
+  conversationId: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  s3Key: string;
+  status: 'pending_upload' | 'ready';
+  deletedAt: Date | null;
+}
+
 export class FakeConversationRepo implements ConversationRepo {
   readonly conversations: ConversationRecord[] = [];
   readonly messages: StoredMessage[] = [];
+  readonly attachments: StoredAttachment[] = [];
   readonly lastMessageAt = new Map<string, Date>();
 
   async findByLeadId(leadId: string): Promise<ConversationRecord | null> {
@@ -86,6 +104,70 @@ export class FakeConversationRepo implements ConversationRepo {
 
   async touchLastMessageAt(conversationId: string, at: Date): Promise<void> {
     this.lastMessageAt.set(conversationId, at);
+  }
+
+  async findMessageById(messageId: string): Promise<MessageRef | null> {
+    const m = this.messages.find((x) => x.id === messageId);
+    return m ? { id: m.id, conversationId: m.conversationId } : null;
+  }
+
+  async createAttachment(input: CreateAttachmentInput): Promise<void> {
+    const message = this.messages.find((m) => m.id === input.messageId);
+    this.attachments.push({
+      id: input.id,
+      messageId: input.messageId,
+      conversationId: message?.conversationId ?? '',
+      fileName: input.fileName,
+      mimeType: input.mimeType,
+      sizeBytes: input.sizeBytes,
+      s3Key: input.s3Key,
+      status: 'pending_upload',
+      deletedAt: null,
+    });
+  }
+
+  async findAttachmentById(id: string): Promise<AttachmentRecord | null> {
+    const a = this.attachments.find((x) => x.id === id);
+    return a ? { ...a } : null;
+  }
+
+  async finalizeAttachment(id: string): Promise<void> {
+    const a = this.attachments.find((x) => x.id === id);
+    if (a) a.status = 'ready';
+  }
+
+  async listAttachmentsByConversation(
+    conversationId: string,
+  ): Promise<ReadonlyArray<AttachmentRecord>> {
+    return this.attachments
+      .filter((a) => a.conversationId === conversationId && !a.deletedAt)
+      .map((a) => ({ ...a }));
+  }
+
+  async markAttachmentDeleted(id: string, at: Date): Promise<void> {
+    const a = this.attachments.find((x) => x.id === id);
+    if (a) a.deletedAt = at;
+  }
+}
+
+/** Stockage objet en mémoire — enregistre les appels presign / delete. */
+export class FakeAttachmentStorage implements AttachmentStorage {
+  readonly uploads: string[] = [];
+  readonly downloads: string[] = [];
+  readonly deleted: string[] = [];
+
+  async presignUpload(s3Key: string): Promise<PresignedUrl> {
+    this.uploads.push(s3Key);
+    return { url: `https://s3.fake/upload/${s3Key}`, expiresInSec: 300 };
+  }
+
+  async presignDownload(s3Key: string): Promise<PresignedUrl> {
+    this.downloads.push(s3Key);
+    return { url: `https://s3.fake/download/${s3Key}`, expiresInSec: 120 };
+  }
+
+  async deleteObject(s3Key: string): Promise<void> {
+    this.deleted.push(s3Key);
   }
 }
 

@@ -23,6 +23,7 @@ import { BullMqModule } from '../../queue/bullmq.module';
 import { ConformiteModule } from '../conformite/interface/conformite.module';
 import { IdentiteModule } from '../identite/identite.module';
 import {
+  ATTACHMENT_STORAGE,
   BRIEF_SNAPSHOT_READER,
   CONSEILLER_IDENTITY_RESOLVER,
   CONSEILLER_SNAPSHOT_READER,
@@ -47,7 +48,10 @@ import {
   REDIS_REMATCH_LOCK,
 } from './application/ports';
 import { ConsumeMatchingEventUseCase } from './application/use-cases/consume-matching-event.use-case';
+import { CreateAttachmentUploadUseCase } from './application/use-cases/create-attachment-upload.use-case';
 import { DetectAllMatchesRevokedUseCase } from './application/use-cases/detect-all-matches-revoked.use-case';
+import { FinalizeAttachmentUseCase } from './application/use-cases/finalize-attachment.use-case';
+import { GetAttachmentUrlUseCase } from './application/use-cases/get-attachment-url.use-case';
 import { ListConversationMessagesUseCase } from './application/use-cases/list-messages.use-case';
 import { OpenConversationOnLeadAcceptedUseCase } from './application/use-cases/open-conversation-on-accept.use-case';
 import { PerformMatchingUseCase } from './application/use-cases/perform-matching.use-case';
@@ -95,6 +99,7 @@ import { PrismaMatchingQueryAdapter } from './infrastructure/prisma-matching-que
 import { PrismaMatchingResultRepository } from './infrastructure/prisma-matching-result-repository';
 import { RedisMatchingEventPublisher } from './infrastructure/redis-matching-event-publisher';
 import { RedisRematchLockAdapter } from './infrastructure/redis-rematch-lock';
+import { S3AttachmentStorage } from './infrastructure/s3-attachment-storage';
 import { SesConversationMailer } from './infrastructure/ses-conversation-mailer';
 import { SesLeadNotificationMailer } from './infrastructure/ses-lead-notification-mailer';
 import { AdminMatchingController } from './interface/http/admin-matching.controller';
@@ -500,6 +505,26 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     ConversationNotificationDispatcher,
     ConversationNotificationSender,
     ConversationNotificationWorker,
+
+    // T024 — pièces jointes (US2) : stockage S3 ca-central-1 + use cases.
+    S3AttachmentStorage,
+    { provide: ATTACHMENT_STORAGE, useExisting: S3AttachmentStorage },
+    {
+      provide: CreateAttachmentUploadUseCase,
+      inject: [UUID_GENERATOR, CONVERSATION_REPO, ATTACHMENT_STORAGE],
+      useFactory: (uuid, repo, storage) =>
+        new CreateAttachmentUploadUseCase({ uuid, repo, storage }),
+    },
+    {
+      provide: FinalizeAttachmentUseCase,
+      inject: [CONVERSATION_REPO],
+      useFactory: (repo) => new FinalizeAttachmentUseCase({ repo }),
+    },
+    {
+      provide: GetAttachmentUrlUseCase,
+      inject: [CONVERSATION_REPO, ATTACHMENT_STORAGE],
+      useFactory: (repo, storage) => new GetAttachmentUrlUseCase({ repo, storage }),
+    },
   ],
   exports: [MATCHING_QUERY_PORT, MATCHING_LEAD_QUERY_PORT],
 })

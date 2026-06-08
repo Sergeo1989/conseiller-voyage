@@ -9,12 +9,16 @@ import { Injectable } from '@nestjs/common';
 import type {
   AppendMessageInput,
   AppendMessageResult,
+  AttachmentRecord,
+  AttachmentStatus,
   ConversationRecord,
   ConversationRepo,
+  CreateAttachmentInput,
   CreateConversationInput,
   CreateConversationResult,
   ListMessagesResult,
   MessageRecord,
+  MessageRef,
 } from '../application/ports';
 
 function isUniqueViolation(e: unknown): boolean {
@@ -123,5 +127,95 @@ export class PrismaConversationRepository implements ConversationRepo {
       where: { id: conversationId },
       data: { lastMessageAt: at },
     });
+  }
+
+  // --- Pièces jointes (US2) ---
+
+  async findMessageById(messageId: string): Promise<MessageRef | null> {
+    const m = await prisma.conversationMessage.findUnique({
+      where: { id: messageId },
+      select: { id: true, conversationId: true },
+    });
+    return m ? { id: m.id, conversationId: m.conversationId } : null;
+  }
+
+  async createAttachment(input: CreateAttachmentInput): Promise<void> {
+    await prisma.conversationAttachment.create({
+      data: {
+        id: input.id,
+        messageId: input.messageId,
+        fileName: input.fileName,
+        mimeType: input.mimeType,
+        sizeBytes: input.sizeBytes,
+        s3Key: input.s3Key,
+        status: 'pending_upload',
+      },
+    });
+  }
+
+  async findAttachmentById(id: string): Promise<AttachmentRecord | null> {
+    const a = await prisma.conversationAttachment.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        messageId: true,
+        fileName: true,
+        mimeType: true,
+        sizeBytes: true,
+        s3Key: true,
+        status: true,
+        deletedAt: true,
+        message: { select: { conversationId: true } },
+      },
+    });
+    if (!a) return null;
+    return {
+      id: a.id,
+      messageId: a.messageId,
+      conversationId: a.message.conversationId,
+      fileName: a.fileName,
+      mimeType: a.mimeType,
+      sizeBytes: a.sizeBytes,
+      s3Key: a.s3Key,
+      status: a.status as AttachmentStatus,
+      deletedAt: a.deletedAt,
+    };
+  }
+
+  async finalizeAttachment(id: string): Promise<void> {
+    await prisma.conversationAttachment.update({ where: { id }, data: { status: 'ready' } });
+  }
+
+  async listAttachmentsByConversation(
+    conversationId: string,
+  ): Promise<ReadonlyArray<AttachmentRecord>> {
+    const rows = await prisma.conversationAttachment.findMany({
+      where: { message: { conversationId }, deletedAt: null },
+      select: {
+        id: true,
+        messageId: true,
+        fileName: true,
+        mimeType: true,
+        sizeBytes: true,
+        s3Key: true,
+        status: true,
+        deletedAt: true,
+      },
+    });
+    return rows.map((a) => ({
+      id: a.id,
+      messageId: a.messageId,
+      conversationId,
+      fileName: a.fileName,
+      mimeType: a.mimeType,
+      sizeBytes: a.sizeBytes,
+      s3Key: a.s3Key,
+      status: a.status as AttachmentStatus,
+      deletedAt: a.deletedAt,
+    }));
+  }
+
+  async markAttachmentDeleted(id: string, at: Date): Promise<void> {
+    await prisma.conversationAttachment.update({ where: { id }, data: { deletedAt: at } });
   }
 }

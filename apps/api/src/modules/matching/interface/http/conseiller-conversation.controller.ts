@@ -37,10 +37,17 @@ import {
   LEAD_READER,
   type LeadReader,
 } from '../../application/ports';
+import { CreateAttachmentUploadUseCase } from '../../application/use-cases/create-attachment-upload.use-case';
+import { FinalizeAttachmentUseCase } from '../../application/use-cases/finalize-attachment.use-case';
+import { GetAttachmentUrlUseCase } from '../../application/use-cases/get-attachment-url.use-case';
 import { ListConversationMessagesUseCase } from '../../application/use-cases/list-messages.use-case';
 import { OpenConversationOnLeadAcceptedUseCase } from '../../application/use-cases/open-conversation-on-accept.use-case';
 import { SendMessageUseCase } from '../../application/use-cases/send-message.use-case';
 import { canWrite } from '../../domain/services/conversation-policy';
+
+/** Mention permanente anti-marketplace (ADR-0002) jointe aux réponses pièces jointes. */
+const ANTI_TRANSACTION_NOTICE =
+  'La plateforme ne participe pas à la transaction. Toute soumission et tout paiement se font directement entre vous et le conseiller.';
 
 interface AuthenticatedReq {
   user?: { id: string };
@@ -51,6 +58,14 @@ type OpenBody = z.infer<typeof OpenBodySchema>;
 
 const SendBodySchema = z.object({ body: z.string().min(1).max(4000) });
 type SendBody = z.infer<typeof SendBodySchema>;
+
+const CreateAttachmentBodySchema = z.object({
+  messageId: z.string().uuid(),
+  fileName: z.string().min(1).max(255),
+  mimeType: z.string().min(1).max(127),
+  sizeBytes: z.number().int().positive(),
+});
+type CreateAttachmentBody = z.infer<typeof CreateAttachmentBodySchema>;
 
 interface MessageResponse {
   id: string;
@@ -73,6 +88,12 @@ export class ConseillerConversationController {
     @Inject(LEAD_READER) private readonly leadReader: LeadReader,
     @Inject(CONSEILLER_IDENTITY_RESOLVER)
     private readonly identityResolver: ConseillerIdentityResolver,
+    @Inject(CreateAttachmentUploadUseCase)
+    private readonly createAttachment: CreateAttachmentUploadUseCase,
+    @Inject(FinalizeAttachmentUseCase)
+    private readonly finalizeAttachment: FinalizeAttachmentUseCase,
+    @Inject(GetAttachmentUrlUseCase)
+    private readonly getAttachmentUrl: GetAttachmentUrlUseCase,
   ) {}
 
   @Post('open')
@@ -165,6 +186,96 @@ export class ConseillerConversationController {
         throw new ConflictException('Le fil est en lecture seule (lead non éligible).');
       case 'invalid_message':
         throw new BadRequestException('Message invalide.');
+    }
+  }
+
+  @Post(':conversationId/attachments')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Demande une URL d’upload pré-signée (devis/fichier opaque)' })
+  async createAttachmentUpload(
+    @Req() req: AuthenticatedReq,
+    @Param('conversationId', new ParseUUIDPipe({ version: '4' })) _conversationId: string,
+    @Body(new ZodValidationPipe(CreateAttachmentBodySchema)) dto: CreateAttachmentBody,
+  ): Promise<{
+    attachmentId: string;
+    uploadUrl: string;
+    expiresInSec: number;
+    notice: string;
+  }> {
+    const conseillerId = await this.requireConseillerId(req);
+    const result = await this.createAttachment.execute({
+      messageId: dto.messageId,
+      requester: 'conseiller',
+      requesterRef: conseillerId,
+      fileName: dto.fileName,
+      mimeType: dto.mimeType,
+      sizeBytes: dto.sizeBytes,
+    });
+    switch (result.kind) {
+      case 'created':
+        return {
+          attachmentId: result.attachmentId,
+          uploadUrl: result.uploadUrl,
+          expiresInSec: result.expiresInSec,
+          notice: ANTI_TRANSACTION_NOTICE,
+        };
+      case 'not_found':
+        throw new NotFoundException('Message introuvable.');
+      case 'forbidden_not_member':
+        throw new ForbiddenException('Accès refusé.');
+      case 'invalid_attachment': {
+        const msg =
+          result.reason === 'type'
+            ? 'Type de fichier non autorisé.'
+            : result.reason === 'empty'
+              ? 'Fichier vide.'
+              : 'Fichier trop volumineux.';
+        throw new BadRequestException(msg);
+      }
+    }
+  }
+
+  @Post(':conversationId/attachments/:attachmentId/finalize')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Finalise une pièce jointe après upload S3 (rattache au fil)' })
+  async finalize(
+    @Req() req: AuthenticatedReq,
+    @Param('conversationId', new ParseUUIDPipe({ version: '4' })) _conversationId: string,
+    @Param('attachmentId', new ParseUUIDPipe({ version: '4' })) attachmentId: string,
+  ): Promise<{ ok: true }> {
+    const conseillerId = await this.requireConseillerId(req);
+    const result = await this.finalizeAttachment.execute({
+      attachmentId,
+      requester: 'conseiller',
+      requesterRef: conseillerId,
+    });
+    if (result.kind === 'not_found') throw new NotFoundException('Pièce jointe introuvable.');
+    if (result.kind === 'forbidden_not_member') throw new ForbiddenException('Accès refusé.');
+    return { ok: true };
+  }
+
+  @Get(':conversationId/attachments/:attachmentId/url')
+  @ApiOperation({ summary: 'URL signée courte pour lire une pièce jointe (membre du fil)' })
+  async attachmentUrl(
+    @Req() req: AuthenticatedReq,
+    @Param('conversationId', new ParseUUIDPipe({ version: '4' })) _conversationId: string,
+    @Param('attachmentId', new ParseUUIDPipe({ version: '4' })) attachmentId: string,
+  ): Promise<{ url: string; expiresInSec: number; fileName: string }> {
+    const conseillerId = await this.requireConseillerId(req);
+    const result = await this.getAttachmentUrl.execute({
+      attachmentId,
+      requester: 'conseiller',
+      requesterRef: conseillerId,
+    });
+    switch (result.kind) {
+      case 'ok':
+        return { url: result.url, expiresInSec: result.expiresInSec, fileName: result.fileName };
+      case 'not_found':
+        throw new NotFoundException('Pièce jointe introuvable.');
+      case 'not_ready':
+        throw new ConflictException('Pièce jointe non disponible (upload non finalisé).');
+      case 'forbidden_not_member':
+        throw new ForbiddenException('Accès refusé.');
     }
   }
 
