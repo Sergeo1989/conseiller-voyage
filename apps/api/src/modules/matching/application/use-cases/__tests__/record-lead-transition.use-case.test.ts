@@ -11,7 +11,16 @@ import {
   FakeUuidGenerator,
   LeadFakeStore,
 } from '../../__tests__/_lead-fakes';
+import type { ConversationOpener, OpenConversationForLeadInput } from '../../ports';
 import { RecordLeadTransitionUseCase } from '../record-lead-transition.use-case';
+
+/** Espion : enregistre les ouvertures de fil déclenchées par l'acceptation. */
+class FakeConversationOpener implements ConversationOpener {
+  readonly calls: OpenConversationForLeadInput[] = [];
+  async openForAcceptedLead(input: OpenConversationForLeadInput): Promise<void> {
+    this.calls.push(input);
+  }
+}
 
 const LEAD_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const MR_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -36,24 +45,56 @@ async function seedLead(store: LeadFakeStore, currentState: string) {
 
 function build(verified: string[]) {
   const store = new LeadFakeStore();
+  const conversationOpener = new FakeConversationOpener();
   const uc = new RecordLeadTransitionUseCase({
     clock: new FakeClock(new Date('2026-06-05T12:00:00Z')),
     uuid: new FakeUuidGenerator(),
     leadReader: new FakeLeadReader(store),
     leadWriter: new FakeLeadWriter(store),
     conformiteQuery: new FakeConformiteQuery(verified),
+    conversationOpener,
   });
-  return { store, uc };
+  return { store, uc, conversationOpener };
 }
 
 describe('RecordLeadTransitionUseCase — US2', () => {
-  it('vu + accepter (propriétaire vérifié) → applied accepte', async () => {
-    const { store, uc } = build([OWNER]);
+  it('vu + accepter (propriétaire vérifié) → applied accepte + ouverture du fil (T016)', async () => {
+    const { store, uc, conversationOpener } = build([OWNER]);
     await seedLead(store, 'vu');
     const res = await uc.execute({ leadId: LEAD_ID, conseillerId: OWNER, action: 'accepter' });
     expect(res).toEqual({ kind: 'applied', newState: 'accepte' });
     expect(store.transitions).toHaveLength(1);
     expect(store.leads[0]?.currentState).toBe('accepte');
+    // FR-001 : l'acceptation déclenche l'ouverture (idempotente) du fil.
+    expect(conversationOpener.calls).toHaveLength(1);
+    expect(conversationOpener.calls[0]).toEqual({
+      leadId: LEAD_ID,
+      conseillerId: OWNER,
+      briefId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+    });
+  });
+
+  it('accepter mais ouverture du fil en échec → acceptation préservée (best-effort)', async () => {
+    const { store, uc } = build([OWNER]);
+    await seedLead(store, 'vu');
+    // Opener qui lève : ne doit pas annuler la transition déjà persistée.
+    (
+      uc as unknown as { deps: { conversationOpener: ConversationOpener } }
+    ).deps.conversationOpener = {
+      async openForAcceptedLead() {
+        throw new Error('S3 down');
+      },
+    };
+    const res = await uc.execute({ leadId: LEAD_ID, conseillerId: OWNER, action: 'accepter' });
+    expect(res).toEqual({ kind: 'applied', newState: 'accepte' });
+    expect(store.transitions).toHaveLength(1);
+  });
+
+  it('marquer_perdu → aucune ouverture de fil', async () => {
+    const { store, uc, conversationOpener } = build([OWNER]);
+    await seedLead(store, 'vu');
+    await uc.execute({ leadId: LEAD_ID, conseillerId: OWNER, action: 'marquer_perdu' });
+    expect(conversationOpener.calls).toHaveLength(0);
   });
 
   it('transition invalide (envoye + accepter) → invalid_transition', async () => {

@@ -28,6 +28,7 @@ import {
   CONSEILLER_SNAPSHOT_READER,
   CONSUMED_EVENT_STORE,
   CONVERSATION_NOTIFICATION_OUTBOX,
+  CONVERSATION_OPENER,
   CONVERSATION_REPO,
   FSA_CENTROID_READER,
   LEAD_BRIEF_SUMMARY_READER,
@@ -68,6 +69,7 @@ import {
 import { LeadReconciliationScheduler } from './infrastructure/jobs/lead-reconciliation.scheduler';
 import { MatchingEventsConsumer } from './infrastructure/jobs/matching-events.consumer';
 import { MatchingOutboxPublisherJob } from './infrastructure/jobs/matching-outbox-publisher.job';
+import { LeadAcceptedConversationOpener } from './infrastructure/lead-accepted-conversation-opener';
 import { OtelLeadMetricsRecorder } from './infrastructure/otel-lead-metrics-recorder';
 import { OtelMetricsRecorder } from './infrastructure/otel-metrics-recorder';
 import { PrismaBriefSnapshotReader } from './infrastructure/prisma-brief-snapshot-reader';
@@ -374,14 +376,24 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
         LEAD_WRITER,
         CONFORMITE_QUERY_PORT,
         LEAD_METRICS_RECORDER,
+        CONVERSATION_OPENER,
       ],
-      useFactory: (clock, uuid, leadReader, leadWriter, conformiteQuery, metrics) => ({
+      useFactory: (
         clock,
         uuid,
         leadReader,
         leadWriter,
         conformiteQuery,
         metrics,
+        conversationOpener,
+      ) => ({
+        clock,
+        uuid,
+        leadReader,
+        leadWriter,
+        conformiteQuery,
+        metrics,
+        conversationOpener,
       }),
     },
     {
@@ -465,6 +477,11 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
       inject: [CONVERSATION_REPO],
       useFactory: (repo) => new ListConversationMessagesUseCase({ repo }),
     },
+
+    // T016 — ouverture du fil déclenchée par l'acceptation d'un lead (FR-001).
+    // Adaptateur in-process consommé par RecordLeadTransitionUseCase.
+    LeadAcceptedConversationOpener,
+    { provide: CONVERSATION_OPENER, useExisting: LeadAcceptedConversationOpener },
   ],
   exports: [MATCHING_QUERY_PORT, MATCHING_LEAD_QUERY_PORT],
 })

@@ -26,4 +26,5 @@ export * from './lead-writer.port';
 
 // Feature 014 — ports conversation
 export * from './conversation-notification-outbox.port';
+export * from './conversation-opener.port';
 export * from './conversation-repo.port';
