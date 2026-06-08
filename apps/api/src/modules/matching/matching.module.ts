@@ -27,6 +27,8 @@ import {
   CONSEILLER_IDENTITY_RESOLVER,
   CONSEILLER_SNAPSHOT_READER,
   CONSUMED_EVENT_STORE,
+  CONVERSATION_NOTIFICATION_OUTBOX,
+  CONVERSATION_REPO,
   FSA_CENTROID_READER,
   LEAD_BRIEF_SUMMARY_READER,
   LEAD_METRICS_RECORDER,
@@ -44,10 +46,13 @@ import {
 } from './application/ports';
 import { ConsumeMatchingEventUseCase } from './application/use-cases/consume-matching-event.use-case';
 import { DetectAllMatchesRevokedUseCase } from './application/use-cases/detect-all-matches-revoked.use-case';
+import { ListConversationMessagesUseCase } from './application/use-cases/list-messages.use-case';
+import { OpenConversationOnLeadAcceptedUseCase } from './application/use-cases/open-conversation-on-accept.use-case';
 import { PerformMatchingUseCase } from './application/use-cases/perform-matching.use-case';
 import { QueryMatchingResultUseCase } from './application/use-cases/query-matching-result.use-case';
 import { ReconcileLeadsUseCase } from './application/use-cases/reconcile-leads.use-case';
 import { RecordLeadTransitionUseCase } from './application/use-cases/record-lead-transition.use-case';
+import { SendMessageUseCase } from './application/use-cases/send-message.use-case';
 import { TriggerRematchUseCase } from './application/use-cases/trigger-rematch.use-case';
 import { ViewLeadUseCase } from './application/use-cases/view-lead.use-case';
 import { WeightsConfig } from './domain/value-objects/weights-config.vo';
@@ -69,6 +74,8 @@ import { PrismaBriefSnapshotReader } from './infrastructure/prisma-brief-snapsho
 import { PrismaConseillerIdentityResolver } from './infrastructure/prisma-conseiller-identity-resolver';
 import { PrismaConseillerSnapshotReader } from './infrastructure/prisma-conseiller-snapshot-reader';
 import { PrismaConsumedEventStore } from './infrastructure/prisma-consumed-event-store';
+import { PrismaConversationNotificationOutbox } from './infrastructure/prisma-conversation-notification-outbox';
+import { PrismaConversationRepository } from './infrastructure/prisma-conversation-repository';
 import { PrismaLeadBriefSummaryReader } from './infrastructure/prisma-lead-brief-summary-reader';
 import { PrismaLeadNotificationOutbox } from './infrastructure/prisma-lead-notification-outbox';
 import { PrismaLeadQueryAdapter } from './infrastructure/prisma-lead-query-adapter';
@@ -81,6 +88,7 @@ import { RedisMatchingEventPublisher } from './infrastructure/redis-matching-eve
 import { RedisRematchLockAdapter } from './infrastructure/redis-rematch-lock';
 import { SesLeadNotificationMailer } from './infrastructure/ses-lead-notification-mailer';
 import { AdminMatchingController } from './interface/http/admin-matching.controller';
+import { ConseillerConversationController } from './interface/http/conseiller-conversation.controller';
 import { ConseillerLeadController } from './interface/http/conseiller-lead.controller';
 
 /** Intervalle de drain de l'outbox matching (5 s prod, 30 s dev). */
@@ -97,7 +105,11 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     // Queue notifications conseiller (012) — un job par destinataire.
     BullModule.registerQueue({ name: LEAD_NOTIFICATIONS_QUEUE }),
   ],
-  controllers: [AdminMatchingController, ConseillerLeadController],
+  controllers: [
+    AdminMatchingController,
+    ConseillerLeadController,
+    ConseillerConversationController,
+  ],
   providers: [
     // ---------------------------------------------------------------
     // Communs — Clock + UuidGenerator (singleton dans tout le module)
@@ -415,6 +427,44 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     LeadNotificationSender,
     LeadNotificationWorker,
     MatchingEventsConsumer,
+
+    // ---------------------------------------------------------------
+    // Feature 013 — Conversation conseiller ↔ voyageur (US1)
+    // Adapters → ports + use cases (ouverture, envoi, lecture).
+    // ---------------------------------------------------------------
+    PrismaConversationRepository,
+    { provide: CONVERSATION_REPO, useExisting: PrismaConversationRepository },
+
+    PrismaConversationNotificationOutbox,
+    {
+      provide: CONVERSATION_NOTIFICATION_OUTBOX,
+      useExisting: PrismaConversationNotificationOutbox,
+    },
+
+    {
+      provide: OpenConversationOnLeadAcceptedUseCase,
+      inject: [CLOCK, UUID_GENERATOR, CONVERSATION_REPO],
+      useFactory: (clock, uuid, repo) =>
+        new OpenConversationOnLeadAcceptedUseCase({ clock, uuid, repo }),
+    },
+    {
+      provide: SendMessageUseCase,
+      inject: [
+        CLOCK,
+        UUID_GENERATOR,
+        CONVERSATION_REPO,
+        CONVERSATION_NOTIFICATION_OUTBOX,
+        LEAD_READER,
+        CONFORMITE_QUERY_PORT,
+      ],
+      useFactory: (clock, uuid, repo, outbox, leadReader, conformiteQuery) =>
+        new SendMessageUseCase({ clock, uuid, repo, outbox, leadReader, conformiteQuery }),
+    },
+    {
+      provide: ListConversationMessagesUseCase,
+      inject: [CONVERSATION_REPO],
+      useFactory: (repo) => new ListConversationMessagesUseCase({ repo }),
+    },
   ],
   exports: [MATCHING_QUERY_PORT, MATCHING_LEAD_QUERY_PORT],
 })
