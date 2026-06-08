@@ -27,6 +27,7 @@ import {
   CONSEILLER_IDENTITY_RESOLVER,
   CONSEILLER_SNAPSHOT_READER,
   CONSUMED_EVENT_STORE,
+  CONVERSATION_NOTIFICATION_MAILER,
   CONVERSATION_NOTIFICATION_OUTBOX,
   CONVERSATION_OPENER,
   CONVERSATION_REPO,
@@ -61,6 +62,12 @@ import { EmbeddedFsaCentroidReader } from './infrastructure/embedded-fsa-centroi
 import { AllMatchesRevokedScheduler } from './infrastructure/jobs/all-matches-revoked.scheduler';
 import { BriefActivatedConsumer } from './infrastructure/jobs/brief-activated.consumer';
 import {
+  CONVERSATION_NOTIFICATIONS_QUEUE,
+  ConversationNotificationDispatcher,
+  ConversationNotificationSender,
+  ConversationNotificationWorker,
+} from './infrastructure/jobs/conversation-notification.job';
+import {
   LEAD_NOTIFICATIONS_QUEUE,
   LeadNotificationDispatcher,
   LeadNotificationSender,
@@ -88,6 +95,7 @@ import { PrismaMatchingQueryAdapter } from './infrastructure/prisma-matching-que
 import { PrismaMatchingResultRepository } from './infrastructure/prisma-matching-result-repository';
 import { RedisMatchingEventPublisher } from './infrastructure/redis-matching-event-publisher';
 import { RedisRematchLockAdapter } from './infrastructure/redis-rematch-lock';
+import { SesConversationMailer } from './infrastructure/ses-conversation-mailer';
 import { SesLeadNotificationMailer } from './infrastructure/ses-lead-notification-mailer';
 import { AdminMatchingController } from './interface/http/admin-matching.controller';
 import { ConseillerConversationController } from './interface/http/conseiller-conversation.controller';
@@ -106,6 +114,8 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     ConformiteModule,
     // Queue notifications conseiller (012) — un job par destinataire.
     BullModule.registerQueue({ name: LEAD_NOTIFICATIONS_QUEUE }),
+    // Queue notifications conversation (013) — un job par destinataire.
+    BullModule.registerQueue({ name: CONVERSATION_NOTIFICATIONS_QUEUE }),
   ],
   controllers: [
     AdminMatchingController,
@@ -482,6 +492,14 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     // Adaptateur in-process consommé par RecordLeadTransitionUseCase.
     LeadAcceptedConversationOpener,
     { provide: CONVERSATION_OPENER, useExisting: LeadAcceptedConversationOpener },
+
+    // T017 — notifications conversation (1 job/destinataire) : mailer SES +
+    // dispatcher/sender/worker BullMQ. Drain périodique via OnModuleInit.
+    SesConversationMailer,
+    { provide: CONVERSATION_NOTIFICATION_MAILER, useExisting: SesConversationMailer },
+    ConversationNotificationDispatcher,
+    ConversationNotificationSender,
+    ConversationNotificationWorker,
   ],
   exports: [MATCHING_QUERY_PORT, MATCHING_LEAD_QUERY_PORT],
 })
@@ -489,11 +507,13 @@ export class MatchingModule implements OnModuleInit, OnModuleDestroy {
   private outboxInterval?: NodeJS.Timeout;
   private leadDispatchInterval?: NodeJS.Timeout;
   private leadReconcileInterval?: NodeJS.Timeout;
+  private conversationDispatchInterval?: NodeJS.Timeout;
 
   constructor(
     private readonly outboxJob: MatchingOutboxPublisherJob,
     private readonly leadDispatcher: LeadNotificationDispatcher,
     private readonly leadReconciliation: LeadReconciliationScheduler,
+    private readonly conversationDispatcher: ConversationNotificationDispatcher,
   ) {}
 
   onModuleInit(): void {
@@ -514,11 +534,18 @@ export class MatchingModule implements OnModuleInit, OnModuleDestroy {
     this.leadReconcileInterval = setInterval(() => {
       void this.leadReconciliation.sweep();
     }, LEAD_RECONCILE_INTERVAL_MS);
+
+    // Dispatch des notifications conversation pending (013) — même cadence que
+    // les notifications conseiller ; un job BullMQ par destinataire.
+    this.conversationDispatchInterval = setInterval(() => {
+      void this.conversationDispatcher.dispatchPending();
+    }, OUTBOX_DRAIN_INTERVAL_MS);
   }
 
   onModuleDestroy(): void {
     if (this.outboxInterval) clearInterval(this.outboxInterval);
     if (this.leadDispatchInterval) clearInterval(this.leadDispatchInterval);
     if (this.leadReconcileInterval) clearInterval(this.leadReconcileInterval);
+    if (this.conversationDispatchInterval) clearInterval(this.conversationDispatchInterval);
   }
 }

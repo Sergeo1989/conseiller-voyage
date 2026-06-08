@@ -15,6 +15,7 @@ import type {
   EnqueueConversationNotifResult,
   ListMessagesResult,
   MessageRecord,
+  PendingConversationNotif,
 } from '../ports';
 
 interface StoredMessage {
@@ -88,13 +89,20 @@ export class FakeConversationRepo implements ConversationRepo {
   }
 }
 
+interface FakeNotifEntry {
+  readonly id: string;
+  readonly messageId: string;
+  readonly recipient: ConversationParticipant;
+  readonly idempotencyKey: string;
+  /** Renseigné uniquement si seedé explicitement (l'enqueue ne le porte pas). */
+  conversationId: string;
+  status: 'pending' | 'sent' | 'failed';
+  sentAt: Date | null;
+  lastError: string | null;
+}
+
 export class FakeConversationNotificationOutbox implements ConversationNotificationOutbox {
-  readonly entries: Array<{
-    readonly id: string;
-    readonly messageId: string;
-    readonly recipient: ConversationParticipant;
-    readonly idempotencyKey: string;
-  }> = [];
+  readonly entries: FakeNotifEntry[] = [];
 
   async enqueue(input: EnqueueConversationNotifInput): Promise<EnqueueConversationNotifResult> {
     if (this.entries.some((e) => e.idempotencyKey === input.idempotencyKey)) {
@@ -105,7 +113,39 @@ export class FakeConversationNotificationOutbox implements ConversationNotificat
       messageId: input.messageId,
       recipient: input.recipient,
       idempotencyKey: input.idempotencyKey,
+      conversationId: '',
+      status: 'pending',
+      sentAt: null,
+      lastError: null,
     });
     return { kind: 'created' };
+  }
+
+  async scanPending(limit: number): Promise<ReadonlyArray<PendingConversationNotif>> {
+    return this.entries
+      .filter((e) => e.status === 'pending')
+      .slice(0, limit)
+      .map((e) => ({
+        id: e.id,
+        messageId: e.messageId,
+        conversationId: e.conversationId,
+        recipient: e.recipient,
+      }));
+  }
+
+  async markSent(id: string, at: Date): Promise<void> {
+    const e = this.entries.find((x) => x.id === id);
+    if (e) {
+      e.status = 'sent';
+      e.sentAt = at;
+    }
+  }
+
+  async markFailed(id: string, error: string): Promise<void> {
+    const e = this.entries.find((x) => x.id === id);
+    if (e) {
+      e.status = 'failed';
+      e.lastError = error;
+    }
   }
 }
