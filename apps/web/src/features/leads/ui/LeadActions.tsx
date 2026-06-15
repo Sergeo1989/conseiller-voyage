@@ -9,7 +9,7 @@
 import type { ActionResult } from '@/shared/lib/result';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { acceptLeadAction } from '../actions/accept-lead.action';
 import { markBookingConfirmedAction } from '../actions/mark-booking-confirmed.action';
 import { markLostAction } from '../actions/mark-lost.action';
@@ -27,8 +27,17 @@ export function LeadActions({ leadId, currentState }: { leadId: string; currentS
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<LeadAction | null>(null);
   const [reason, setReason] = useState('');
+  const confirmRef = useRef<HTMLButtonElement>(null);
 
-  const available = WRITABLE_NEXT[currentState];
+  // À l'ouverture du panneau de confirmation, on déplace le focus dessus pour
+  // que les lecteurs d'écran annoncent l'alertdialog (WCAG 2.1 AA).
+  useEffect(() => {
+    if (confirming) confirmRef.current?.focus();
+  }, [confirming]);
+
+  // `currentState` provient du JSON de l'API (runtime) : on se protège d'un état
+  // hors union (dérive d'enum canonique) qui rendrait `available` undefined → crash.
+  const available = WRITABLE_NEXT[currentState] ?? [];
   if (available.length === 0) return null;
 
   function run(action: LeadAction): void {
@@ -41,6 +50,9 @@ export function LeadActions({ leadId, currentState }: { leadId: string; currentS
         router.refresh();
       } else {
         setError(errorMessage(t, res.error.code, res.error.message));
+        // Conflit d'état : la vue est périmée — on resynchronise les actions
+        // disponibles en plus du message (cf. en-tête du composant).
+        if (res.error.code === 'CONFLICT') router.refresh();
       }
     });
   }
@@ -77,8 +89,15 @@ export function LeadActions({ leadId, currentState }: { leadId: string; currentS
       </div>
 
       {confirming && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-4">
-          <p className="text-sm text-amber-900">
+        <div
+          role="alertdialog"
+          aria-labelledby="lead-confirm-msg"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && !pending) setConfirming(null);
+          }}
+          className="rounded-md border border-amber-300 bg-amber-50 p-4"
+        >
+          <p id="lead-confirm-msg" className="text-sm text-amber-900">
             {confirming === 'refuse' ? t('confirmRefuse') : t('confirmLost')}
           </p>
           <label className="mt-2 block text-sm text-slate-700">
@@ -94,6 +113,7 @@ export function LeadActions({ leadId, currentState }: { leadId: string; currentS
           </label>
           <div className="mt-2 flex gap-2">
             <button
+              ref={confirmRef}
               type="button"
               onClick={() => run(confirming)}
               disabled={pending}
@@ -114,7 +134,7 @@ export function LeadActions({ leadId, currentState }: { leadId: string; currentS
       )}
 
       {error && (
-        <p role="alert" aria-live="polite" className="text-sm text-rose-600">
+        <p role="alert" className="text-sm text-rose-600">
           {error}
         </p>
       )}

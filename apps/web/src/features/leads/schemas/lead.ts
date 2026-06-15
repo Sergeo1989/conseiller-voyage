@@ -2,16 +2,13 @@
 // Miroir des réponses HTTP de 012 (ConseillerLeadController). Aucune PII de
 // contact, aucun champ transactionnel.
 
+import type { LeadState } from '@cv/shared/matching';
 import { z } from 'zod';
 
-export type LeadState =
-  | 'envoye'
-  | 'vu'
-  | 'accepte'
-  | 'refuse'
-  | 'devis_envoye'
-  | 'reservation_confirmee'
-  | 'perdu';
+// `LeadState` est ré-exporté depuis la source de vérité `@cv/shared/matching`
+// (et non recopié) pour qu'un ajout d'état déclenche une erreur de compilation
+// ici plutôt qu'une dérive silencieuse (cf. WRITABLE_NEXT exhaustif ci-dessous).
+export type { LeadState };
 
 export interface LeadBriefSummary {
   readonly destinations: string[];

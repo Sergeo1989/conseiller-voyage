@@ -429,8 +429,10 @@
     "messageTooLong": "Message too long (4000 characters max).",
     "messageEmpty": "The message cannot be empty.",
     "listTitle": "My conversations",
+    "loadError": "We couldn't load your conversations right now. Please try again shortly.",
     "listEmpty": "No conversations yet.",
     "lastMessage": "Last message",
+    "noMessages": "No messages yet",
     "active": "Active",
     "readOnlyBadge": "Read-only",
     "open": "Open"
@@ -438,6 +440,7 @@
   "leads": {
     "title": "My leads",
     "subtitle": "Travel projects matching your profile.",
+    "loadError": "We couldn't load your leads right now. Please try again shortly.",
     "empty": "No leads yet.",
     "position": "Match {n}/3",
     "openConversation": "Open conversation",
@@ -484,7 +487,9 @@
   },
   "dashboard": {
     "leadsWidget": "My leads",
+    "leadsWidgetDesc": "Review the travel projects that match your profile.",
     "conversationsWidget": "My conversations",
+    "conversationsWidgetDesc": "Exchange with the travellers you support.",
     "view": "View"
   }
 }

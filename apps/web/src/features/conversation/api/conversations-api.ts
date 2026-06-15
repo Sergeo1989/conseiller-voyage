@@ -50,12 +50,21 @@ interface ConversationListResponse {
   total: number;
 }
 
+/**
+ * Résultat de liste : `error` distingue une panne API d'une liste vide
+ * (sinon un incident afficherait « aucune conversation »).
+ */
+export interface ConversationListResult {
+  readonly items: ConversationListItem[];
+  readonly error: boolean;
+}
+
 /** Liste des fils du conseiller courant (cloisonnement côté API). */
-export async function listConversations(): Promise<ConversationListItem[]> {
+export async function listConversations(): Promise<ConversationListResult> {
   const res = await apiClient.get<ConversationListResponse>(
     '/api/matching/conseiller/conversations?page=1&pageSize=50',
   );
-  return res.ok ? res.data.items : [];
+  return res.ok ? { items: res.data.items, error: false } : { items: [], error: true };
 }
 
 /** Page de messages d'un fil (entête `writable` + pièces jointes). `null` si refusé/introuvable. */

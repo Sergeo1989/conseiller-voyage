@@ -12,8 +12,16 @@ export interface ListLeadsParams {
   readonly state?: LeadState;
 }
 
+/**
+ * Résultat de liste : `error` distingue une panne API (rendre un état dégradé)
+ * d'une liste réellement vide — sinon un incident afficherait « 0 lead ».
+ */
+export interface LeadListResult extends LeadListPage {
+  readonly error: boolean;
+}
+
 /** Liste paginée des leads du conseiller courant (cloisonnement côté API). */
-export async function listLeads(params: ListLeadsParams = {}): Promise<LeadListPage> {
+export async function listLeads(params: ListLeadsParams = {}): Promise<LeadListResult> {
   const qs = new URLSearchParams();
   if (params.page) qs.set('page', String(params.page));
   if (params.pageSize) qs.set('pageSize', String(params.pageSize));
@@ -21,9 +29,15 @@ export async function listLeads(params: ListLeadsParams = {}): Promise<LeadListP
   const suffix = qs.toString() ? `?${qs.toString()}` : '';
   const res = await apiClient.get<LeadListPage>(`/api/matching/conseiller/leads${suffix}`);
   if (!res.ok) {
-    return { items: [], page: params.page ?? 1, pageSize: params.pageSize ?? 20, total: 0 };
+    return {
+      items: [],
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 20,
+      total: 0,
+      error: true,
+    };
   }
-  return res.data;
+  return { ...res.data, error: false };
 }
 
 /** Détail d'un lead (auto-`vu` à la 1re consultation côté 012). `null` si introuvable/refusé. */

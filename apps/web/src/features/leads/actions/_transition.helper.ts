@@ -5,10 +5,10 @@
 
 import 'server-only';
 import { toUrlLocale } from '@/i18n';
-import { apiClient } from '@/shared/lib/http';
+import { type ApiFailure, type ApiResult, apiClient } from '@/shared/lib/http';
 import { type ActionResult, err, ok } from '@/shared/lib/result';
 import { revalidatePath } from 'next/cache';
-import type { LeadView } from '../schemas/lead';
+import { type LeadView, reasonSchema } from '../schemas/lead';
 
 interface TransitionInput {
   readonly leadId: string;
@@ -18,17 +18,31 @@ interface TransitionInput {
 }
 
 export async function callLeadTransition(input: TransitionInput): Promise<ActionResult<LeadView>> {
-  const body = input.reason !== undefined ? { reason: input.reason } : {};
-  const res = await apiClient.post<LeadView>(
-    `/api/matching/conseiller/leads/${input.leadId}/${input.verb}`,
-    body,
-    { idempotent: true },
-  );
+  // Validation Zod côté serveur (Principe IX) avant tout appel : rejette un
+  // leadId malformé ou une raison hors limite sans atteindre l'API.
+  const parsed = reasonSchema.safeParse({ leadId: input.leadId, reason: input.reason });
+  if (!parsed.success) {
+    return err('VALIDATION', 'Requête invalide.');
+  }
+  const body = parsed.data.reason !== undefined ? { reason: parsed.data.reason } : {};
+
+  let res: ApiResult<LeadView> | ApiFailure;
+  try {
+    res = await apiClient.post<LeadView>(
+      `/api/matching/conseiller/leads/${parsed.data.leadId}/${input.verb}`,
+      body,
+      { idempotent: true },
+    );
+  } catch {
+    // Panne réseau / API injoignable : retour gracieux plutôt que throw qui
+    // remonterait à la error boundary (adversarial #2).
+    return err('ACTION_ERROR', 'Action impossible pour le moment. Réessayez.');
+  }
   if (!res.ok) return mapError(res.status, res.errorBody);
 
   const urlLocale = toUrlLocale(input.locale);
   revalidatePath(`/${urlLocale}/conseiller/leads`);
-  revalidatePath(`/${urlLocale}/conseiller/leads/${input.leadId}`);
+  revalidatePath(`/${urlLocale}/conseiller/leads/${parsed.data.leadId}`);
   return ok(res.data);
 }
 

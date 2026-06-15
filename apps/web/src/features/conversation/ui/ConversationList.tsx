@@ -42,7 +42,7 @@ export function ConversationList({
                   </time>
                 </>
               ) : (
-                t('listEmpty')
+                t('noMessages')
               )}
             </span>
             <span

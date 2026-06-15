@@ -572,8 +572,10 @@
     "messageTooLong": "Message trop long (4000 caractères max).",
     "messageEmpty": "Le message ne peut pas être vide.",
     "listTitle": "Mes conversations",
+    "loadError": "Impossible de charger vos conversations pour le moment. Réessayez dans un instant.",
     "listEmpty": "Aucune conversation pour le moment.",
     "lastMessage": "Dernier message",
+    "noMessages": "Aucun message",
     "active": "Active",
     "readOnlyBadge": "Lecture seule",
     "open": "Ouvrir"
@@ -581,6 +583,7 @@
   "leads": {
     "title": "Mes leads",
     "subtitle": "Les projets de voyage qui correspondent à votre profil.",
+    "loadError": "Impossible de charger vos leads pour le moment. Réessayez dans un instant.",
     "empty": "Aucun lead pour le moment.",
     "position": "Proposition {n}/3",
     "openConversation": "Ouvrir la conversation",
@@ -627,7 +630,9 @@
   },
   "dashboard": {
     "leadsWidget": "Mes leads",
+    "leadsWidgetDesc": "Consulter les projets de voyage qui correspondent à votre profil.",
     "conversationsWidget": "Mes conversations",
+    "conversationsWidgetDesc": "Échanger avec les voyageurs accompagnés.",
     "view": "Consulter"
   }
 }

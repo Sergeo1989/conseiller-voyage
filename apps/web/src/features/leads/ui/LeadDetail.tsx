@@ -50,7 +50,7 @@ export function LeadDetail({ lead, locale }: { lead: LeadView; locale: Locale })
               <time dateTime={h.occurredAt}>{format.dateTime(new Date(h.occurredAt))}</time>
               <span>·</span>
               <span>{t(`status.${h.toState}`)}</span>
-              <span className="text-slate-400">({t(`by.${h.actor}`)})</span>
+              <span className="text-slate-600">({t(`by.${h.actor}`)})</span>
             </li>
           ))}
         </ol>

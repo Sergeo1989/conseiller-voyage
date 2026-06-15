@@ -14,13 +14,21 @@ export default async function ConversationsPage({ params }: PageProps) {
   const { locale } = await params;
   await requireConseiller({ locale });
   const t = await getTranslations({ locale, namespace: 'conversation' });
-  const conversations = await listConversations();
+  const { items, error } = await listConversations();
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="text-2xl font-bold text-slate-900">{t('listTitle')}</h1>
+      {error && (
+        <p
+          role="alert"
+          className="mt-4 rounded-md border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+        >
+          {t('loadError')}
+        </p>
+      )}
       <div className="mt-6">
-        <ConversationList conversations={conversations} locale={locale} />
+        <ConversationList conversations={items} locale={locale} />
       </div>
     </main>
   );
