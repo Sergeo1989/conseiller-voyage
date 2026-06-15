@@ -15,10 +15,11 @@ ne parse donc **pas** un grand blob ; ses cibles concrètes :
    mobilite_reduite | multigenerationnel | culturel_historique | luxe | road_trip |
    voyage_affaires`). C'est le gain le plus direct : l'axe *speciality* (poids 0,25,
    ADR-0020) est un match binaire sur l'enum — aujourd'hui `autre` ne matche rien.
-2. **Extraire des intentions complémentaires** depuis `budgetNote` / `specialityOther` /
-   notes de région : destinations additionnelles, type de projet, indices de période,
-   langue, signaux de spécialité secondaires.
-3. **Normaliser** le texte pour une éventuelle lecture conseiller (anti-PII, anti-marketplace).
+2. **Extraire des destinations additionnelles** depuis `budgetNote` / `specialityOther` /
+   notes de région → **consommées** par l'axe destination du scoring (union, déterministes
+   toujours conservées — clarification 2026-06-15), + la langue.
+3. *(Retiré, clarification 2026-06-15)* : aucune reformulation/texte libre n'est persistée
+   (minimisation Loi 25). Seules les intentions **structurées** sont stockées.
 
 **Rationale** : maximise la valeur matching mesurable (SC-006) sans sur-promettre un
 parsing de blob inexistant. **Alternatives rejetées** : enrichir tous les champs
@@ -94,8 +95,9 @@ au LLM (viole minimisation) ; effacement applicatif seul (le pattern projet est 
 ## R6 — Déterminisme préservé (Principe VI)
 
 **Décision** : la logique sensible testée en TDD ici est la **fusion intentions enrichies →
-entrée de scoring** (fonction pure : « si `speciality = autre` et enrichissement fournit une
-spécialité canonique de confiance ≥ seuil, utiliser l'enrichie ; sinon déterministe ») et la
+entrée de scoring** (fonction pure : (a) si `speciality = autre` + confiance ≥ seuil → spécialité
+canonique, sinon déterministe ; (b) `destinations` = **union** déterministe ∪ enrichies sous
+seuil, déterministes toujours conservées — clarification 2026-06-15) et la
 **validation/sanitisation de la sortie LLM**. La validation de brief 008 reste inchangée.
 
 **Rationale** : Principe VI — la seule nouvelle logique métier (règle de fusion + frontière

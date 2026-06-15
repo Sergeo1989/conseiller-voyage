@@ -46,8 +46,10 @@ consomme) doivent être actées :
 - **Sweep de réconciliation** (pattern feature 012) : tout brief activé non apparié sous
   N minutes est apparié → le matching n'est **jamais** durablement bloqué si le job échoue.
 - Le matching lit l'enrichi via le port public `BriefEnrichmentQueryPort` et applique une
-  **fonction pure** (`mergeEnrichmentIntoSnapshot`) : effet borné = résoudre `speciality =
-  'autre'` → canonique. Poids, plafond 3, filtre `verified` **inchangés**.
+  **fonction pure** (`mergeEnrichmentIntoSnapshot`). Effets au MVP (sous seuil de confiance,
+  clarification 2026-06-15) : (a) résoudre `speciality = 'autre'` → canonique ; (b) **augmenter**
+  l'ensemble de destinations (union ; déterministes **toujours** conservées, jamais écrasées —
+  FR-003). Poids, plafond 3, filtre `verified` **inchangés**.
 
 ## Conséquences
 
@@ -74,9 +76,17 @@ consomme) doivent être actées :
 | **Appeler un SDK LLM directement depuis l'application** | Couple le domaine au fournisseur (viole VIII + Principe V « derrière `LlmProvider` »). |
 | **Fournisseur hors région CA (ex. API publique US)** | Viole Loi 25 (résidence) — rédhibitoire. |
 
-## Points ouverts (à trancher avant merge)
+## Décisions de clarification (2026-06-15)
 
-- **Revue juridique Loi 25** : un *avis de traitement automatisé* explicite côté voyageur
-  est-il requis, ou le consentement d'intake existant (008/004) suffit-il ? Si requis →
-  ajouter la divulgation (probablement dans la politique Loi 25, feature 004).
-- Choix précis du modèle Bedrock + seuil de `confidence` : à calibrer en implémentation.
+- **Loi 25 (résolu)** : **avis de traitement automatisé léger** — divulgation dans l'intake +
+  politique Loi 25 (feature 004), **sans** porte de consentement dédiée (l'enrichissement n'est
+  pas conditionné à un opt-in). Encodé FR-016.
+- **Périmètre scoring (résolu)** : le MVP consomme `speciality` **et** `destinations` enrichies
+  (union, déterministes conservées) — pas seulement la spécialité.
+- **Minimisation (résolu)** : **aucun texte libre persisté** (pas de reformulation) ; seules les
+  intentions structurées sont stockées.
+
+## Points ouverts (calibration implémentation)
+
+- Choix précis du modèle Bedrock + **seuil de `confidence`** (commun à la résolution de
+  spécialité et à l'injection de destinations) : à calibrer en implémentation.

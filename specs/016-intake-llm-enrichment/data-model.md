@@ -14,10 +14,8 @@ Artefact dérivé best-effort d'un brief. **Relation 1:1 idempotente** avec un b
 | `briefId` | uuid | **UNIQUE**, FK logique → `voyageur_briefs.id` (cloisonnement intake). Clé d'idempotence. |
 | `status` | enum `EnrichmentStatus` | `enrichi` \| `partiel` \| `non_enrichi` \| `indisponible` |
 | `enrichedSpeciality` | enum `Speciality` \| null | spécialité **canonique** inférée (jamais `autre`) quand le brief était `autre` + texte ; null sinon |
-| `enrichedDestinations` | jsonb (string[]) | destinations/pays additionnels détectés (indicatif ; le déterministe reste maître) |
+| `enrichedDestinations` | jsonb (string[]) | destinations/pays additionnels détectés ; **consommés** par le scoring (augmentent l'ensemble, cf. fusion). Le déterministe reste toujours présent. |
 | `languageDetected` | enum `ConseillerLanguage` \| null | langue détectée du texte |
-| `periodHints` | text \| null | indices de période non structurés normalisés (jamais une date faisant autorité) |
-| `normalizedSummary` | text \| null | reformulation neutre, **sans PII ni montant** (anti-marketplace) |
 | `confidence` | numeric(3,2) | 0.00–1.00 ; en dessous d'un seuil → traité comme `partiel`/`non_enrichi` |
 | `providerVersion` | text | provenance (modèle + version de prompt) pour traçabilité/rejeu |
 | `inputTokens` / `outputTokens` | int | usage (coût/observabilité) |
@@ -29,8 +27,8 @@ Artefact dérivé best-effort d'un brief. **Relation 1:1 idempotente** avec un b
 - `briefId` unique → idempotence (R4, SC-005).
 - `enrichedSpeciality` ∈ taxonomie **sans** `autre` (la résolution de `autre` est tout l'intérêt).
 - `status = enrichi` ⇒ au moins une intention exploitable + `confidence ≥ seuil`.
-- Aucun champ ne contient de PII de contact ni de montant/prix (FR-004/011, SC-004 — scan).
-- `redactedAt != null` ⇒ `normalizedSummary`, `enrichedDestinations`, `periodHints` neutralisés.
+- Aucun champ ne contient de PII de contact ni de montant/prix (FR-004/011, SC-004 — scan). **Aucun champ texte libre persisté** (clarification 2026-06-15) → surface anti-PII minimale.
+- `redactedAt != null` ⇒ `enrichedDestinations` neutralisé (`[]`).
 
 ## Objet de valeur : `EnrichedIntentions` (sortie validée du LLM)
 
@@ -41,12 +39,12 @@ La sortie brute du modèle qui ne valide pas → rejetée → `status = indispon
 ```
 EnrichedIntentions {
   speciality?: Speciality (hors 'autre')   // null/absent autorisé
-  destinations?: string[]                  // pays/villes normalisés
+  destinations?: string[]                  // pays/villes normalisés (consommés par le scoring)
   language?: ConseillerLanguage
-  periodHints?: string                     // ≤ 200 c., normalisé
-  summary?: string                         // ≤ 500 c., neutre, sans PII/montant
   confidence: number (0..1)
 }
+// Pas de champ texte libre (summary/periodHints retirés — clarification 2026-06-15,
+// minimisation Loi 25). Toute normalisation interne reste transitoire, jamais persistée.
 ```
 
 ## Fonction pure : `mergeEnrichmentIntoSnapshot` (logique testée Principe VI)
@@ -54,17 +52,22 @@ EnrichedIntentions {
 Entrée : `BriefSnapshot` déterministe (matching 011) + `BriefEnrichment | null`.
 Sortie : `BriefSnapshot` effectif pour le scoring.
 
-Règles (TDD, cas nominal + erreur) :
+Règles (TDD, cas nominal + erreur) — clarification 2026-06-15 :
 - `speciality` : si déterministe ≠ `autre` → **inchangé** (déterministe prévaut, FR-003).
-  Si déterministe = `autre` **et** `enrichment.status ∈ {enrichi}` **et** `enrichedSpeciality != null`
-  → utiliser `enrichedSpeciality`. Sinon → `autre` (inchangé).
-- Autres axes (destination, geo, familiarity, langue) : **inchangés** par défaut au MVP
-  (enrichi = indicatif). `enrichedDestinations` non injecté dans le scoring MVP (évite de
-  fausser l'axe destination déterministe) — réservé à un incrément ultérieur.
+  Si déterministe = `autre` **et** `enrichment.status = enrichi` **et** `enrichedSpeciality != null`
+  **et** `confidence ≥ seuil` → utiliser `enrichedSpeciality`. Sinon → `autre` (inchangé).
+- `destinations` : **union** des destinations déterministes (TOUJOURS conservées) et des
+  `enrichedDestinations`, **uniquement** si `confidence ≥ seuil`. L'enrichi **augmente**
+  l'ensemble, ne **retire/écrase jamais** une destination déterministe (FR-003). Dédupliqué,
+  ordre stable.
+- Autres axes (geo, familiarity, langue) : **inchangés** au MVP.
 - `enrichment = null` ou non `enrichi` → snapshot déterministe tel quel.
 
 > Le scoring lui-même (poids, plafond 3, filtre vérifié) n'est **pas** modifié (FR-008).
-> Seule l'**entrée** `speciality` peut être résolue quand elle valait `autre`.
+> Seules les **entrées** `speciality` (si `autre`) et `destinations` (par union) sont enrichies,
+> de façon **pure et déterministe** une fois la sortie LLM validée. La fonction est testée
+> AVANT implémentation (Principe VI) : cas déterministe-prévaut, union destinations,
+> confiance < seuil, enrichment absent/non fiable.
 
 ## Flux & événements
 
@@ -79,9 +82,9 @@ Règles (TDD, cas nominal + erreur) :
 ## Cascade Loi 25
 
 Trigger Postgres (aligné ADR-0023) : `voyageur_briefs.status → 'anonymized'` ⇒
-`UPDATE brief_enrichments SET normalizedSummary=NULL, enrichedDestinations='[]',
-periodHints=NULL, redactedAt=now()` pour le `briefId`. L'audit d'intake (008) reste maître
-de la traçabilité ; aucune PII n'était stockée ici de toute façon.
+`UPDATE brief_enrichments SET enrichedDestinations='[]', redactedAt=now()` pour le `briefId`.
+L'audit d'intake (008) reste maître de la traçabilité ; aucun texte libre ni PII n'est stocké
+ici (minimisation), la cascade ne neutralise donc que les destinations enrichies.
 
 ## Migration
 

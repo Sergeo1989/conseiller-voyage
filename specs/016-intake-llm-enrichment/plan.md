@@ -9,8 +9,11 @@
 Couche d'**enrichissement best-effort** du brief d'intake (008), au service du matching
 (011). Un port `LlmProvider` (nouveau, Bedrock `ca-central-1` derrière l'interface) extrait
 des **intentions structurées** depuis les seuls champs texte libre du brief (`budgetNote`,
-`specialityOther`, notes de région) — sa valeur concrète : **résoudre `speciality = 'autre'`
-→ une spécialité canonique** consommée par l'axe *speciality* du scoring. L'enrichissement
+`specialityOther`, notes de région) — valeur concrète (clarifications 2026-06-15) :
+**résoudre `speciality = 'autre'` → spécialité canonique** ET **augmenter l'ensemble de
+destinations** (union, déterministes toujours conservées), sous seuil de confiance. Aucun
+texte libre n'est persisté (minimisation Loi 25) ; un **avis de traitement automatisé** léger
+est ajouté (FR-016). L'enrichissement
 vit **en arrière-plan, en amont du scoring**, déclenché par `voyageur.brief.activated` ; il
 **ne touche jamais** le chemin de soumission/vérification du voyageur, **ne bloque jamais**
 le matching (timeout + sweep de réconciliation), et **n'écrase jamais** une donnée validée
@@ -63,10 +66,13 @@ testé sur `normalizedSummary`/intentions). N'affecte pas le filtre `verified` d
 **Minimisation** : seuls le texte de projet (`budgetNote`, `specialityOther`, notes de région)
 + champs structurés **non identifiants** sont envoyés au LLM ; `voyageurContactId` et toute
 PII de contact **exclus** (FR-004, SC-004). **Région CA** : Bedrock ca-central-1 (FR-005,
-SC-008). **Effacement** : cascade trigger Postgres (pattern ADR-0023) redacte le
-`BriefEnrichment` quand le brief est anonymisé (FR-015). **Anti-PII defense-in-depth** :
-scan étendu aux tables d'enrichissement. Rétention : alignée sur le brief (pas de nouvelle
-donnée personnelle conservée au-delà).
+SC-008). **Minimisation renforcée (clarification 2026-06-15)** : **aucun texte libre persisté**
+(pas de reformulation) — seules les intentions structurées (spécialité, destinations, langue)
+sont stockées → surface anti-PII minimale. **Avis de traitement automatisé** léger ajouté
+(FR-016 ; divulgation intake + politique Loi 25 / feature 004), sans porte de consentement
+dédiée. **Effacement** : cascade trigger Postgres (pattern ADR-0023) neutralise les
+destinations enrichies quand le brief est anonymisé (FR-015). **Anti-PII defense-in-depth** :
+scan étendu aux tables d'enrichissement.
 
 ### III. Qualité de lead avant volume — ✅ PASS
 Améliore la **qualité** d'appariement (résolution de `autre` → meilleure pertinence, SC-006)
@@ -74,8 +80,9 @@ sans toucher au **plafond 3** ni à la traçabilité d'état (matching/012 incha
 
 ### IV. Français d'abord — ✅ PASS
 FR-CA par défaut ; prise en charge d'une saisie non francophone (langue détectée comme
-intention, FR-012). Aucune copie utilisateur nouvelle (feature backend) ; messages/erreurs
-éventuels en clés i18n.
+intention, FR-012). **Copie utilisateur nouvelle** = l'avis de traitement automatisé (FR-016,
+clarification 2026-06-15) → rédigée **FR-CA** + clés i18n (EN), intégrée à l'intake / politique
+Loi 25 (feature 004).
 
 ### V. Architecture : monolithe modulaire — ✅ PASS
 Module **intake**. LLM **derrière `LlmProvider`** (constitution). **Plafond coût ≤ 0,05 USD/req**
@@ -85,9 +92,11 @@ FR-007). Couplage inter-module **uniquement** via le port public `BriefEnrichmen
 
 ### VI. Logique métier déterministe et testée (NON-NÉGOCIABLE) — ✅ PASS
 Seule logique sensible nouvelle = **fonctions pures** : `mergeEnrichmentIntoSnapshot` (règle
-de fusion : déterministe prévaut ; n'utilise l'enrichi que si `autre` + confiance ≥ seuil) et
-la **validation/sanitisation de la sortie LLM**. **TDD obligatoire** (tests écrits AVANT,
-commits séparés visibles ; cas nominal + erreur). La validation de brief 008 reste inchangée.
+de fusion : déterministe prévaut ; `speciality` enrichie seulement si `autre` + confiance ≥
+seuil ; `destinations` = **union** sous seuil, déterministes toujours conservées) et la
+**validation/sanitisation de la sortie LLM**. **TDD obligatoire** (tests écrits AVANT, commits
+séparés ; cas : déterministe-prévaut, union destinations, confiance < seuil, sortie non
+fiable). La validation de brief 008 reste inchangée.
 
 ### VII. Observabilité — ✅ PASS
 Métriques OTel `cv.intake.enrichment.*` (attempts/success/fallback par cause/latency/tokens),
@@ -117,8 +126,9 @@ Budget de temps strict (pas de blocage). SLO : le chemin voyageur n'est pas touc
 ### Definition of Done
 DoD constitution cochée avant merge : Vitest (purs, TDD) + Testcontainers verts ; lint
 Biome ; tsc ; boundaries ; scan anti-PII vert (tables d'enrichissement) ; invariant
-anti-marketplace ; FR-CA/i18n ; **ADR-0028** mergé ; revue juridique Loi 25 (avis traitement
-automatisé) tranchée ; migration testée en staging ; coût LLM mesuré sous plafond.
+anti-marketplace ; FR-CA/i18n ; **ADR-0028** mergé ; **avis de traitement automatisé** (FR-016)
+implémenté — divulgation intake + politique Loi 25 (feature 004) ; migration testée en
+staging ; coût LLM mesuré sous plafond.
 
 ## Project Structure
 
@@ -185,5 +195,6 @@ résolue via une fonction pure).
   parcours de validation. ✅ + **ADR-0028** (décision structurante fournisseur LLM).
 - **Phase 2 — tasks.md** (`/speckit-tasks`) : Setup → Foundational (port + schéma + migration)
   → US1 (enrichissement non bloquant + mode dégradé, TDD fonctions pures d'abord) → US2
-  (consommation matching via port public) → US3 (idempotence/coût/observabilité) → Polish
-  (scan anti-PII étendu, runbook, ADR, revue Loi 25).
+  (consommation matching via port public — speciality + union destinations) → US3
+  (idempotence/coût/observabilité) → Polish (scan anti-PII étendu, **avis FR-016** dans
+  l'intake + politique Loi 25 / feature 004, runbook, ADR).

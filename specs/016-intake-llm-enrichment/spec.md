@@ -19,6 +19,14 @@ soumission ni casser le caractère déterministe du brief. Contraintes non-négo
 Loi 25 / région canadienne, mode dégradé obligatoire, validation déterministe = source de
 vérité, idempotence et coût maîtrisé, anti-marketplace (ADR-0002) préservé."
 
+## Clarifications
+
+### Session 2026-06-15
+
+- Q: Loi 25 — le voyageur doit-il être informé/consentir explicitement à l'enrichissement automatisé ? → A: **Avis explicite léger** — divulgation du traitement automatisé dans l'intake + politique Loi 25 (feature 004), **sans** porte de consentement séparée (l'enrichissement n'est pas conditionné à un opt-in dédié).
+- Q: Quelles intentions enrichies alimentent le scoring au MVP ? → A: **`speciality` (résolution de `autre`) ET `destinations` enrichies** — les destinations détectées **augmentent** l'ensemble de destinations du scoring ; les destinations déterministes sont **toujours conservées** (jamais retirées/écrasées), injection sous seuil de confiance.
+- Q: Faut-il stocker une reformulation en texte libre (`normalizedSummary`) ? → A: **Non** — ne persister que les **intentions structurées** (speciality canonique, destinations enrichies, langue, confidence, statut, usage). Minimisation Loi 25 ; aucune surface de texte libre stockée.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — Le brief est enrichi sans jamais bloquer le voyageur (Priority: P1) 🎯 MVP
@@ -65,7 +73,7 @@ intacts.
 
 **Acceptance Scenarios**:
 
-1. **Given** un brief enrichi, **When** le matching s'exécute, **Then** il peut consommer les intentions structurées via une interface définie, sans changer ses règles déterministes ni le plafond de 3.
+1. **Given** un brief enrichi (`autre` résolu + destinations détectées), **When** le matching s'exécute, **Then** l'axe spécialité matche la valeur canonique et l'ensemble de destinations est augmenté des destinations enrichies (déterministes toujours présentes), **sans** changer poids, plafond de 3, ni filtre « vérifié ».
 2. **Given** un brief non enrichi (mode dégradé), **When** le matching s'exécute, **Then** il fonctionne sur le brief déterministe seul, sans erreur ni dépendance dure à l'enrichissement.
 
 ---
@@ -107,14 +115,15 @@ latence et usage sont visibles.
 
 ### Functional Requirements
 
-- **FR-001**: Le système DOIT, à partir du texte libre d'un brief, produire best-effort une **reformulation normalisée** et des **intentions structurées** : destinations, type de projet, période approximative, langue, indices de spécialité.
+- **FR-001**: Le système DOIT, à partir du texte libre d'un brief, produire best-effort des **intentions structurées** : **spécialité canonique** (résolvant `speciality = 'autre'`), **destinations** détectées, et **langue**. Aucune **reformulation en texte libre n'est persistée** (minimisation Loi 25, clarification 2026-06-15) ; toute normalisation interne reste transitoire.
 - **FR-002**: L'enrichissement DOIT être **non bloquant** : la soumission d'un brief DOIT réussir même si l'enrichissement échoue, dépasse son budget de temps, ou est indisponible (repli sur le brief déterministe).
 - **FR-003**: La **validation déterministe** du brief (008) DOIT rester la **source de vérité** : l'enrichissement NE DOIT NI modifier l'acceptation de la soumission, NI écraser/invalider un champ validé de façon déterministe.
 - **FR-004**: Le système NE DOIT JAMAIS transmettre de **PII de contact** du voyageur (nom, courriel, téléphone, adresse) au fournisseur d'enrichissement ; seuls le texte de projet de voyage et des champs non identifiants sont transmis.
 - **FR-005**: Tout traitement et toute donnée d'enrichissement DOIVENT rester en **région canadienne** (Loi 25).
 - **FR-006**: Le système DOIT **valider la sortie du fournisseur contre un schéma attendu** avant toute persistance ou utilisation ; une sortie malformée, hors schéma ou non sûre DOIT être écartée avec repli sur le brief brut (la sortie LLM est traitée comme non fiable).
 - **FR-007**: L'enrichissement DOIT être **idempotent par version de brief** : un re-traitement d'un brief inchangé NE DOIT PAS émettre d'appel redondant et DOIT réutiliser le résultat existant.
-- **FR-008**: Les intentions enrichies DOIVENT être **mises à disposition du matching** via une interface définie, **sans** changer les règles déterministes du scoring ni le **plafond de 3** conseillers ni le filtre « vérifié ».
+- **FR-008**: Les intentions enrichies DOIVENT être **mises à disposition du matching** via une interface définie. Au MVP le scoring consomme : (a) la **spécialité canonique** quand le brief valait `autre` ; (b) les **destinations enrichies**, qui **augmentent** l'ensemble de destinations (union) — les destinations déterministes sont **toujours conservées**, jamais retirées ni écrasées, et l'injection est conditionnée à un **seuil de confiance**. Les **poids**, le **plafond de 3** et le filtre « vérifié » restent **inchangés**.
+- **FR-016**: Le voyageur DOIT être **informé du traitement automatisé** (enrichissement LLM) de sa description, via une divulgation dans l'intake et la politique Loi 25 (feature 004) ; **aucune** porte de consentement dédiée n'est ajoutée et l'enrichissement n'est **pas** conditionné à un opt-in séparé (clarification 2026-06-15).
 - **FR-009**: Le système DOIT **enregistrer des métriques** d'enrichissement : taux de réussite, taux de repli (mode dégradé), latence, usage/coût.
 - **FR-010**: La capacité d'enrichissement DOIT être exposée **derrière une abstraction de fournisseur**, afin que le fournisseur LLM concret puisse changer sans impacter l'intake ni le matching. *(Le choix du fournisseur concret et de sa région est une décision structurante à acter en ADR au `/speckit.plan`.)*
 - **FR-011**: L'enrichissement DOIT **préserver les invariants anti-marketplace** (ADR-0002) : aucune coordonnée, aucun montant/prix, aucun lien ou donnée de réservation introduits.
@@ -126,7 +135,7 @@ latence et usage sont visibles.
 ### Key Entities *(include if feature involves data)*
 
 - **Brief** *(existant, 008)* : intake structuré + texte libre du voyageur ; source de vérité déterministe. L'enrichissement s'y rattache sans le modifier.
-- **Enrichissement de brief** : artefact dérivé d'un brief — reformulation normalisée + intentions structurées + niveau de confiance + statut (`enrichi` / `partiel` / `non_enrichi` / `indisponible`) + provenance (version de la capacité d'enrichissement). Relation **1:1 idempotente** avec une version de brief.
+- **Enrichissement de brief** : artefact dérivé d'un brief — **intentions structurées uniquement** (spécialité canonique, destinations enrichies, langue) + niveau de confiance + statut (`enrichi` / `partiel` / `non_enrichi` / `indisponible`) + provenance + usage. **Aucun texte libre persisté** (pas de reformulation, clarification 2026-06-15). Relation **1:1 idempotente** avec une version de brief.
 - **Intention structurée** : champs extraits alimentant le matching — destinations, type de projet, période approximative, langue, indices de spécialité (alignés sur la taxonomie de spécialités du matching 011).
 - **Métrique d'enrichissement** : indicateurs de réussite/repli/latence/usage pour l'observabilité (Principe VII).
 
@@ -150,6 +159,6 @@ latence et usage sont visibles.
 - **Timing** exprimé en résultat (SC-001), pas en architecture : le choix « enrichissement synchrone avec budget de temps + repli » vs « asynchrone avec ré-appariement quand prêt » est une décision de `/speckit.plan` ; les deux satisfont « ne jamais bloquer la soumission ».
 - Le **fournisseur LLM concret et sa région** (p. ex. Bedrock `ca-central-1`) sont décidés en **ADR** au `/speckit.plan`, derrière le port `LlmProvider` (Stack canonique).
 - Les **indices de spécialité** extraits sont alignés sur la **taxonomie de spécialités du matching 011** (plutôt que des étiquettes libres), pour une intégration directe au scoring.
-- L'enrichissement est **interne et best-effort** ; une **UI de visualisation/correction par le voyageur** est hors périmètre de cette feature (divulgation via la politique Loi 25 existante). À réévaluer si les règles Loi 25 sur le traitement automatisé imposent un avis explicite — **point de revue juridique au `/speckit.plan`**.
-- Le **consentement d'intake** existant (008/004) couvre la divulgation de l'enrichissement automatisé ; aucune nouvelle porte de consentement n'est ajoutée dans le MVP.
+- L'enrichissement est **interne et best-effort** ; une **UI de visualisation/correction par le voyageur** est hors périmètre de cette feature.
+- **Loi 25 (résolu, clarification 2026-06-15)** : un **avis explicite léger** de traitement automatisé est ajouté (divulgation dans l'intake + politique Loi 25 / feature 004) — FR-016 ; **pas** de porte de consentement dédiée, l'enrichissement n'est pas conditionné à un opt-in.
 - Le caractère **déterministe et testé** de la validation de brief (Principe VI) n'est pas touché : l'enrichissement est une couche additive de métadonnées.

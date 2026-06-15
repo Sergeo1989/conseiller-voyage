@@ -15,6 +15,7 @@ BriefEnrichmentView {
   briefId: string;
   status: 'enrichi' | 'partiel' | 'non_enrichi' | 'indisponible';
   enrichedSpeciality: Speciality | null;   // canonique, jamais 'autre'
+  enrichedDestinations: string[];          // [] si aucune ; augmentent l'ensemble de scoring
   confidence: number;                       // 0..1
 }
 // Vue minimale : aucun texte libre, aucune PII, aucun montant. Seul ce dont le scoring a besoin.
@@ -27,9 +28,10 @@ BriefEnrichmentView {
 
 Le `BriefSnapshotReader` (matching 011) compose le snapshot déterministe **puis** appelle
 `BriefEnrichmentQueryPort.getByBriefId` et applique la fonction pure
-`mergeEnrichmentIntoSnapshot` (cf. data-model). Effet **borné** au MVP : résoudre
-`speciality = 'autre'` → spécialité canonique. Poids, plafond 3, filtre `verified` :
-**inchangés** (FR-008).
+`mergeEnrichmentIntoSnapshot` (cf. data-model). Effets au MVP (sous seuil de confiance) :
+(a) résoudre `speciality = 'autre'` → spécialité canonique ; (b) **augmenter** l'ensemble de
+destinations (union ; déterministes toujours conservées, jamais écrasées). Poids, plafond 3,
+filtre `verified` : **inchangés** (FR-008).
 
 ## Dépendance lecture seule
 
