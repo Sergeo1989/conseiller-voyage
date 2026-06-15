@@ -40,6 +40,7 @@
     "@biomejs/biome": "1.9.4",
     "@commitlint/cli": "^19.6.0",
     "@commitlint/config-conventional": "^19.6.0",
+    "@cv/db": "workspace:*",
     "@playwright/test": "^1.60.0",
     "@types/adm-zip": "^0.5.8",
     "@types/geojson": "^7946.0.16",

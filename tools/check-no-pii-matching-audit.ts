@@ -99,6 +99,16 @@ function isAbsentDbError(err: unknown): boolean {
 }
 
 async function main(): Promise<void> {
+  // Contrat du workflow : sans DATABASE_URL (secret staging non configuré),
+  // skip non bloquant. Une URL vide ne produit pas une erreur Prisma reconnue
+  // par isAbsentDbError, donc on court-circuite ici explicitement.
+  if (!process.env.DATABASE_URL || process.env.DATABASE_URL.trim() === '') {
+    process.stdout.write(
+      '[check-no-pii-matching-audit] DATABASE_URL absent — skip non bloquant (DB staging non configurée).\n',
+    );
+    process.exit(0);
+  }
+
   process.stdout.write(
     '[check-no-pii-matching-audit] Scan matching_audit_entries + matching_result_entries + lead_* (012)...\n',
   );
