@@ -15,7 +15,6 @@ Artefact dérivé best-effort d'un brief. **Relation 1:1 idempotente** avec un b
 | `status` | enum `EnrichmentStatus` | `enrichi` \| `partiel` \| `non_enrichi` \| `indisponible` |
 | `enrichedSpeciality` | enum `Speciality` \| null | spécialité **canonique** inférée (jamais `autre`) quand le brief était `autre` + texte ; null sinon |
 | `enrichedDestinations` | jsonb (string[]) | destinations/pays additionnels détectés ; **consommés** par le scoring (augmentent l'ensemble, cf. fusion). Le déterministe reste toujours présent. |
-| `languageDetected` | enum `ConseillerLanguage` \| null | langue détectée du texte |
 | `confidence` | numeric(3,2) | 0.00–1.00 ; en dessous d'un seuil → traité comme `partiel`/`non_enrichi` |
 | `providerVersion` | text | provenance (modèle + version de prompt) pour traçabilité/rejeu |
 | `inputTokens` / `outputTokens` | int | usage (coût/observabilité) |
@@ -40,10 +39,9 @@ La sortie brute du modèle qui ne valide pas → rejetée → `status = indispon
 EnrichedIntentions {
   speciality?: Speciality (hors 'autre')   // null/absent autorisé
   destinations?: string[]                  // pays/villes normalisés (consommés par le scoring)
-  language?: ConseillerLanguage
   confidence: number (0..1)
 }
-// Pas de champ texte libre (summary/periodHints retirés — clarification 2026-06-15,
+// Pas de champ texte libre (summary/periodHints) ni langue détectée (révision 2026-06-15,
 // minimisation Loi 25). Toute normalisation interne reste transitoire, jamais persistée.
 ```
 
@@ -71,13 +69,18 @@ Règles (TDD, cas nominal + erreur) — clarification 2026-06-15 :
 
 ## Flux & événements
 
-- **Déclencheur** : `voyageur.brief.activated` (intake 008, inchangé) → job d'enrichissement.
-- **Job** `EnrichBriefJob` (BullMQ, idempotent `briefId`) : lit le brief, construit le
-  payload **non identifiant**, appelle `LlmProvider` sous budget, valide la sortie, persiste
-  `BriefEnrichment`, **puis** déclenche `PerformMatchingUseCase({ briefId })`.
+- **Déclencheur** : `voyageur.brief.activated` (intake 008, inchangé) → `EnrichBriefJob` (intake).
+- **Job** `EnrichBriefJob` (BullMQ, idempotent `briefId`) : lit le brief, **expurge la PII**
+  du texte libre (FR-017, fonction pure), construit le payload **non identifiant**, appelle
+  `LlmProvider` sous budget, valide la sortie, persiste `BriefEnrichment`, **puis publie
+  `voyageur.brief.enriched`** (toujours, même en fallback).
+- **Repoint matching** (révision 2026-06-15) : le `BriefActivatedConsumer` du matching est
+  **repointé** pour consommer `voyageur.brief.enriched` (au lieu de `voyageur.brief.activated`)
+  → `PerformMatchingUseCase({ briefId })`. Le scoring lit alors l'enrichi (présent ou non).
 - **Filet** : sweep de réconciliation (pattern 012) — brief activé non apparié sous N min → apparié.
-- Aucun nouvel événement outbox public requis au MVP (l'enrichissement précède le scoring
-  dans le même pipeline ; le matching publie déjà ses events 011/012).
+- **Nouvel événement outbox** : `voyageur.brief.enriched` (intake). Le **câblage bus prod**
+  (drain outbox → bus → consumer) est un **prérequis partagé** avec 011 (déjà différé, cf.
+  `brief-activated.consumer` « wiring effectif T093 ») — même gate staging/infra.
 
 ## Cascade Loi 25
 

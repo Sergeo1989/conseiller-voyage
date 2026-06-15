@@ -37,12 +37,17 @@ consomme) doivent être actées :
 - **Coût borné** : `maxOutputTokens` + troncature de l'entrée → ≤ 0,05 USD/req. **Cache** =
   l'entité `BriefEnrichment` idempotente par `briefId` (0 ré-appel).
 
-### 2. Enrichissement en amont du scoring, en arrière-plan, chaîné sur l'activation
+### 2. Enrichissement en amont du scoring, via un nouvel événement `voyageur.brief.enriched`
 
-- Déclencheur : `voyageur.brief.activated` (008, inchangé) → `EnrichBriefJob` (BullMQ,
-  idempotent `briefId`).
-- Le job tente l'enrichissement sous **budget strict** ; quel que soit le résultat, il
-  persiste `BriefEnrichment` **puis déclenche l'appariement** (`PerformMatchingUseCase`).
+- Déclencheur : un consumer **intake** sur `voyageur.brief.activated` (008) → `EnrichBriefJob`
+  (BullMQ, idempotent `briefId`).
+- Le job **expurge la PII** du texte libre (FR-017, filtre déterministe) avant l'appel LLM,
+  tente l'enrichissement sous **budget strict**, persiste `BriefEnrichment`, **puis publie
+  `voyageur.brief.enriched`** (toujours, même en fallback).
+- Le `BriefActivatedConsumer` du matching est **repointé** sur `voyageur.brief.enriched`
+  (au lieu de `.activated`) → `PerformMatchingUseCase`. *Révision 2026-06-15 : le câblage
+  bus `activated → matching` était lui-même déjà différé (`brief-activated.consumer` :
+  « wiring effectif T093 ») ; le repoint hérite de ce prérequis bus prod (gate staging partagée).*
 - **Sweep de réconciliation** (pattern feature 012) : tout brief activé non apparié sous
   N minutes est apparié → le matching n'est **jamais** durablement bloqué si le job échoue.
 - Le matching lit l'enrichi via le port public `BriefEnrichmentQueryPort` et applique une
@@ -85,6 +90,14 @@ consomme) doivent être actées :
   (union, déterministes conservées) — pas seulement la spécialité.
 - **Minimisation (résolu)** : **aucun texte libre persisté** (pas de reformulation) ; seules les
   intentions structurées sont stockées.
+
+### Révisions de revue tasks (2026-06-15)
+
+- **Déclenchement** : nouvel événement `voyageur.brief.enriched` (intake) + repoint du consumer
+  matching ; le câblage bus prod reste un prérequis partagé (gate staging).
+- **Scrub PII (FR-017)** : le texte libre est expurgé (filtre déterministe) avant l'appel LLM —
+  un champ libre peut contenir une coordonnée tapée par le voyageur.
+- **`languageDetected` retiré** : champ sans consommateur → non persisté (cohérence minimisation).
 
 ## Points ouverts (calibration implémentation)
 

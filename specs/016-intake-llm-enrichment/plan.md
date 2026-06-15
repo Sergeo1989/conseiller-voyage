@@ -12,14 +12,16 @@ des **intentions structurées** depuis les seuls champs texte libre du brief (`b
 `specialityOther`, notes de région) — valeur concrète (clarifications 2026-06-15) :
 **résoudre `speciality = 'autre'` → spécialité canonique** ET **augmenter l'ensemble de
 destinations** (union, déterministes toujours conservées), sous seuil de confiance. Aucun
-texte libre n'est persisté (minimisation Loi 25) ; un **avis de traitement automatisé** léger
-est ajouté (FR-016). L'enrichissement
-vit **en arrière-plan, en amont du scoring**, déclenché par `voyageur.brief.activated` ; il
-**ne touche jamais** le chemin de soumission/vérification du voyageur, **ne bloque jamais**
-le matching (timeout + sweep de réconciliation), et **n'écrase jamais** une donnée validée
-de façon déterministe. Idempotent par `briefId`, coût borné, région CA, anti-PII, cascade
-Loi 25. Le seul couplage inter-module est un port public lu par le matching
-(`BriefEnrichmentQueryPort`).
+texte libre (ni langue détectée) n'est persisté (minimisation Loi 25) ; un **avis de traitement
+automatisé** léger est ajouté (FR-016). L'enrichissement vit **en arrière-plan, en amont du
+scoring** : un consumer intake sur `voyageur.brief.activated` lance le job, qui **expurge la PII**
+du texte libre (FR-017) avant l'appel LLM, persiste l'enrichi, **puis publie
+`voyageur.brief.enriched`** ; le `BriefActivatedConsumer` du matching est **repointé** sur cet
+événement (révision 2026-06-15 — le câblage activation→matching étant lui-même déjà différé). Il
+**ne touche jamais** le chemin voyageur, **ne bloque jamais** le matching (timeout + sweep), et
+**n'écrase jamais** une donnée validée déterministe. Idempotent par `briefId`, coût borné, région
+CA, anti-PII, cascade Loi 25. Couplage inter-module : port public `BriefEnrichmentQueryPort` +
+événement `voyageur.brief.enriched`.
 
 ## Technical Context
 
@@ -59,15 +61,17 @@ backend, ~1 nouvelle table, 1 port nouveau + 1 port public, 1 job + 1 sweep.
 ### I. Conformité réglementaire (NON-NÉGOCIABLE) — ✅ PASS
 Aucune touche à une réservation/encaissement/versement. L'enrichissement n'introduit ni
 montant, ni lien de réservation, ni coordonnée (FR-011, anti-marketplace ADR-0002, invariant
-testé sur `normalizedSummary`/intentions). N'affecte pas le filtre `verified` du matching
-(inchangé, FR-008). Le `normalizedSummary` est neutralisé de tout prix/contact.
+testé sur les intentions structurées + la vue du port). N'affecte pas le filtre `verified` du
+matching (inchangé, FR-008). Aucun texte libre n'est stocké ni exposé (minimisation).
 
 ### II. Vie privée et Loi 25 (NON-NÉGOCIABLE) — ✅ PASS
 **Minimisation** : seuls le texte de projet (`budgetNote`, `specialityOther`, notes de région)
 + champs structurés **non identifiants** sont envoyés au LLM ; `voyageurContactId` et toute
-PII de contact **exclus** (FR-004, SC-004). **Région CA** : Bedrock ca-central-1 (FR-005,
-SC-008). **Minimisation renforcée (clarification 2026-06-15)** : **aucun texte libre persisté**
-(pas de reformulation) — seules les intentions structurées (spécialité, destinations, langue)
+PII de contact **exclus** (FR-004, SC-004). **Scrub PII du texte libre (FR-017, révision
+2026-06-15)** : `budgetNote`/`specialityOther`/notes expurgés par filtre déterministe (regex
+courriel/téléphone) **avant** l'appel LLM — le voyageur peut y taper une coordonnée. **Région
+CA** : Bedrock ca-central-1 (FR-005, SC-008). **Minimisation renforcée** : **aucun texte libre
+ni langue détectée persistés** — seules les intentions structurées (**spécialité, destinations**)
 sont stockées → surface anti-PII minimale. **Avis de traitement automatisé** léger ajouté
 (FR-016 ; divulgation intake + politique Loi 25 / feature 004), sans porte de consentement
 dédiée. **Effacement** : cascade trigger Postgres (pattern ADR-0023) neutralise les
@@ -153,7 +157,9 @@ specs/016-intake-llm-enrichment/
 apps/api/src/modules/intake/
 ├── domain/
 │   ├── value-objects/enriched-intentions.ts        # VO + schéma Zod cible
-│   └── services/merge-enrichment-into-snapshot.ts  # fonction PURE (TDD)
+│   └── services/
+│       ├── merge-enrichment-into-snapshot.ts       # fonction PURE (TDD)
+│       └── scrub-contact-pii.ts                    # fonction PURE (TDD) — FR-017 scrub texte libre
 ├── application/
 │   ├── ports/llm-provider.port.ts                  # NOUVEAU port (interface)
 │   ├── ports/brief-enrichment-repository.port.ts
@@ -161,17 +167,27 @@ apps/api/src/modules/intake/
 │   └── use-cases/enrich-brief.use-case.ts
 ├── infrastructure/
 │   ├── llm/bedrock-llm-provider.ts                 # adaptateur Bedrock ca-central-1
+│   ├── llm/__fakes__/fake-llm-provider.ts          # test double déterministe
 │   ├── prisma-brief-enrichment-repository.ts
-│   └── jobs/enrich-brief.job.ts                    # BullMQ + reconciliation sweep
+│   ├── prisma-brief-enrichment-query.ts            # adaptateur du port public
+│   └── jobs/
+│       ├── brief-activated.consumer.ts             # consumer intake → EnrichBriefJob
+│       ├── enrich-brief.job.ts                     # BullMQ : scrub→LLM→persist→publish enriched
+│       └── enrichment-reconciliation.sweep.ts      # filet (pattern 012)
+├── intake.module.ts                                # + enregistrement DI (providers/ports/job)
 └── (interface/ : aucun endpoint — déclenché par event)
 
-apps/api/src/modules/matching/
-├── application/ports/brief-snapshot-reader.port.ts # étendu : compose enrichi via le port public
-└── ...                                             # scoring INCHANGÉ (poids, plafond 3, verified)
+apps/api/src/modules/intake/.../outbox                # + eventType 'voyageur.brief.enriched'
 
-packages/db/prisma/schema/intake.prisma             # + model BriefEnrichment + enum + trigger
-packages/shared/src/intake/                          # types partagés EnrichmentStatus / vue port public
-tools/check-no-pii-matching-audit.ts (ou jumeau)     # scan étendu aux tables d'enrichissement
+apps/api/src/modules/matching/
+├── application/ports/brief-snapshot-reader.port.ts  # étendu : compose enrichi via le port public
+├── infrastructure/jobs/brief-activated.consumer.ts  # REPOINTÉ sur 'voyageur.brief.enriched'
+├── matching.module.ts                               # + injection BriefEnrichmentQueryPort
+└── ...                                              # scoring INCHANGÉ (poids, plafond 3, verified)
+
+packages/db/prisma/schema/intake.prisma             # + model BriefEnrichment + enum + 2 migrations (table, trigger)
+packages/shared/src/intake/enrichment.ts            # types EnrichmentStatus / EnrichedIntentions / vue port
+tools/check-no-pii-matching-audit.ts (ou jumeau)     # scan étendu à brief_enrichments
 docs/adr/0028-llm-provider-intake-enrichment.md      # ADR fournisseur LLM + placement
 ```
 

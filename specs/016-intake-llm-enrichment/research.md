@@ -17,9 +17,10 @@ ne parse donc **pas** un grand blob ; ses cibles concrètes :
    ADR-0020) est un match binaire sur l'enum — aujourd'hui `autre` ne matche rien.
 2. **Extraire des destinations additionnelles** depuis `budgetNote` / `specialityOther` /
    notes de région → **consommées** par l'axe destination du scoring (union, déterministes
-   toujours conservées — clarification 2026-06-15), + la langue.
-3. *(Retiré, clarification 2026-06-15)* : aucune reformulation/texte libre n'est persistée
-   (minimisation Loi 25). Seules les intentions **structurées** sont stockées.
+   toujours conservées — clarification 2026-06-15).
+3. *(Retiré)* : aucune reformulation/texte libre **ni langue détectée** n'est persistée
+   (minimisation Loi 25, révisions 2026-06-15). Seules les intentions **structurées**
+   (spécialité, destinations) sont stockées.
 
 **Rationale** : maximise la valeur matching mesurable (SC-006) sans sur-promettre un
 parsing de blob inexistant. **Alternatives rejetées** : enrichir tous les champs
@@ -32,16 +33,21 @@ texte libre au brief (changerait 008, hors périmètre).
 déclenché par `voyageur.brief.activated`, avec budget de temps strict et filet de
 réconciliation** — *jamais* sur le chemin de soumission/vérification du voyageur.
 
-Flux retenu :
-1. `voyageur.brief.activated` (publié par 008 `VerifyMagicLinkUseCase`) déclenche un job
-   d'enrichissement (BullMQ, idempotent par `briefId`).
-2. Le job tente l'enrichissement best-effort sous **budget court** (timeout). Quel que
-   soit le résultat (succès / partiel / timeout / indisponible), il persiste un
-   `BriefEnrichment` (statut explicite) **puis déclenche l'appariement** (`PerformMatchingUseCase`).
-3. Un **sweep de réconciliation** (réutilise le pattern 012 « sweep bus HS ») garantit que
-   tout brief activé non apparié sous N minutes est apparié (filet anti-perte si le job
-   d'enrichissement disparaît).
-4. Le scoring lit les intentions enrichies **si présentes** (sinon brief déterministe).
+Flux retenu (mécanisme de déclenchement révisé 2026-06-15 après lecture du code) :
+1. `voyageur.brief.activated` (008) → consumer **intake** → `EnrichBriefJob` (BullMQ, idempotent `briefId`).
+2. Le job scrub la PII du texte libre (FR-017), tente l'enrichissement best-effort sous **budget
+   court**, persiste un `BriefEnrichment` (statut explicite) **puis publie `voyageur.brief.enriched`**
+   (toujours, même en fallback).
+3. Le `BriefActivatedConsumer` du matching est **repointé** sur `voyageur.brief.enriched`
+   (au lieu de `.activated`) → `PerformMatchingUseCase`.
+4. Un **sweep de réconciliation** (pattern 012) garantit que tout brief activé non apparié sous
+   N min est apparié (filet anti-perte de job).
+5. Le scoring lit les intentions enrichies **si présentes** (sinon brief déterministe).
+
+> **Réalité du code** : le câblage bus `voyageur.brief.activated → matching` est déjà **différé**
+> (`brief-activated.consumer` : « wiring effectif T093 » ; seul un appel in-process existe). 016
+> introduit donc `voyageur.brief.enriched` + repoint, et **hérite** du même prérequis de câblage
+> bus prod (gate staging/infra partagée avec 011).
 
 **Rationale** : (a) la soumission/vérification voyageur n'est **jamais** ralentie (SC-001,
 tout est post-activation, en arrière-plan) ; (b) **pas de course** entre deux consommateurs
@@ -80,14 +86,17 @@ cache externe (Redis) séparé — redondant, le brief n'est enrichi qu'une fois
 
 **Décision** :
 - **Aucune PII de contact** transmise au LLM : le `voyageurContactId` et tout identifiant
-  de contact sont exclus du payload ; seuls `budgetNote`, `specialityOther`, notes de
-  région et champs structurés non identifiants sont envoyés (FR-004).
+  de contact sont exclus du payload. **De plus** (révision 2026-06-15, FR-017), le texte libre
+  (`budgetNote`/`specialityOther`/notes) est **expurgé par un filtre déterministe**
+  (regex courriel/téléphone) AVANT envoi — le voyageur peut y avoir tapé une coordonnée.
+  Fonction pure testée, réutilise les patterns du scan anti-PII existant.
 - Traitement **région CA** (Bedrock ca-central-1) (FR-005, SC-008).
 - **Étendre `tools/check-no-pii-matching-audit.ts`** (ou un scan jumeau) pour couvrir la
   table d'enrichissement (le scan ne couvre pas l'intake aujourd'hui) — garde defense-in-depth.
 - **Cascade d'anonymisation** : trigger Postgres aligné sur le pattern intake/matching
   (ADR-0023) — quand le brief passe `anonymized`, le `BriefEnrichment` est redacté
-  (`normalizedSummary` → null, intentions → redacted), audit préservé.
+  (`enrichedDestinations` → `[]`, `redactedAt` posé), audit préservé. (Aucun texte libre ni
+  langue n'étant stocké, la surface à redacter est minimale.)
 
 **Rationale** : Loi 25 NON-NÉGOCIABLE. **Alternatives rejetées** : envoyer tout le brief
 au LLM (viole minimisation) ; effacement applicatif seul (le pattern projet est trigger DB).
