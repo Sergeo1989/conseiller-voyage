@@ -117,24 +117,23 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/015-dashboard-conseiller/plan.md`](specs/015-dashboard-conseiller/plan.md)
-(Feature roadmap **014** — tableau de bord conseiller ; modules `matching` × `identité` ;
-Tier 2 ; branche `015-dashboard-conseiller`). **Couche interface/présentation** réunissant
-*Mes leads* (liste + détail + actions de transition de 012) et *Mes conversations*
-(liste + fil + envoi + pièces jointes de 013). Lecture **exclusivement** via les endpoints
-HTTP conseiller existants (012/013) et les ports publics `MatchingLeadQueryPort` (012) +
-`ConversationQueryPort` (013) — **aucune** logique métier ré-implémentée, **aucune** nouvelle
-table/machine d'état. **Anti-marketplace strict** (ADR-0002) : 0 montant/paiement/réservation
-affiché, devis = fichier opaque, mention permanente de neutralité. **Loi 25** : 0 PII de
-contact (résumé non nominatif). **Cloisonnement** RBAC (un conseiller ne voit que ses
-leads/fils). Front **VIII.a** : route group `(conseiller)` (déjà protégé auth 006 + CGU 004 +
-vérifié 001), slices `features/leads` (nouveau) + `features/conversation` (réutilisé de 013),
-Server Actions par verbe, RSC + TanStack Query, i18n FR-CA/EN, a11y AA. **Seul ajout backend** :
-endpoint `GET /api/matching/conseiller/conversations` exposant `ConversationQueryPort.listForConseiller`.
+**Plan courant** : [`specs/016-intake-llm-enrichment/plan.md`](specs/016-intake-llm-enrichment/plan.md)
+(Feature roadmap **009** — enrichissement LLM de l'intake ; module `préqualification` ;
+Tier 2 ; branche `016-intake-llm-enrichment`). **Couche d'enrichissement best-effort** du
+brief 008, au service du matching 011. Nouveau port domaine **`LlmProvider`** (1re intro LLM,
+adaptateur **Bedrock `ca-central-1`**, ADR-0028). Valeur concrète : **résoudre
+`speciality = 'autre'` → spécialité canonique** consommée par l'axe *speciality* du scoring.
+**En arrière-plan, en amont du scoring** (déclenché par `voyageur.brief.activated`) : ne
+touche **jamais** le chemin voyageur, ne **bloque jamais** le matching (timeout + sweep de
+réconciliation, pattern 012), n'**écrase jamais** un champ validé déterministe (FR-003).
+**Idempotent** par `briefId` (= cache, 0 ré-appel), **coût ≤ 0,05 USD/req**, **région CA**,
+**0 PII de contact** envoyée au LLM, cascade **Loi 25** (trigger). **Frontière de confiance** :
+sortie LLM validée Zod avant usage (FR-006). Couplage inter-module via le seul port public
+**`BriefEnrichmentQueryPort`** (lu par le matching ; scoring/plafond 3/filtre vérifié inchangés).
 
 Pour le contexte détaillé, lire ce plan ainsi que `research.md`, `data-model.md`,
-`contracts/{http-endpoints,ui-routes-actions}.md`, et `quickstart.md` du même répertoire
-`specs/015-dashboard-conseiller/`.
+`contracts/{llm-provider.port,brief-enrichment.port,enrichment-flow}.md`, et `quickstart.md`
+du répertoire `specs/016-intake-llm-enrichment/`, ainsi que [`docs/adr/0028`](docs/adr/0028-llm-provider-intake-enrichment.md).
 
 **Features précédentes mergées** (Tier 0 fermé) :
 - `001-conformite-module` (PR #1, squash `8592922`). Source de vérité pour
@@ -212,7 +211,16 @@ Pour le contexte détaillé, lire ce plan ainsi que `research.md`, `data-model.m
   (slice `features/conversation`). Déclencheur d'ouverture = hook in-process sur la transition
   `accepté` (012). ADR-0027. Côté voyageur déféré à 015. Avant prod : intégration Testcontainers
   + charge staging.
+- `015-dashboard-conseiller` = **feature 014 roadmap** (PR #27, squash `40740a4`). Tableau de
+  bord conseiller : *Mes leads* (liste + détail + 5 transitions de 012) + *Mes conversations*
+  (liste + fil + pièces jointes de 013), couche présentation pure (RSC + Server Actions, slices
+  `features/{leads,conversation}`), 1 endpoint `GET /conseiller/conversations`. Anti-marketplace
+  + 0 PII + cloisonnement RBAC. Durci en revue (PR #27) : `LeadState` importé du canonique,
+  validation Zod actions, états d'erreur RSC, a11y dialog/contraste. Suivis différés : pagination
+  UI + clé d'idempotence stable. Validations staging restantes.
+- `scan-matching-pii` réparé (PR #28, `2695823`) : garde Loi 25 hebdo résolvait `@cv/db`
+  (root devDep + build + skip propre sans DB staging). Reste à brancher `DATABASE_URL_STAGING`.
 
 **Features en cours / à venir** :
-- `015-dashboard-conseiller` (cette branche, feature roadmap 014) : voir *Plan courant* ci-dessus.
+- `016-intake-llm-enrichment` (cette branche, feature roadmap 009) : voir *Plan courant* ci-dessus.
 <!-- SPECKIT END -->
