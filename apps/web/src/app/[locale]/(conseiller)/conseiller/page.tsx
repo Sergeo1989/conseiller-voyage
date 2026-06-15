@@ -12,6 +12,7 @@ import { auth } from '@/auth';
 import { WidgetConformite, WidgetPlaceholder, WidgetProfil } from '@/features/dashboard';
 import { lireProfilPriveAction } from '@/features/profil-conseiller';
 import { type Locale, toUrlLocale } from '@/i18n';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -32,6 +33,7 @@ export default async function DashboardPage({ params }: PageProps) {
 
   const profil = await lireProfilPriveAction();
   const urlLocale = toUrlLocale(locale);
+  const t = await getTranslations({ locale, namespace: 'dashboard' });
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
@@ -76,7 +78,20 @@ export default async function DashboardPage({ params }: PageProps) {
           locale={urlLocale}
         />
         <WidgetProfil profil={profil} locale={urlLocale} />
-        <WidgetPlaceholder title="Mes leads" message="Bientôt disponible — feature 012." />
+        <Link
+          href={`/${urlLocale}/conseiller/leads`}
+          className="rounded-lg border border-slate-200 bg-white p-5 transition hover:border-blue-400 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <h2 className="text-lg font-semibold text-slate-900">{t('leadsWidget')}</h2>
+          <p className="mt-1 text-sm text-slate-600">{t('leadsWidgetDesc')}</p>
+        </Link>
+        <Link
+          href={`/${urlLocale}/conseiller/conversations`}
+          className="rounded-lg border border-slate-200 bg-white p-5 transition hover:border-blue-400 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <h2 className="text-lg font-semibold text-slate-900">{t('conversationsWidget')}</h2>
+          <p className="mt-1 text-sm text-slate-600">{t('conversationsWidgetDesc')}</p>
+        </Link>
         <WidgetPlaceholder title="Mon abonnement" message="Bientôt disponible — feature 006-007." />
       </div>
     </main>

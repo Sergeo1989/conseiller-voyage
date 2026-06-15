@@ -85,7 +85,9 @@ export class PrismaConversationQueryAdapter implements ConversationQueryPort {
     const [rows, total] = await Promise.all([
       prisma.conversationMessage.findMany({
         where: { conversationId },
-        orderBy: { createdAt: 'asc' },
+        // `id` en clé secondaire : ordre stable entre messages de même `createdAt`
+        // (sinon skip/repeat possible à la pagination).
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
         select: {
@@ -133,7 +135,9 @@ export class PrismaConversationQueryAdapter implements ConversationQueryPort {
     const [rows, total] = await Promise.all([
       prisma.conversation.findMany({
         where,
-        orderBy: { lastMessageAt: 'desc' },
+        // `lastMessageAt` peut être null (fil juste ouvert) et des fils peuvent
+        // partager une valeur : `openedAt` puis `id` garantissent un ordre stable.
+        orderBy: [{ lastMessageAt: 'desc' }, { openedAt: 'desc' }, { id: 'desc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
         select: CONV_SELECT,

@@ -58,7 +58,6 @@ import { CreateAttachmentUploadUseCase } from './application/use-cases/create-at
 import { DetectAllMatchesRevokedUseCase } from './application/use-cases/detect-all-matches-revoked.use-case';
 import { FinalizeAttachmentUseCase } from './application/use-cases/finalize-attachment.use-case';
 import { GetAttachmentUrlUseCase } from './application/use-cases/get-attachment-url.use-case';
-import { ListConversationMessagesUseCase } from './application/use-cases/list-messages.use-case';
 import { OpenConversationOnLeadAcceptedUseCase } from './application/use-cases/open-conversation-on-accept.use-case';
 import { PerformMatchingUseCase } from './application/use-cases/perform-matching.use-case';
 import { QueryMatchingResultUseCase } from './application/use-cases/query-matching-result.use-case';
@@ -498,12 +497,6 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
       useFactory: (clock, uuid, repo, outbox, leadReader, conformiteQuery, metrics) =>
         new SendMessageUseCase({ clock, uuid, repo, outbox, leadReader, conformiteQuery, metrics }),
     },
-    {
-      provide: ListConversationMessagesUseCase,
-      inject: [CONVERSATION_REPO],
-      useFactory: (repo) => new ListConversationMessagesUseCase({ repo }),
-    },
-
     // T016 — ouverture du fil déclenchée par l'acceptation d'un lead (FR-001).
     // Adaptateur in-process consommé par RecordLeadTransitionUseCase.
     LeadAcceptedConversationOpener,
