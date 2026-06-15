@@ -1,14 +1,10 @@
 // T005 [016] — Port PUBLIC BriefEnrichmentQueryPort.
 //
-// Surface inter-module : SEULE interface par laquelle le matching (011) lit
-// l'enrichi (Principe V). Le matching ne touche jamais la table. Retourne une
-// vue minimale (aucun texte libre / PII / montant) — cf. contracts/brief-enrichment.port.md.
+// L'interface + le symbole vivent dans @cv/shared/intake (surface inter-module,
+// Principe V) pour que le matching les importe sans import profond cross-module.
+// Ce fichier les re-exporte pour le barrel des ports intake.
 
-import type { BriefEnrichmentView } from '@cv/shared/intake';
-
-export interface BriefEnrichmentQueryPort {
-  /** `null` si aucun enrichissement → le matching procède en déterministe. */
-  getByBriefId(briefId: string): Promise<BriefEnrichmentView | null>;
-}
-
-export const BRIEF_ENRICHMENT_QUERY_PORT = Symbol.for('BriefEnrichmentQueryPort');
+export {
+  BRIEF_ENRICHMENT_QUERY_PORT,
+  type BriefEnrichmentQueryPort,
+} from '@cv/shared/intake';

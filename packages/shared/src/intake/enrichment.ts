@@ -57,3 +57,12 @@ export interface BriefEnrichmentView {
   readonly enrichedDestinations: ReadonlyArray<string>;
   readonly confidence: number;
 }
+
+// Port PUBLIC inter-module (Principe V) : le matching (011) lit l'enrichi via
+// cette interface uniquement. Vit dans @cv/shared pour éviter tout import profond
+// cross-module (cf. CONFORMITE_QUERY_PORT / CONVERSATION_QUERY_PORT).
+export interface BriefEnrichmentQueryPort {
+  getByBriefId(briefId: string): Promise<BriefEnrichmentView | null>;
+}
+
+export const BRIEF_ENRICHMENT_QUERY_PORT = Symbol.for('BriefEnrichmentQueryPort');
