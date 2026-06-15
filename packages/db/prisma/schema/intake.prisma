@@ -70,6 +70,23 @@ enum MagicLinkPurpose {
   view_brief_status
 }
 
+// T002 [016] — Statut d'un enrichissement LLM de brief (roadmap 009).
+enum EnrichmentStatus {
+  enrichi
+  partiel
+  non_enrichi
+  indisponible
+}
+
+// T002 [016] — Cause de repli quand l'enrichissement n'aboutit pas.
+enum EnrichmentFailureReason {
+  timeout
+  unavailable
+  schema_invalid
+  low_confidence
+  empty_input
+}
+
 // =====================================================================
 // Modèles (T012 — 5 tables, mapping data-model.md)
 // =====================================================================
@@ -157,6 +174,7 @@ model VoyageurBrief {
   idempotencyKey String?
 
   magicLinkTokens MagicLinkToken[]
+  briefEnrichment BriefEnrichment? // 1:1 (016) — enrichissement LLM best-effort
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -166,6 +184,30 @@ model VoyageurBrief {
   @@index([status, expiresAt])
   @@index([verifiedAt, status])
   @@map("intake_voyageur_briefs")
+}
+
+/// Enrichissement LLM best-effort d'un brief (016 / roadmap 009). 1:1 idempotent
+/// par briefId. AUCUN texte libre ni langue persistés (minimisation Loi 25) :
+/// seules des intentions structurées. Cascade Loi 25 via trigger (T032) :
+/// `enrichedDestinations` → [] + `redactedAt` à l'anonymisation du brief.
+model BriefEnrichment {
+  briefId String        @id @db.Uuid
+  brief   VoyageurBrief @relation(fields: [briefId], references: [id], onDelete: Cascade)
+
+  status             EnrichmentStatus
+  enrichedSpeciality TravelSpeciality? // canonique (jamais `autre`)
+  enrichedDestinations Json            @default("[]") // string[] codes pays ISO
+  confidence         Decimal          @db.Decimal(3, 2)
+
+  failureReason  EnrichmentFailureReason?
+  providerVersion String?                 @db.VarChar(100)
+  inputTokens    Int?
+  outputTokens   Int?
+
+  createdAt  DateTime  @default(now())
+  redactedAt DateTime?
+
+  @@map("intake_brief_enrichments")
 }
 
 /// Token signé temporaire (J+7) pour vérifier l'email du voyageur ou
