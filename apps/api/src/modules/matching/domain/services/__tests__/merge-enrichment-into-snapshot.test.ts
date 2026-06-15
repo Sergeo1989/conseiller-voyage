@@ -68,3 +68,36 @@ describe('mergeEnrichmentIntoSnapshot — mode dégradé', () => {
     expect(out.familiarity).toBe('occasional_traveler');
   });
 });
+
+describe('mergeEnrichmentIntoSnapshot — union des destinations (US2)', () => {
+  it('augmente l’ensemble : déterministes d’abord, enrichies ensuite (ordre stable)', () => {
+    const out = mergeEnrichmentIntoSnapshot(BASE, ENRICHI({ enrichedDestinations: ['FR', 'JP'] }));
+    expect(out.destinations).toEqual([{ country: 'IT' }, { country: 'FR' }, { country: 'JP' }]);
+  });
+
+  it('conserve les déterministes et dédoublonne vs déterministe (FR-003)', () => {
+    const out = mergeEnrichmentIntoSnapshot(BASE, ENRICHI({ enrichedDestinations: ['IT', 'FR'] }));
+    expect(out.destinations).toEqual([{ country: 'IT' }, { country: 'FR' }]);
+  });
+
+  it('dédoublonne entre destinations enrichies', () => {
+    const out = mergeEnrichmentIntoSnapshot(BASE, ENRICHI({ enrichedDestinations: ['FR', 'FR'] }));
+    expect(out.destinations).toEqual([{ country: 'IT' }, { country: 'FR' }]);
+  });
+
+  it('n’injecte rien sous le seuil de confiance', () => {
+    const low = ENRICHI({
+      enrichedDestinations: ['FR'],
+      confidence: ENRICHMENT_CONFIDENCE_THRESHOLD - 0.01,
+    });
+    expect(mergeEnrichmentIntoSnapshot(BASE, low).destinations).toEqual(BASE.destinations);
+  });
+
+  it('n’injecte rien si statut non `enrichi`', () => {
+    const out = mergeEnrichmentIntoSnapshot(
+      BASE,
+      ENRICHI({ status: 'partiel', enrichedDestinations: ['FR'] }),
+    );
+    expect(out.destinations).toEqual(BASE.destinations);
+  });
+});

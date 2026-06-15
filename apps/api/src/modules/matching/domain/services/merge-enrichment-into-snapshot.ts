@@ -7,7 +7,7 @@
 // touché — seule l'ENTRÉE est résolue.
 //
 // US1 : résolution de `speciality = 'autre'` → spécialité canonique.
-// US2 (T023) : étendra avec l'union des destinations.
+// US2 : union des destinations (déterministes TOUJOURS conservées, jamais écrasées).
 
 import { ENRICHMENT_CONFIDENCE_THRESHOLD } from '@cv/shared/intake';
 import type {
@@ -44,5 +44,27 @@ export function mergeEnrichmentIntoSnapshot(
       ? enrichment.enrichedSpeciality
       : snapshot.speciality;
 
-  return { ...snapshot, speciality };
+  return {
+    ...snapshot,
+    speciality,
+    destinations: unionDestinations(snapshot, enrichment.enrichedDestinations),
+  };
+}
+
+// Augmente l'ensemble de destinations : déterministes TOUJOURS conservées,
+// enrichies ajoutées seulement si absentes (dédup vs déterministe ET entre elles,
+// ordre stable). N'écrase/ne retire jamais une destination déterministe (FR-003).
+function unionDestinations(
+  snapshot: BriefSnapshot,
+  enrichedDestinations: ReadonlyArray<string>,
+): BriefSnapshot['destinations'] {
+  const seen = new Set(snapshot.destinations.map((d) => d.country));
+  const added: Array<{ readonly country: string }> = [];
+  for (const country of enrichedDestinations) {
+    if (!seen.has(country)) {
+      seen.add(country);
+      added.push({ country });
+    }
+  }
+  return added.length > 0 ? [...snapshot.destinations, ...added] : snapshot.destinations;
 }
