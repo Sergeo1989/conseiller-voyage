@@ -27,6 +27,11 @@ export type EnrichmentFailureReason = z.infer<typeof EnrichmentFailureReasonSche
 export const CanonicalSpecialitySchema = TravelSpecialitySchema.exclude(['autre']);
 export type CanonicalSpeciality = z.infer<typeof CanonicalSpecialitySchema>;
 
+// Seuil de confiance commun : en deçà, l'enrichi n'est ni marqué `enrichi`
+// (use case intake) ni consommé par le scoring (merge matching). Source unique
+// pour garder intake et matching alignés. Calibration : ADR-0028 (point ouvert).
+export const ENRICHMENT_CONFIDENCE_THRESHOLD = 0.7;
+
 // Schéma CIBLE imposé au `LlmProvider`, validé avant persistance/usage (FR-006).
 // `.strict()` rejette toute clé inattendue (anti-injection / anti-PII).
 // `destinations` : noms/pays normalisés (lettres/espaces/traits d'union) — un

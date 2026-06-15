@@ -9,13 +9,13 @@
 // US1 : résolution de `speciality = 'autre'` → spécialité canonique.
 // US2 (T023) : étendra avec l'union des destinations.
 
+import { ENRICHMENT_CONFIDENCE_THRESHOLD } from '@cv/shared/intake';
 import type {
   BriefSnapshot,
   TravelSpeciality,
 } from '../../application/ports/brief-snapshot-reader.port';
 
-// Seuil de confiance commun (calibration implémentation — ADR-0028, point ouvert).
-export const ENRICHMENT_CONFIDENCE_THRESHOLD = 0.7;
+export { ENRICHMENT_CONFIDENCE_THRESHOLD };
 
 export interface EnrichmentForScoring {
   readonly status: 'enrichi' | 'partiel' | 'non_enrichi' | 'indisponible';
