@@ -1,12 +1,14 @@
-// T062 — Consumer du topic event bus `voyageur.brief.activated`.
+// T062 — Consumer déclencheur du matching.
 //
-// MVP : classe injectable qui expose `handleBriefActivated(briefId)`.
-// Le wiring BullMQ effectif (subscribe topic + call cette méthode) arrive
-// avec T093 — extension du `OutboxPublisherJob` 003 pour drainer
-// `matching_outbox_entries` ET dispatcher vers les consumers matching.
+// REPOINTÉ par 016 (T018) : consomme désormais `voyageur.brief.enriched`
+// (publié par l'intake après l'enrichissement best-effort) AU LIEU de
+// `voyageur.brief.activated`. L'enrichissement précède ainsi le scoring ; le
+// matching ne dépend jamais du LLM (l'événement est publié même en fallback).
 //
-// En dev local, ce handler peut être appelé directement par un test
-// d'intégration ou par un script CLI de simulation.
+// MVP : classe injectable qui expose `handleBriefActivated(briefId)`. Le wiring
+// bus effectif (subscribe topic) reste le prérequis partagé déjà différé (cf. 011
+// « wiring effectif T093 ») — même gate staging/infra. En dev/test, ce handler
+// est appelé en in-process.
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
