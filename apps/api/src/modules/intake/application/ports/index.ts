@@ -5,6 +5,7 @@
 export * from './brief-enrichment-query.port';
 export * from './brief-enrichment-repository.port';
 export * from './disposable-email-checker.port';
+export * from './enrichment-metrics-recorder.port';
 export * from './intake-audit-log-writer.port';
 export * from './llm-provider.port';
 export * from './intake-outbox-writer.port';

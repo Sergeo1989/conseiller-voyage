@@ -89,6 +89,7 @@ function makeUseCase(opts: {
     briefReader: makeBriefReader(opts.brief),
     llm: opts.llm,
     repo: opts.repo,
+    metrics: { record: () => {} },
   });
 }
 

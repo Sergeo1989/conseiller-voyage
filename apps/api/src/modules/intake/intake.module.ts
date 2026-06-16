@@ -33,6 +33,7 @@ import {
   BRIEF_ENRICHMENT_QUERY_PORT,
   BRIEF_ENRICHMENT_REPOSITORY,
   DISPOSABLE_EMAIL_CHECKER,
+  ENRICHMENT_METRICS_RECORDER,
   INTAKE_AUDIT_LOG_WRITER,
   INTAKE_OUTBOX_WRITER,
   INTAKE_RATE_LIMITER,
@@ -61,6 +62,7 @@ import { IntakeDisposableEmailsRefreshJob } from './infrastructure/jobs/intake-d
 import { IntakeExpirationReminderJob } from './infrastructure/jobs/intake-expiration-reminder.job';
 import { IntakeMagicLinkRetryJob } from './infrastructure/jobs/intake-magic-link-retry.job';
 import { DegradedLlmProvider } from './infrastructure/llm/degraded-llm-provider';
+import { OtelEnrichmentMetricsRecorder } from './infrastructure/otel-enrichment-metrics-recorder';
 import { PrismaBriefEnrichmentQuery } from './infrastructure/prisma-brief-enrichment-query';
 import { PrismaBriefEnrichmentRepository } from './infrastructure/prisma-brief-enrichment-repository';
 import { PrismaIntakeAuditLogWriter } from './infrastructure/prisma-intake-audit-log-writer';
@@ -346,10 +348,24 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
     // Provider LLM : Bedrock ca-central-1 (T031) à venir ; défaut sûr = mode dégradé.
     DegradedLlmProvider,
     { provide: LLM_PROVIDER, useExisting: DegradedLlmProvider },
+    OtelEnrichmentMetricsRecorder,
+    { provide: ENRICHMENT_METRICS_RECORDER, useExisting: OtelEnrichmentMetricsRecorder },
     {
       provide: EnrichBriefUseCase.DEPS_TOKEN,
-      inject: [CLOCK, VOYAGEUR_BRIEF_READER, LLM_PROVIDER, BRIEF_ENRICHMENT_REPOSITORY],
-      useFactory: (clock, briefReader, llm, repo) => ({ clock, briefReader, llm, repo }),
+      inject: [
+        CLOCK,
+        VOYAGEUR_BRIEF_READER,
+        LLM_PROVIDER,
+        BRIEF_ENRICHMENT_REPOSITORY,
+        ENRICHMENT_METRICS_RECORDER,
+      ],
+      useFactory: (clock, briefReader, llm, repo, metrics) => ({
+        clock,
+        briefReader,
+        llm,
+        repo,
+        metrics,
+      }),
     },
     EnrichBriefUseCase,
     EnrichBriefJob,
