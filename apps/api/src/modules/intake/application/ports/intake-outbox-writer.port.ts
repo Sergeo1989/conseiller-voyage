@@ -7,6 +7,9 @@ import type { IntakeOutboxEntryId } from '@cv/shared/intake';
 
 export type IntakeOutboxEventType =
   | 'voyageur.brief.activated'
+  // T007 [016] — publié par EnrichBriefJob après l'enrichissement (toujours,
+  // même en fallback) ; consommé par le matching repointé (déclenche le scoring).
+  | 'voyageur.brief.enriched'
   | 'voyageur.brief.deleted'
   | 'voyageur.brief.expired'
   | 'voyageur.brief.pushed_manual';

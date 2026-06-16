@@ -30,10 +30,14 @@ import { BullMqModule } from '../../queue/bullmq.module';
 import { ConformiteModule } from '../conformite/interface/conformite.module';
 import { IdentiteModule } from '../identite/identite.module';
 import {
+  BRIEF_ENRICHMENT_QUERY_PORT,
+  BRIEF_ENRICHMENT_REPOSITORY,
   DISPOSABLE_EMAIL_CHECKER,
+  ENRICHMENT_METRICS_RECORDER,
   INTAKE_AUDIT_LOG_WRITER,
   INTAKE_OUTBOX_WRITER,
   INTAKE_RATE_LIMITER,
+  LLM_PROVIDER,
   MAGIC_LINK_MAILER,
   MAGIC_LINK_TOKEN_WRITER,
   VOYAGEUR_BRIEF_READER,
@@ -41,6 +45,7 @@ import {
   VOYAGEUR_CONTACT_READER,
   VOYAGEUR_CONTACT_WRITER,
 } from './application/ports';
+import { EnrichBriefUseCase } from './application/use-cases/enrich-brief.use-case';
 import { EraseAllVoyageurDataUseCase } from './application/use-cases/erase-all-voyageur-data.use-case';
 import { ListBriefsByEmailUseCase } from './application/use-cases/list-briefs-by-email.use-case';
 import { ListUnmatchedBriefsUseCase } from './application/use-cases/list-unmatched-briefs.use-case';
@@ -51,10 +56,16 @@ import { SubmitBriefUseCase } from './application/use-cases/submit-brief.use-cas
 import { VerifyMagicLinkUseCase } from './application/use-cases/verify-magic-link.use-case';
 import { ViewBriefStatusUseCase } from './application/use-cases/view-brief-status.use-case';
 import { DisposableEmailCheckerImpl } from './infrastructure/disposable-email-checker';
+import { EnrichBriefJob } from './infrastructure/jobs/enrich-brief.job';
+import { EnrichmentReconciliationSweep } from './infrastructure/jobs/enrichment-reconciliation.sweep';
 import { IntakeBriefExpirationSweepJob } from './infrastructure/jobs/intake-brief-expiration-sweep.job';
 import { IntakeDisposableEmailsRefreshJob } from './infrastructure/jobs/intake-disposable-emails-refresh.job';
 import { IntakeExpirationReminderJob } from './infrastructure/jobs/intake-expiration-reminder.job';
 import { IntakeMagicLinkRetryJob } from './infrastructure/jobs/intake-magic-link-retry.job';
+import { DegradedLlmProvider } from './infrastructure/llm/degraded-llm-provider';
+import { OtelEnrichmentMetricsRecorder } from './infrastructure/otel-enrichment-metrics-recorder';
+import { PrismaBriefEnrichmentQuery } from './infrastructure/prisma-brief-enrichment-query';
+import { PrismaBriefEnrichmentRepository } from './infrastructure/prisma-brief-enrichment-repository';
 import { PrismaIntakeAuditLogWriter } from './infrastructure/prisma-intake-audit-log-writer';
 import { PrismaIntakeOutboxWriter } from './infrastructure/prisma-intake-outbox-writer';
 import { PrismaMagicLinkTokenRepository } from './infrastructure/prisma-magic-link-token-repository';
@@ -329,6 +340,39 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
     PushBriefToConseillerUseCase,
 
     // ---------------------------------------------------------------
+    // Enrichissement LLM (016 / roadmap 009)
+    // ---------------------------------------------------------------
+    PrismaBriefEnrichmentRepository,
+    { provide: BRIEF_ENRICHMENT_REPOSITORY, useExisting: PrismaBriefEnrichmentRepository },
+    PrismaBriefEnrichmentQuery,
+    { provide: BRIEF_ENRICHMENT_QUERY_PORT, useExisting: PrismaBriefEnrichmentQuery },
+    // Provider LLM : Bedrock ca-central-1 (T031) à venir ; défaut sûr = mode dégradé.
+    DegradedLlmProvider,
+    { provide: LLM_PROVIDER, useExisting: DegradedLlmProvider },
+    OtelEnrichmentMetricsRecorder,
+    { provide: ENRICHMENT_METRICS_RECORDER, useExisting: OtelEnrichmentMetricsRecorder },
+    {
+      provide: EnrichBriefUseCase.DEPS_TOKEN,
+      inject: [
+        CLOCK,
+        VOYAGEUR_BRIEF_READER,
+        LLM_PROVIDER,
+        BRIEF_ENRICHMENT_REPOSITORY,
+        ENRICHMENT_METRICS_RECORDER,
+      ],
+      useFactory: (clock, briefReader, llm, repo, metrics) => ({
+        clock,
+        briefReader,
+        llm,
+        repo,
+        metrics,
+      }),
+    },
+    EnrichBriefUseCase,
+    EnrichBriefJob,
+    EnrichmentReconciliationSweep,
+
+    // ---------------------------------------------------------------
     // BullMQ jobs (Phase 5+)
     // ---------------------------------------------------------------
     IntakeDisposableEmailsRefreshJob,
@@ -336,6 +380,7 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
     IntakeExpirationReminderJob,
     IntakeMagicLinkRetryJob,
   ],
-  exports: [],
+  // Port public consommé par le matching (011) pour composer l'enrichi (T025).
+  exports: [BRIEF_ENRICHMENT_QUERY_PORT],
 })
 export class IntakeModule {}

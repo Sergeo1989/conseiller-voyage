@@ -103,6 +103,18 @@ const ALLOWED_CROSS_MODULE_SYMBOLS: ReadonlySet<string> = new Set([
   // que AuthenticatedRequest/AuthenticatedUser ci-dessus ; le préfixe `Auth`
   // est une collision de nommage, le type appartient au module matching.
   'AuthenticatedReq',
+  // ---------------------------------------------------------------------
+  // Feature 016 enrichissement LLM intake.
+  // ---------------------------------------------------------------------
+  // IntakeModule — importé par MatchingModule pour résoudre la chaîne DI du
+  // port public BRIEF_ENRICHMENT_QUERY_PORT (composition enrichi → scoring,
+  // T025). Même motif que `ConformiteModule` : import du module entier pour
+  // le wiring DI, pas pour consommer des internes.
+  'IntakeModule',
+  // Port public d'enrichissement exposé par @cv/shared/intake (façade
+  // publique), consommé par le matching (011) via le décorateur de snapshot.
+  'BriefEnrichmentQueryPort',
+  'BRIEF_ENRICHMENT_QUERY_PORT',
 ]);
 
 interface Violation {

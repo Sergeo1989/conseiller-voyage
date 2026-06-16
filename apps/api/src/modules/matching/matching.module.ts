@@ -26,6 +26,7 @@ import { env } from '../../env';
 import { BullMqModule } from '../../queue/bullmq.module';
 import { ConformiteModule } from '../conformite/interface/conformite.module';
 import { IdentiteModule } from '../identite/identite.module';
+import { IntakeModule } from '../intake/intake.module';
 import {
   ATTACHMENT_STORAGE,
   BRIEF_SNAPSHOT_READER,
@@ -68,6 +69,7 @@ import { TriggerRematchUseCase } from './application/use-cases/trigger-rematch.u
 import { ViewLeadUseCase } from './application/use-cases/view-lead.use-case';
 import { WeightsConfig } from './domain/value-objects/weights-config.vo';
 import { EmbeddedFsaCentroidReader } from './infrastructure/embedded-fsa-centroid-reader';
+import { EnrichedBriefSnapshotReader } from './infrastructure/enriched-brief-snapshot-reader';
 import { AllMatchesRevokedScheduler } from './infrastructure/jobs/all-matches-revoked.scheduler';
 import { BriefActivatedConsumer } from './infrastructure/jobs/brief-activated.consumer';
 import {
@@ -124,6 +126,7 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     BullMqModule,
     IdentiteModule,
     ConformiteModule,
+    IntakeModule, // 016 — expose BRIEF_ENRICHMENT_QUERY_PORT (composition enrichi → scoring)
     // Queue notifications conseiller (012) — un job par destinataire.
     BullModule.registerQueue({ name: LEAD_NOTIFICATIONS_QUEUE }),
     // Queue notifications conversation (013) — un job par destinataire.
@@ -154,8 +157,10 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
     PrismaMatchingOutboxWriter,
     { provide: MATCHING_OUTBOX_WRITER, useExisting: PrismaMatchingOutboxWriter },
 
+    // Base déterministe (008) décorée par l'enrichi (016) avant le scoring.
     PrismaBriefSnapshotReader,
-    { provide: BRIEF_SNAPSHOT_READER, useExisting: PrismaBriefSnapshotReader },
+    EnrichedBriefSnapshotReader,
+    { provide: BRIEF_SNAPSHOT_READER, useExisting: EnrichedBriefSnapshotReader },
 
     PrismaConseillerSnapshotReader,
     { provide: CONSEILLER_SNAPSHOT_READER, useExisting: PrismaConseillerSnapshotReader },

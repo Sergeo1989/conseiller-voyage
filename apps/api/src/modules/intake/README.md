@@ -112,8 +112,20 @@ Cf. `apps/api/src/env.ts` :
 - [ADR-0018](../../../../../docs/adr/0018-intake-magic-link-token-db.md) — Magic link random DB
 - [ADR-0019](../../../../../docs/adr/0019-intake-disposable-emails-list.md) — Liste disposable 3-tier
 
+## Enrichissement LLM (feature 016 / roadmap 009)
+
+Couche best-effort au-dessus du brief : `EnrichBriefJob` (sur `voyageur.brief.activated`)
+scrub PII → `LlmProvider` (Bedrock ca-central-1) → validation Zod → `BriefEnrichment` →
+publie `voyageur.brief.enriched` (consommé par le matching repointé). Résout
+`speciality='autre'` → canonique + augmente les destinations, sans toucher aux règles de
+scoring. Mode dégradé sûr par défaut (`DegradedLlmProvider`) tant que Bedrock (T031) n'est
+pas branché. Aucun texte libre ni PII persisté ; cascade Loi 25 par trigger. Détail :
+[`docs/runbooks/intake-enrichment.md`](../../../../../docs/runbooks/intake-enrichment.md) +
+[`specs/016-intake-llm-enrichment/`](../../../../../specs/016-intake-llm-enrichment/).
+
 ## Runbooks
 
 - [`intake-secrets-rotation`](../../../../../docs/runbooks/intake-secrets-rotation.md)
 - [`intake-anonymisation-loi25`](../../../../../docs/runbooks/intake-anonymisation-loi25.md)
 - [`intake-disposable-emails-monitoring`](../../../../../docs/runbooks/intake-disposable-emails-monitoring.md)
+- [`intake-enrichment`](../../../../../docs/runbooks/intake-enrichment.md)

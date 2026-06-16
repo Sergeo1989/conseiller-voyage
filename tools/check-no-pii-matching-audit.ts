@@ -74,9 +74,9 @@ function scanText(table: string, column: string, id: string, txt: string): Findi
   return findings;
 }
 
-async function scanColumn(table: string, column: string): Promise<Finding[]> {
+async function scanColumn(table: string, column: string, idColumn = 'id'): Promise<Finding[]> {
   const rows = await prisma.$queryRawUnsafe<{ id: string; txt: string }[]>(
-    `SELECT id::text AS id, "${column}"::text AS txt FROM ${table}`,
+    `SELECT "${idColumn}"::text AS id, "${column}"::text AS txt FROM ${table}`,
   );
   const findings: Finding[] = [];
   for (const row of rows) {
@@ -121,6 +121,10 @@ async function main(): Promise<void> {
       // Feature 012 — colonnes texte libres des leads (FR-004 / FR-009).
       ...(await scanColumn('lead_transitions', 'reason')),
       ...(await scanColumn('lead_notification_outbox', 'lastError')),
+      // Feature 016 — enrichissement intake : destinations enrichies (jsonb).
+      // Aucun texte libre n'y est persisté, mais on scanne en défense (SC-004).
+      // PK = briefId (pas de colonne `id`).
+      ...(await scanColumn('intake_brief_enrichments', 'enrichedDestinations', 'briefId')),
     ];
   } catch (err) {
     if (isAbsentDbError(err)) {
