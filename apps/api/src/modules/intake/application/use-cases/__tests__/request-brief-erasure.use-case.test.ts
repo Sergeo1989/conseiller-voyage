@@ -21,8 +21,17 @@ import {
   asBriefId,
   asContactId,
 } from '../../__tests__/_fakes';
-import type { VoyageurBriefRecord } from '../../ports';
+import type { VoyageurBriefRecord, VoyageurNotificationOutbox } from '../../ports';
 import { RequestBriefErasureUseCase } from '../request-brief-erasure.use-case';
+
+/** Fake minimal : enregistre les annulations Loi 25 (FR-010). */
+class FakeVoyageurNotificationOutbox implements Partial<VoyageurNotificationOutbox> {
+  readonly cancelled: string[] = [];
+  cancelPendingForBrief(briefId: string): Promise<number> {
+    this.cancelled.push(briefId);
+    return Promise.resolve(1);
+  }
+}
 
 const NOW = new Date('2026-05-15T12:00:00Z');
 const BRIEF_ID = asBriefId('11111111-1111-4111-8111-111111111111');
@@ -105,6 +114,32 @@ describe('RequestBriefErasureUseCase — golden path', () => {
 
     expect(audit.entries.some((e) => e.eventType === 'intake.brief.erasure_requested')).toBe(true);
     expect(outbox.entries.some((e) => e.eventType === 'voyageur.brief.deleted')).toBe(true);
+  });
+});
+
+describe('RequestBriefErasureUseCase — cascade Loi 25 (FR-010)', () => {
+  it('annule les notifications voyageur en attente du brief effacé', async () => {
+    const clock = new FakeClock(NOW);
+    const briefs = new FakeVoyageurBriefStore();
+    const notif = new FakeVoyageurNotificationOutbox();
+    seedBrief(briefs);
+    const useCase = new RequestBriefErasureUseCase({
+      clock,
+      uuid: new FakeUuidGenerator(),
+      briefReader: briefs,
+      briefWriter: briefs,
+      audit: new FakeIntakeAuditLogWriter(),
+      outbox: new FakeIntakeOutboxWriter(),
+      voyageurNotificationOutbox: notif as unknown as VoyageurNotificationOutbox,
+    });
+
+    const r = await useCase.execute({
+      briefId: BRIEF_ID,
+      contactId: CONTACT_ID,
+      confirmation: VALID_PHRASE,
+    });
+    expect(r.kind).toBe('ok');
+    expect(notif.cancelled).toEqual([BRIEF_ID]);
   });
 });
 

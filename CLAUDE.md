@@ -117,23 +117,24 @@ format MADR. Lier depuis le plan. Ne jamais modifier rétroactivement.
   les prochains `/speckit.specify`
 
 <!-- SPECKIT START -->
-**Plan courant** : [`specs/016-intake-llm-enrichment/plan.md`](specs/016-intake-llm-enrichment/plan.md)
-(Feature roadmap **009** — enrichissement LLM de l'intake ; module `préqualification` ;
-Tier 2 ; branche `016-intake-llm-enrichment`). **Couche d'enrichissement best-effort** du
-brief 008, au service du matching 011. Nouveau port domaine **`LlmProvider`** (1re intro LLM,
-adaptateur **Bedrock `ca-central-1`**, ADR-0028). Valeur concrète : **résoudre
-`speciality = 'autre'` → spécialité canonique** consommée par l'axe *speciality* du scoring.
-**En arrière-plan, en amont du scoring** (déclenché par `voyageur.brief.activated`) : ne
-touche **jamais** le chemin voyageur, ne **bloque jamais** le matching (timeout + sweep de
-réconciliation, pattern 012), n'**écrase jamais** un champ validé déterministe (FR-003).
-**Idempotent** par `briefId` (= cache, 0 ré-appel), **coût ≤ 0,05 USD/req**, **région CA**,
-**0 PII de contact** envoyée au LLM, cascade **Loi 25** (trigger). **Frontière de confiance** :
-sortie LLM validée Zod avant usage (FR-006). Couplage inter-module via le seul port public
-**`BriefEnrichmentQueryPort`** (lu par le matching ; scoring/plafond 3/filtre vérifié inchangés).
+**Plan courant** : [`specs/017-voyageur-notif-suivi/plan.md`](specs/017-voyageur-notif-suivi/plan.md)
+(Feature roadmap **010** — notifications + magic-link de suivi voyageur ; modules
+`préqualification` × `identité` ; Tier 2 ; branche `017-voyageur-notif-suivi`). **Couche de
+notification côté voyageur** par-dessus 008 (brief + magic-link + récap) et 003 (SES
+ca-central-1) ; consomme les événements de 011/012. Le module **intake** OWNE la
+`VoyageurNotification` (outbox + Dispatcher/Sender/Worker + mailer + templates + annulation
+Loi 25), **mirroir exact du pattern conseiller de 012**. 3 déclencheurs : accusé d'activation
+(intake), « conseillers prêts »/« on cherche » via le port public **`VoyageurMatchNotifier`**
+appelé par le consumer matching **déjà dédupliqué** (piggyback → 1 notif/événement, **sans 2e
+abonné bus** — ADR-0029). Le mailer résout **prénom + spécialité publics** (007) au send
+(**jamais** de coordonnée de contact — anti-marketplace ADR-0002), insère un **lien de suivi**
+(magic-link `view_brief_status` de 008, renvoyable). **Idempotent** (clé d'événement), **mode
+dégradé** courriel, **région CA**, cascade **Loi 25** (annulation), FR-CA/i18n. Aucun front
+nouveau (le lien route vers la page récap 008). Contenu de l'espace voyageur déféré à **015**.
 
 Pour le contexte détaillé, lire ce plan ainsi que `research.md`, `data-model.md`,
-`contracts/{llm-provider.port,brief-enrichment.port,enrichment-flow}.md`, et `quickstart.md`
-du répertoire `specs/016-intake-llm-enrichment/`, ainsi que [`docs/adr/0028`](docs/adr/0028-llm-provider-intake-enrichment.md).
+`contracts/ports.md`, et `quickstart.md` du répertoire `specs/017-voyageur-notif-suivi/`,
+ainsi que [`docs/adr/0029`](docs/adr/0029-voyageur-notification-trigger.md).
 
 **Features précédentes mergées** (Tier 0 fermé) :
 - `001-conformite-module` (PR #1, squash `8592922`). Source de vérité pour
@@ -221,6 +222,14 @@ du répertoire `specs/016-intake-llm-enrichment/`, ainsi que [`docs/adr/0028`](d
 - `scan-matching-pii` réparé (PR #28, `2695823`) : garde Loi 25 hebdo résolvait `@cv/db`
   (root devDep + build + skip propre sans DB staging). Reste à brancher `DATABASE_URL_STAGING`.
 
+- `016-intake-llm-enrichment` = **feature 009 roadmap** (PR #29, squash `05d4d33`). Enrichissement
+  LLM best-effort du brief (port `LlmProvider`, Bedrock ca-central-1 ADR-0028) : résout
+  `speciality='autre'` → canonique + augmente les destinations, consommé par le scoring via
+  `BriefEnrichmentQueryPort` (décorateur de snapshot). Scrub PII (FR-017), validation Zod stricte,
+  idempotent, métriques OTel, cascade Loi 25 (trigger). **Mode dégradé sûr par défaut**
+  (`DegradedLlmProvider`) — reste **T031 adaptateur Bedrock** (AWS) + **T034 avis FR-016**
+  (juridique) au gate staging. 33/36 tâches, 40+ tests dont 3 d'intégration réels.
+
 **Features en cours / à venir** :
-- `016-intake-llm-enrichment` (cette branche, feature roadmap 009) : voir *Plan courant* ci-dessus.
+- `017-voyageur-notif-suivi` (cette branche, feature roadmap 010) : voir *Plan courant* ci-dessus.
 <!-- SPECKIT END -->

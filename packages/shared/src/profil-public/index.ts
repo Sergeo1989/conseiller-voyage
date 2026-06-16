@@ -4,3 +4,4 @@
 // Pattern aligné sur @cv/shared/conformite.
 
 export * from './contracts';
+export * from './display-reader';

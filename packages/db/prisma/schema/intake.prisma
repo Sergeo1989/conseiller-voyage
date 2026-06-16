@@ -87,6 +87,26 @@ enum EnrichmentFailureReason {
   empty_input
 }
 
+// T004 [017] — Notification voyageur (roadmap 010).
+enum VoyageurNotificationType {
+  accuse_activation
+  conseillers_prets
+  recherche_en_cours
+}
+
+enum VoyageurNotificationStatus {
+  en_attente
+  envoyee
+  echouee
+  annulee
+}
+
+enum VoyageurMatchOutcome {
+  matched
+  partially_matched
+  unmatched
+}
+
 // =====================================================================
 // Modèles (T012 — 5 tables, mapping data-model.md)
 // =====================================================================
@@ -175,6 +195,7 @@ model VoyageurBrief {
 
   magicLinkTokens MagicLinkToken[]
   briefEnrichment BriefEnrichment? // 1:1 (016) — enrichissement LLM best-effort
+  voyageurNotifications VoyageurNotification[] // (017) — notifications voyageur
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -208,6 +229,32 @@ model BriefEnrichment {
   redactedAt DateTime?
 
   @@map("intake_brief_enrichments")
+}
+
+/// Notification voyageur (017 / roadmap 010). Outbox append-only : un envoi par
+/// notification, idempotent par `idempotencyKey` (clé de l'événement source).
+/// Aucune PII conseiller stockée (`conseillerIds` = IDs techniques ; prénom/
+/// spécialité résolus au send). Cascade Loi 25 = annulation applicative.
+model VoyageurNotification {
+  id String @id @default(uuid()) @db.Uuid
+
+  briefId String        @db.Uuid
+  brief   VoyageurBrief @relation(fields: [briefId], references: [id], onDelete: Cascade)
+
+  type           VoyageurNotificationType
+  status         VoyageurNotificationStatus @default(en_attente)
+  idempotencyKey String                     @unique
+  outcome        VoyageurMatchOutcome?
+  conseillerIds  Json                       @default("[]") // uuid[] techniques
+  attempts       Int                        @default(0)
+  lastError      String?                    @db.VarChar(1000)
+
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+
+  @@index([status])
+  @@index([briefId])
+  @@map("intake_voyageur_notifications")
 }
 
 /// Token signé temporaire (J+7) pour vérifier l'email du voyageur ou
