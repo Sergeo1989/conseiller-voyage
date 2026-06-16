@@ -13,6 +13,7 @@ export * from './intake-rate-limiter.port';
 export * from './magic-link-mailer.port';
 export * from './magic-link-token-writer.port';
 export * from './voyageur-brief-reader.port';
+export * from './voyageur-notification-outbox.port';
 export * from './voyageur-brief-writer.port';
 export * from './voyageur-contact-reader.port';
 export * from './voyageur-contact-writer.port';

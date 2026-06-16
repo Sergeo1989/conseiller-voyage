@@ -12,4 +12,5 @@ export * from './branded-ids';
 export * from './contracts';
 export * from './enrichment';
 export * from './formatters';
+export * from './notification';
 export * from './schemas';
