@@ -64,8 +64,8 @@ plan.md, data-model.md, contracts/ports.md, research.md, docs/adr/0029.
 - [x] T025 [US3] Cascade Loi 25 : étendre `RequestBriefErasureUseCase` (008) pour `cancelPendingForBrief(briefId)` (FR-010) + test (notification en attente → `annulee`, 0 envoi ultérieur, SC-005)
 - [x] T026 [P] Métriques OTel `cv.intake.voyageur_notification.*` (enqueued/sent/failed/cancelled par type) + ré-engagement (SC-007/009)
 - [x] T027 [P] Étendre le scan anti-PII (`tools/check-no-pii-matching-audit.ts`) à `intake_voyageur_notifications` (colonne `lastError` ; `conseillerIds` = UUIDs) — SC-004
-- [ ] T028 [P] README intake (section notifications voyageur) + runbook `docs/runbooks/` + ADR-0029 → *accepté* + `quickstart.md` § Statut de validation (SC-001→009) + DoD
-- [ ] T029 Revue de copie FR-CA des 3 templates avec ton rassurant pour `recherche_en_cours` (FR-003/SC-008) ; clés i18n EN
+- [x] T028 [P] README intake (section notifications voyageur) + runbook `docs/runbooks/` + ADR-0029 → *accepté* + `quickstart.md` § Statut de validation (SC-001→009) + DoD
+- [x] T029 Revue de copie FR-CA des 3 templates avec ton rassurant pour `recherche_en_cours` (FR-003/SC-008) ; clés i18n EN
 
 ## Dépendances & ordre
 

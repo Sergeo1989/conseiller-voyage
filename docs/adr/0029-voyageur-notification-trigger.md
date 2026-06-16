@@ -1,7 +1,7 @@
 # ADR-0029 — Déclencheur des notifications voyageur (port intake vs 2e abonné bus)
 
 **Date** : 2026-06-16
-**Statut** : proposé (feature 017 / roadmap 010)
+**Statut** : accepté (feature 017 / roadmap 010 — implémenté sur la branche `017-voyageur-notif-suivi`)
 **Décideurs** : équipe technique
 **Spec lié** : [017-voyageur-notif-suivi/spec.md](../../specs/017-voyageur-notif-suivi/spec.md)
 **Plan lié** : [017-voyageur-notif-suivi/plan.md](../../specs/017-voyageur-notif-suivi/plan.md), Constitution Check V / X

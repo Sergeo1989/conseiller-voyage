@@ -123,9 +123,27 @@ pas branché. Aucun texte libre ni PII persisté ; cascade Loi 25 par trigger. D
 [`docs/runbooks/intake-enrichment.md`](../../../../../docs/runbooks/intake-enrichment.md) +
 [`specs/016-intake-llm-enrichment/`](../../../../../specs/016-intake-llm-enrichment/).
 
+## Notifications voyageur (feature 017 / roadmap 010)
+
+Couche de **notification + suivi côté voyageur** au-dessus du matching. Sur l'issue du
+brief (`matched`/`partially_matched`/`unmatched`), le matching — déjà dédupliqué — appelle
+le port public `VoyageurMatchNotifier` (`@cv/shared/intake`) ; `NotifyBriefOutcomeUseCase`
+applique l'anti-spam (issue inchangée → supprimée) et enfile une `VoyageurNotification`
+(table `intake_voyageur_notifications`). À l'activation du brief, `VerifyMagicLinkUseCase`
+enfile un accusé `accuse_activation`. Un drain périodique (`VoyageurNotificationDispatcher`)
+crée **un job BullMQ par notification** ; le `Sender` rend le gabarit react-email FR-CA/EN
+(prénom + spécialités **publics+vérifiés** via `ConseillerPublicDisplayReader`, **0 contact /
+0 montant** — ADR-0002) et envoie via SES ca-central-1 (003). Le CTA renvoie au récap via un
+**magic-link `view_brief_status` durable** (réutilisable 7 j, distinct du `verify_email`
+one-time). Mode dégradé (SES HS → réessai), idempotence (UNIQUE `idempotencyKey`), cascade
+Loi 25 (effacement → `annulee`), métriques OTel `cv.intake.voyageur_notification.*`. Détail :
+[`docs/runbooks/intake-voyageur-notifications.md`](../../../../../docs/runbooks/intake-voyageur-notifications.md)
++ [`specs/017-voyageur-notif-suivi/`](../../../../../specs/017-voyageur-notif-suivi/) + ADR-0029.
+
 ## Runbooks
 
 - [`intake-secrets-rotation`](../../../../../docs/runbooks/intake-secrets-rotation.md)
 - [`intake-anonymisation-loi25`](../../../../../docs/runbooks/intake-anonymisation-loi25.md)
 - [`intake-disposable-emails-monitoring`](../../../../../docs/runbooks/intake-disposable-emails-monitoring.md)
 - [`intake-enrichment`](../../../../../docs/runbooks/intake-enrichment.md)
+- [`intake-voyageur-notifications`](../../../../../docs/runbooks/intake-voyageur-notifications.md)

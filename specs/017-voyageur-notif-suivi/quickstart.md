@@ -48,4 +48,19 @@ pnpm --filter @cv/api test -- voyageur-notif.integration
 - Scan anti-PII étendu à `intake_voyageur_notifications` ; migration testée.
 
 ## Statut de validation
-À compléter au `/speckit.tasks` + implémentation (mapping SC-001→SC-009).
+
+| SC | Critère | Statut | Preuve |
+|----|---------|--------|--------|
+| SC-001 | matched → 1 notif `conseillers_prets`, 0 doublon au rejeu | ✅ | `voyageur-notification.integration.test.ts` |
+| SC-002 | prénoms + spécialités publics seulement (0 contact) | ✅ | `prisma-conseiller-public-display-reader` (re-check `pret`×`verified`) + invariant T011 |
+| SC-003 | SES HS → reste `en_attente` (réessai non bloquant) | ✅ | `voyageur-notification-sender.test.ts` (throw → 0 mark) |
+| SC-004 | 0 PII en base (scan) | ✅ | `tools/check-no-pii-matching-audit.ts` étendu à `intake_voyageur_notifications` |
+| SC-005 | effacement Loi 25 → notifications en attente `annulee` | ✅ | `request-brief-erasure.use-case.test.ts` (cascade) |
+| SC-006 | unmatched → `recherche_en_cours` (ton rassurant, pas d'échec) | ✅ | template `voyageur-still-searching` + intégration |
+| SC-007/009 | observabilité ré-engagement | ✅ (métriques) | meter `cv.intake.voyageur_notification.*` (T026) |
+| SC-008 | accusé d'activation distinct du verify | ✅ | `voyageur-activation-ack.integration.test.ts` |
+| US3 | lien de suivi durable + renvoyable | ✅ | `voyageur-status-link.integration.test.ts` |
+
+**Avant prod (restant)** : validations staging (charge), secret `DATABASE_URL_STAGING`
+(workflow scan PII), **ratification humaine de la copie FR-CA** des 3 templates (ton
+« prêts » conformité OPC/TICO), image OG/branding courriel.
