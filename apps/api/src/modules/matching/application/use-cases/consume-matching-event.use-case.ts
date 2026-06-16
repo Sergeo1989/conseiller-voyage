@@ -9,6 +9,7 @@
 // et la supersession re-match sont traités en Phase 5 (T047/T048).
 
 import type { ConformiteQueryPort } from '@cv/shared/conformite';
+import type { MatchOutcome, VoyageurMatchNotifier } from '@cv/shared/intake';
 import {
   type MatchingEventBusName,
   OutboxAllMatchesRevokedPayloadSchema,
@@ -36,6 +37,8 @@ export interface ConsumeMatchingEventDeps {
   readonly conformiteQuery: ConformiteQueryPort;
   /** Optionnel — no-op par défaut (tests). */
   readonly metrics?: LeadMetricsRecorder;
+  /** Optionnel (017) — notifie le voyageur de l'issue ; no-op si absent. */
+  readonly voyageurNotifier?: VoyageurMatchNotifier;
 }
 
 export interface ConsumeMatchingEventInput {
@@ -85,8 +88,9 @@ export class ConsumeMatchingEventUseCase {
 
     if (input.name === 'voyageur.brief.unmatched') {
       // Validation à la frontière (trace de cohérence), puis simple trace.
-      OutboxUnmatchedPayloadSchema.parse(input.payload);
+      const p = OutboxUnmatchedPayloadSchema.parse(input.payload);
       await this.deps.consumedEvents.recordConsumed(input.idempotencyKey, input.name);
+      await this.notifyVoyageur(p.briefId, 'unmatched', [], input.idempotencyKey);
       return { kind: 'unmatched' };
     }
 
@@ -135,6 +139,15 @@ export class ConsumeMatchingEventUseCase {
     }
 
     await this.deps.consumedEvents.recordConsumed(input.idempotencyKey, input.name);
+
+    const outcome: MatchOutcome =
+      input.name === 'voyageur.brief.matched' ? 'matched' : 'partially_matched';
+    await this.notifyVoyageur(
+      briefId,
+      outcome,
+      entries.map((e) => e.conseillerId),
+      input.idempotencyKey,
+    );
 
     for (let i = 0; i < supersededClosed; i += 1) this.metrics.recordLeadTransition('perdu');
     this.logger.log(
@@ -207,6 +220,22 @@ export class ConsumeMatchingEventUseCase {
 
     if (created.kind === 'created') this.metrics.recordLeadCreated();
     return { leadCreated: created.kind === 'created', verified: status.verified };
+  }
+
+  /** Notifie le voyageur de l'issue (017). No-op si le notifier n'est pas câblé.
+   *  Le notifier est best-effort (il ne throw jamais), mais on garde la garde. */
+  private async notifyVoyageur(
+    briefId: string,
+    outcome: MatchOutcome,
+    conseillerIds: ReadonlyArray<string>,
+    idempotencyKey: string,
+  ): Promise<void> {
+    await this.deps.voyageurNotifier?.onBriefOutcome({
+      briefId,
+      outcome,
+      conseillerIds,
+      idempotencyKey,
+    });
   }
 
   private parseMatched(input: ConsumeMatchingEventInput): {

@@ -11,6 +11,7 @@
 //   - useClass pour les adapters (injection directe DI)
 
 import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
+import { VOYAGEUR_MATCH_NOTIFIER } from '@cv/shared/intake';
 import {
   CONVERSATION_QUERY_PORT,
   MATCHING_LEAD_QUERY_PORT,
@@ -368,6 +369,7 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
         LEAD_NOTIFICATION_OUTBOX,
         CONFORMITE_QUERY_PORT,
         LEAD_METRICS_RECORDER,
+        VOYAGEUR_MATCH_NOTIFIER, // 017 — notifie le voyageur de l'issue (best-effort)
       ],
       useFactory: (
         clock,
@@ -377,6 +379,7 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
         notificationOutbox,
         conformiteQuery,
         metrics,
+        voyageurNotifier,
       ) => ({
         clock,
         uuid,
@@ -385,6 +388,7 @@ const LEAD_RECONCILE_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 120_
         notificationOutbox,
         conformiteQuery,
         metrics,
+        voyageurNotifier,
       }),
     },
     {

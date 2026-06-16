@@ -19,6 +19,7 @@
 // Pattern hérité de packages/api/src/modules/conformite/interface/conformite.module.ts.
 
 import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
+import { VOYAGEUR_MATCH_NOTIFIER } from '@cv/shared/intake';
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
@@ -44,11 +45,13 @@ import {
   VOYAGEUR_BRIEF_WRITER,
   VOYAGEUR_CONTACT_READER,
   VOYAGEUR_CONTACT_WRITER,
+  VOYAGEUR_NOTIFICATION_OUTBOX,
 } from './application/ports';
 import { EnrichBriefUseCase } from './application/use-cases/enrich-brief.use-case';
 import { EraseAllVoyageurDataUseCase } from './application/use-cases/erase-all-voyageur-data.use-case';
 import { ListBriefsByEmailUseCase } from './application/use-cases/list-briefs-by-email.use-case';
 import { ListUnmatchedBriefsUseCase } from './application/use-cases/list-unmatched-briefs.use-case';
+import { NotifyBriefOutcomeUseCase } from './application/use-cases/notify-brief-outcome.use-case';
 import { PushBriefToConseillerUseCase } from './application/use-cases/push-brief-to-conseiller.use-case';
 import { RequestBriefErasureUseCase } from './application/use-cases/request-brief-erasure.use-case';
 import { ResendMagicLinkUseCase } from './application/use-cases/resend-magic-link.use-case';
@@ -71,6 +74,7 @@ import { PrismaIntakeOutboxWriter } from './infrastructure/prisma-intake-outbox-
 import { PrismaMagicLinkTokenRepository } from './infrastructure/prisma-magic-link-token-repository';
 import { PrismaVoyageurBriefRepository } from './infrastructure/prisma-voyageur-brief-repository';
 import { PrismaVoyageurContactRepository } from './infrastructure/prisma-voyageur-contact-repository';
+import { PrismaVoyageurNotificationOutbox } from './infrastructure/prisma-voyageur-notification-outbox';
 import { RedisIntakeRateLimiter } from './infrastructure/redis-intake-rate-limiter';
 import { SesMagicLinkMailer } from './infrastructure/ses-magic-link-mailer';
 import { AdminIntakeController } from './interface/http/admin-intake.controller';
@@ -373,6 +377,19 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
     EnrichmentReconciliationSweep,
 
     // ---------------------------------------------------------------
+    // Notifications voyageur (017 / roadmap 010)
+    // ---------------------------------------------------------------
+    PrismaVoyageurNotificationOutbox,
+    { provide: VOYAGEUR_NOTIFICATION_OUTBOX, useExisting: PrismaVoyageurNotificationOutbox },
+    {
+      provide: NotifyBriefOutcomeUseCase.DEPS_TOKEN,
+      inject: [CLOCK, UUID_GENERATOR, VOYAGEUR_NOTIFICATION_OUTBOX],
+      useFactory: (clock, uuid, outbox) => ({ clock, uuid, outbox }),
+    },
+    NotifyBriefOutcomeUseCase,
+    { provide: VOYAGEUR_MATCH_NOTIFIER, useExisting: NotifyBriefOutcomeUseCase },
+
+    // ---------------------------------------------------------------
     // BullMQ jobs (Phase 5+)
     // ---------------------------------------------------------------
     IntakeDisposableEmailsRefreshJob,
@@ -380,7 +397,7 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
     IntakeExpirationReminderJob,
     IntakeMagicLinkRetryJob,
   ],
-  // Port public consommé par le matching (011) pour composer l'enrichi (T025).
-  exports: [BRIEF_ENRICHMENT_QUERY_PORT],
+  // Ports publics consommés par le matching (011) : enrichi (T025) + notifier voyageur (017 T018).
+  exports: [BRIEF_ENRICHMENT_QUERY_PORT, VOYAGEUR_MATCH_NOTIFIER],
 })
 export class IntakeModule {}

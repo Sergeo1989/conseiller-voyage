@@ -19,7 +19,7 @@ plan.md, data-model.md, contracts/ports.md, research.md, docs/adr/0029.
 ## Phase 2 : Foundational (bloque les user stories)
 
 - [x] T006 Port interne `VoyageurNotificationOutbox` (`enqueue`/`scanPending`/`markSent`/`markFailed`/`cancelPendingForBrief`) + symbole dans `application/ports/` (mirroir `LeadNotificationOutbox` de 012)
-- [ ] T007 `PrismaVoyageurNotificationOutbox` (`infrastructure/prisma-voyageur-notification-outbox.ts`) : enqueue idempotent (`ON CONFLICT (idempotencyKey)`), scan pending
+- [x] T007 `PrismaVoyageurNotificationOutbox` (`infrastructure/prisma-voyageur-notification-outbox.ts`) : enqueue idempotent (`ON CONFLICT (idempotencyKey)`), scan pending
 - [ ] T008 [P] Adapter `PrismaConseillerPublicDisplayReader` (`infrastructure/`) : lit prénom + spécialités via la surface publique profil 007 ; ne retourne que les conseillers **publics+vérifiés** (re-check)
 - [ ] T009 Enregistrement file BullMQ `intake.voyageur-notifications` (module) + DI des ports (T006/T008)
 
@@ -35,7 +35,7 @@ plan.md, data-model.md, contracts/ports.md, research.md, docs/adr/0029.
 ### Implémentation
 - [x] T012 [US1] Implémenter `selectNotificationForOutcome` (pure) dans `domain/services/select-notification-for-outcome.ts` (fait passer T010)
 - [x] T013 [US1] `VoyageurMatchNotifier` (impl du port public T002) = use case `NotifyBriefOutcomeUseCase` (`application/use-cases/`) : applique `selectNotificationForOutcome`, enqueue idempotent (anti-spam si issue inchangée) ; best-effort (ne throw pas vers matching)
-- [ ] T014 [US1] Brancher le **consumer matching** (`matching/application/use-cases/consume-matching-event.use-case.ts`) pour appeler `VoyageurMatchNotifier.onBriefOutcome(...)` après son traitement (cross-module via port public ; MatchingModule importe déjà IntakeModule)
+- [x] T014 [US1] Brancher le **consumer matching** (`matching/application/use-cases/consume-matching-event.use-case.ts`) pour appeler `VoyageurMatchNotifier.onBriefOutcome(...)` après son traitement (cross-module via port public ; MatchingModule importe déjà IntakeModule)
 - [ ] T015 [P] [US1] Templates react-email FR-CA/EN `voyageur-advisors-ready.tsx` + `voyageur-still-searching.tsx` dans `packages/email-templates/src/intake/` (prénoms+spécialités, CTA lien suivi, **aucun contact**)
 - [ ] T016 [US1] `SesVoyageurNotificationMailer` (`infrastructure/`) : au send → résout prénom/spécialité (`ConseillerPublicDisplayReader`), génère un magic-link `view_brief_status` (008), rend le template, envoie SES ca-central-1 ; **skip si brief anonymisé**
 - [ ] T017 [US1] `VoyageurNotificationDispatcher` + `Sender` + `Worker` (`infrastructure/jobs/voyageur-notification.job.ts`, mirroir 012) : 1 job/notification (`jobId=id`), re-throw sur échec SES → backoff
