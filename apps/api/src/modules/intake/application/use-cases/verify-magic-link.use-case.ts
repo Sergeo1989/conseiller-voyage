@@ -73,7 +73,15 @@ export class VerifyMagicLinkUseCase {
       return { kind: 'brief_anonymised' };
     }
 
-    // Transition pending_verification → active.
+    // Lien de suivi DURABLE (017 US3) : un token `view_brief_status` est
+    // réutilisable jusqu'à expiration (distinct du `verify_email` one-time) et
+    // ne (ré)active rien — il donne seulement accès au récap. On valide et on
+    // rend la main sans consommer le token ni rejouer l'activation.
+    if (token.purpose === 'view_brief_status') {
+      return { kind: 'ok', briefId: brief.id, status: 'active' };
+    }
+
+    // verify_email — one-time : transition pending_verification → active.
     await this.deps.tokenWriter.markConsumed({ tokenId: token.id, consumedAt: now });
     await this.deps.briefWriter.markVerified({ briefId: brief.id, verifiedAt: now });
 

@@ -56,8 +56,8 @@ plan.md, data-model.md, contracts/ports.md, research.md, docs/adr/0029.
 **Goal** : le voyageur revient via le lien de suivi ; expiré → renvoi.
 **Independent Test** : lien valide → page récap ; expiré → ResendMagicLink → nouvel accès.
 
-- [ ] T023 [US3] Vérifier/cadrer la génération du lien `view_brief_status` dans le mailer (T016) comme **renvoyable** ; brancher le renvoi sur `ResendMagicLinkUseCase` (008) depuis le courriel/échec
-- [ ] T024 [US3] Test intégration : lien de suivi route vers `/voyage/[token]` (récap) ; expiré → renvoi fonctionnel (réutilise les tests magic-link 008)
+- [x] T023 [US3] Vérifier/cadrer la génération du lien `view_brief_status` dans le mailer (T016) comme **renvoyable** ; brancher le renvoi sur `ResendMagicLinkUseCase` (008) depuis le courriel/échec
+- [x] T024 [US3] Test intégration : lien de suivi route vers `/voyage/[token]` (récap) ; expiré → renvoi fonctionnel (réutilise les tests magic-link 008)
 
 ## Phase 6 : Polish & portes qualité (transverses — requises pour la DoD)
 
