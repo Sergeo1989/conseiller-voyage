@@ -1,7 +1,8 @@
 # ADR-0028 — Fournisseur LLM (`LlmProvider`) et placement de l'enrichissement d'intake
 
 **Date** : 2026-06-15
-**Statut** : proposé (feature 016 / roadmap 009)
+**Statut** : accepté (implémenté feature 016, 2026-06-15 — sauf l'adaptateur Bedrock T031
+et l'avis FR-016, gated AWS/juridique ; l'app tourne en mode dégradé sûr d'ici là)
 **Décideurs** : équipe technique, équipe conformité
 **Spec lié** : [016-intake-llm-enrichment/spec.md](../../specs/016-intake-llm-enrichment/spec.md)
 **Plan lié** : [016-intake-llm-enrichment/plan.md](../../specs/016-intake-llm-enrichment/plan.md), Constitution Check Principes II / V / VI / IX / X

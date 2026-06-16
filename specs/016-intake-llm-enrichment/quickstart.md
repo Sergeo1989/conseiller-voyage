@@ -50,5 +50,28 @@ pnpm exec tsx tools/check-no-pii-matching-audit.ts   # ou le scan jumeau intake
 - ADR-0028 (fournisseur LLM + placement) mergé. Revue juridique Loi 25 (avis traitement automatisé) tranchée.
 - i18n FR-CA ; lint/tsc/boundaries/a11y verts ; migration testée en staging.
 
-## Statut de validation
-À compléter au `/speckit.tasks` + implémentation (mapping SC-001→SC-009).
+## Statut de validation (2026-06-15)
+
+Implémenté et vérifié (40 tests verts dont 3 d'intégration contre Postgres Docker ;
+2 migrations appliquées ; AppModule boote ; tsc/Biome/boundaries propres).
+
+| SC | Critère | Couverture |
+|---|---|---|
+| SC-001 | Soumission jamais retardée | enrichissement **post-activation, arrière-plan** (job) — chemin voyageur intouché |
+| SC-002 | 100 % soumissions OK si LLM HS | `DegradedLlmProvider` par défaut + test use case « indisponible » + intégration |
+| SC-003 | ≥ 90 % enrichis si dispo | observable via `cv.intake.enrichment.*` (staging) |
+| SC-004 | 0 PII au LLM / stockée | scrub FR-017 (test payload) + invariant T035 + scan T033 + schéma sans texte libre |
+| SC-005 | Re-traitement → 0 appel | court-circuit idempotent (test unit + sweep idempotent) |
+| SC-006 | Pertinence ≥, pas de régression | merge testé + intégration (`autre`→canonique, union destinations) |
+| SC-007 | Observabilité | métriques OTel T029 (attempts/outcome/latency/tokens) |
+| SC-008 | Données région CA | Bedrock ca-central-1 (T031, gated AWS) ; mode dégradé d'ici là |
+| SC-009 | Sortie validée avant usage | `parseEnrichedIntentions` Zod `.strict()` (8 tests) |
+
+**Reste avant prod** : **T031** (adaptateur Bedrock ca-central-1, AWS) · **T034** (avis FR-016,
+copie juridique feature 004) · validations staging (charge) · calibration seuil/modèle.
+D'ici là l'app tourne en **mode dégradé sûr** (matching toujours déterministe).
+
+## DoD
+tsc + Biome + boundaries ✓ · fonctions pures TDD ✓ · invariant anti-PII/anti-marketplace ✓ ·
+cascade Loi 25 (trigger testé) ✓ · idempotence ✓ · i18n FR-CA (avis FR-016 = T034) ⏳ ·
+ADR-0028 accepté ✓ · migration testée (Docker ; staging ⏳) · Bedrock + charge **staging** ⏳.

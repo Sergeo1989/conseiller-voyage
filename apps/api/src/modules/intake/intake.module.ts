@@ -57,6 +57,7 @@ import { VerifyMagicLinkUseCase } from './application/use-cases/verify-magic-lin
 import { ViewBriefStatusUseCase } from './application/use-cases/view-brief-status.use-case';
 import { DisposableEmailCheckerImpl } from './infrastructure/disposable-email-checker';
 import { EnrichBriefJob } from './infrastructure/jobs/enrich-brief.job';
+import { EnrichmentReconciliationSweep } from './infrastructure/jobs/enrichment-reconciliation.sweep';
 import { IntakeBriefExpirationSweepJob } from './infrastructure/jobs/intake-brief-expiration-sweep.job';
 import { IntakeDisposableEmailsRefreshJob } from './infrastructure/jobs/intake-disposable-emails-refresh.job';
 import { IntakeExpirationReminderJob } from './infrastructure/jobs/intake-expiration-reminder.job';
@@ -369,6 +370,7 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
     },
     EnrichBriefUseCase,
     EnrichBriefJob,
+    EnrichmentReconciliationSweep,
 
     // ---------------------------------------------------------------
     // BullMQ jobs (Phase 5+)
