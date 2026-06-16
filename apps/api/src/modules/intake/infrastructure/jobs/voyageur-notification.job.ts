@@ -10,14 +10,17 @@
 
 import type { MatchOutcome, VoyageurNotificationType } from '@cv/shared/intake';
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import type { Job, Queue } from 'bullmq';
 import { CLOCK, type Clock } from '../../../../common/ports/clock.port';
 import {
   VOYAGEUR_NOTIFICATION_MAILER,
+  VOYAGEUR_NOTIFICATION_METRICS_RECORDER,
   VOYAGEUR_NOTIFICATION_OUTBOX,
   type VoyageurNotificationMailer,
+  type VoyageurNotificationMetricsRecorder,
   type VoyageurNotificationOutbox,
+  noopVoyageurNotificationMetricsRecorder,
 } from '../../application/ports';
 
 export const VOYAGEUR_NOTIFICATIONS_QUEUE = 'intake.voyageur-notifications';
@@ -88,26 +91,38 @@ export class VoyageurNotificationSender {
     @Inject(VOYAGEUR_NOTIFICATION_MAILER) private readonly mailer: VoyageurNotificationMailer,
     @Inject(VOYAGEUR_NOTIFICATION_OUTBOX) private readonly outbox: VoyageurNotificationOutbox,
     @Inject(CLOCK) private readonly clock: Clock,
+    @Optional()
+    @Inject(VOYAGEUR_NOTIFICATION_METRICS_RECORDER)
+    private readonly metrics: VoyageurNotificationMetricsRecorder = noopVoyageurNotificationMetricsRecorder,
   ) {}
 
   /** Traite une notification. Lève si SES échoue (→ retry BullMQ). */
   async send(data: VoyageurNotificationJobData): Promise<void> {
-    const result = await this.mailer.send({
-      notificationId: data.notificationId,
-      briefId: data.briefId,
-      type: data.type,
-      outcome: data.outcome,
-      conseillerIds: data.conseillerIds,
-    });
+    let result: Awaited<ReturnType<VoyageurNotificationMailer['send']>>;
+    try {
+      result = await this.mailer.send({
+        notificationId: data.notificationId,
+        briefId: data.briefId,
+        type: data.type,
+        outcome: data.outcome,
+        conseillerIds: data.conseillerIds,
+      });
+    } catch (err) {
+      // Échec transitoire (SES HS) → métrique + propagation pour retry BullMQ.
+      this.metrics.recordFailed(data.type, 'ses_error');
+      throw err;
+    }
 
     switch (result.kind) {
       case 'sent':
       case 'skipped_anonymized':
         // Issue définitive non bloquante : on clôt la notification.
         await this.outbox.markSent(data.notificationId, this.clock.now());
+        this.metrics.recordSent(data.type);
         break;
       case 'skipped_no_address':
         await this.outbox.markFailed(data.notificationId, 'no_address');
+        this.metrics.recordFailed(data.type, 'no_address');
         break;
     }
   }

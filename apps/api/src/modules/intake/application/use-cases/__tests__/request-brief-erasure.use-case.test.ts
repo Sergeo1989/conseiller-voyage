@@ -27,9 +27,9 @@ import { RequestBriefErasureUseCase } from '../request-brief-erasure.use-case';
 /** Fake minimal : enregistre les annulations Loi 25 (FR-010). */
 class FakeVoyageurNotificationOutbox implements Partial<VoyageurNotificationOutbox> {
   readonly cancelled: string[] = [];
-  cancelPendingForBrief(briefId: string): Promise<void> {
+  cancelPendingForBrief(briefId: string): Promise<number> {
     this.cancelled.push(briefId);
-    return Promise.resolve();
+    return Promise.resolve(1);
   }
 }
 

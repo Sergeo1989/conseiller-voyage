@@ -48,7 +48,10 @@ import {
   VOYAGEUR_CONTACT_WRITER,
   VOYAGEUR_NOTIFICATION_OUTBOX,
 } from './application/ports';
-import { VOYAGEUR_NOTIFICATION_MAILER } from './application/ports';
+import {
+  VOYAGEUR_NOTIFICATION_MAILER,
+  VOYAGEUR_NOTIFICATION_METRICS_RECORDER,
+} from './application/ports';
 import { EnrichBriefUseCase } from './application/use-cases/enrich-brief.use-case';
 import { EraseAllVoyageurDataUseCase } from './application/use-cases/erase-all-voyageur-data.use-case';
 import { ListBriefsByEmailUseCase } from './application/use-cases/list-briefs-by-email.use-case';
@@ -75,6 +78,7 @@ import {
 } from './infrastructure/jobs/voyageur-notification.job';
 import { DegradedLlmProvider } from './infrastructure/llm/degraded-llm-provider';
 import { OtelEnrichmentMetricsRecorder } from './infrastructure/otel-enrichment-metrics-recorder';
+import { OtelVoyageurNotificationMetricsRecorder } from './infrastructure/otel-voyageur-notification-metrics-recorder';
 import { PrismaBriefEnrichmentQuery } from './infrastructure/prisma-brief-enrichment-query';
 import { PrismaBriefEnrichmentRepository } from './infrastructure/prisma-brief-enrichment-repository';
 import { PrismaIntakeAuditLogWriter } from './infrastructure/prisma-intake-audit-log-writer';
@@ -289,6 +293,7 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
         INTAKE_AUDIT_LOG_WRITER,
         INTAKE_OUTBOX_WRITER,
         VOYAGEUR_NOTIFICATION_OUTBOX, // 017 FR-010 — annulation notifications
+        VOYAGEUR_NOTIFICATION_METRICS_RECORDER, // 017 T026 — métrique cancelled
       ],
       useFactory: (
         clock,
@@ -298,6 +303,7 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
         audit,
         outbox,
         voyageurNotificationOutbox,
+        metrics,
       ) => ({
         clock,
         uuid,
@@ -306,6 +312,7 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
         audit,
         outbox,
         voyageurNotificationOutbox,
+        metrics,
       }),
     },
     RequestBriefErasureUseCase,
@@ -413,10 +420,20 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
     // ---------------------------------------------------------------
     PrismaVoyageurNotificationOutbox,
     { provide: VOYAGEUR_NOTIFICATION_OUTBOX, useExisting: PrismaVoyageurNotificationOutbox },
+    OtelVoyageurNotificationMetricsRecorder,
+    {
+      provide: VOYAGEUR_NOTIFICATION_METRICS_RECORDER,
+      useExisting: OtelVoyageurNotificationMetricsRecorder,
+    },
     {
       provide: NotifyBriefOutcomeUseCase.DEPS_TOKEN,
-      inject: [CLOCK, UUID_GENERATOR, VOYAGEUR_NOTIFICATION_OUTBOX],
-      useFactory: (clock, uuid, outbox) => ({ clock, uuid, outbox }),
+      inject: [
+        CLOCK,
+        UUID_GENERATOR,
+        VOYAGEUR_NOTIFICATION_OUTBOX,
+        VOYAGEUR_NOTIFICATION_METRICS_RECORDER,
+      ],
+      useFactory: (clock, uuid, outbox, metrics) => ({ clock, uuid, outbox, metrics }),
     },
     NotifyBriefOutcomeUseCase,
     { provide: VOYAGEUR_MATCH_NOTIFIER, useExisting: NotifyBriefOutcomeUseCase },

@@ -43,8 +43,8 @@ class FakeOutbox implements VoyageurNotificationOutbox {
   markFailed(): Promise<void> {
     return Promise.resolve();
   }
-  cancelPendingForBrief(): Promise<void> {
-    return Promise.resolve();
+  cancelPendingForBrief(): Promise<number> {
+    return Promise.resolve(0);
   }
 }
 

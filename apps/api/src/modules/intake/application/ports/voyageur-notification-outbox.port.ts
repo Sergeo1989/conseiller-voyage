@@ -34,8 +34,9 @@ export interface VoyageurNotificationOutbox {
   scanPending(limit: number): Promise<ReadonlyArray<PendingVoyageurNotification>>;
   markSent(notificationId: string, sentAt: Date): Promise<void>;
   markFailed(notificationId: string, error: string): Promise<void>;
-  /** Loi 25 (FR-010) : annule les notifications en attente d'un brief effacé. */
-  cancelPendingForBrief(briefId: string): Promise<void>;
+  /** Loi 25 (FR-010) : annule les notifications en attente d'un brief effacé.
+   *  Retourne le nombre de notifications annulées (pour la métrique). */
+  cancelPendingForBrief(briefId: string): Promise<number>;
 }
 
 export const VOYAGEUR_NOTIFICATION_OUTBOX = Symbol.for('VoyageurNotificationOutbox');

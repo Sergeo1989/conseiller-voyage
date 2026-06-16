@@ -18,6 +18,7 @@ import type {
   IntakeOutboxWriter,
   VoyageurBriefReader,
   VoyageurBriefWriter,
+  VoyageurNotificationMetricsRecorder,
   VoyageurNotificationOutbox,
 } from '../ports';
 
@@ -43,6 +44,8 @@ export interface RequestBriefErasureDeps {
   readonly outbox: IntakeOutboxWriter;
   /** Optionnel (017 FR-010) — annule les notifications voyageur en attente. */
   readonly voyageurNotificationOutbox?: VoyageurNotificationOutbox;
+  /** Optionnel (017 T026) — métrique d'annulation Loi 25. */
+  readonly metrics?: VoyageurNotificationMetricsRecorder;
 }
 
 @Injectable()
@@ -101,7 +104,10 @@ export class RequestBriefErasureUseCase {
     // annule celles en attente. Best-effort — l'effacement reste effectif.
     if (this.deps.voyageurNotificationOutbox) {
       try {
-        await this.deps.voyageurNotificationOutbox.cancelPendingForBrief(input.briefId);
+        const cancelled = await this.deps.voyageurNotificationOutbox.cancelPendingForBrief(
+          input.briefId,
+        );
+        this.deps.metrics?.recordCancelled(cancelled);
       } catch {
         // best-effort
       }

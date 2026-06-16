@@ -11,12 +11,18 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Clock } from '../../../../common/ports/clock.port';
 import type { UuidGenerator } from '../../../../common/ports/uuid-generator.port';
 import { selectNotificationForOutcome } from '../../domain/services/select-notification-for-outcome';
-import type { VoyageurNotificationOutbox } from '../ports';
+import {
+  type VoyageurNotificationMetricsRecorder,
+  type VoyageurNotificationOutbox,
+  noopVoyageurNotificationMetricsRecorder,
+} from '../ports';
 
 export interface NotifyBriefOutcomeDeps {
   readonly clock: Clock;
   readonly uuid: UuidGenerator;
   readonly outbox: VoyageurNotificationOutbox;
+  /** Optionnel — no-op par défaut (tests). */
+  readonly metrics?: VoyageurNotificationMetricsRecorder;
 }
 
 @Injectable()
@@ -36,7 +42,7 @@ export class NotifyBriefOutcomeUseCase implements VoyageurMatchNotifier {
       const { type, suppressed } = selectNotificationForOutcome(input.outcome, last);
       if (suppressed) return; // anti-spam (FR-014)
 
-      await this.deps.outbox.enqueue({
+      const result = await this.deps.outbox.enqueue({
         id: this.deps.uuid.generate(),
         briefId: input.briefId,
         type,
@@ -45,6 +51,9 @@ export class NotifyBriefOutcomeUseCase implements VoyageurMatchNotifier {
         conseillerIds: input.conseillerIds,
         createdAt: this.deps.clock.now(),
       });
+      if (result.kind === 'enqueued') {
+        (this.deps.metrics ?? noopVoyageurNotificationMetricsRecorder).recordEnqueued(type);
+      }
     } catch (err) {
       // Best-effort : ne jamais propager vers matching (Principe X).
       this.logger.warn(

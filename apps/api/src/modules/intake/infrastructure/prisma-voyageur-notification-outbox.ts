@@ -84,11 +84,12 @@ export class PrismaVoyageurNotificationOutbox implements VoyageurNotificationOut
     });
   }
 
-  async cancelPendingForBrief(briefId: string): Promise<void> {
-    await prisma.voyageurNotification.updateMany({
+  async cancelPendingForBrief(briefId: string): Promise<number> {
+    const { count } = await prisma.voyageurNotification.updateMany({
       where: { briefId, status: 'en_attente' },
       data: { status: 'annulee' },
     });
+    return count;
   }
 }
 
