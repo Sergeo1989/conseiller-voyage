@@ -15,6 +15,7 @@ import type {
   MagicLinkTokenWriter,
   VoyageurBriefReader,
   VoyageurBriefWriter,
+  VoyageurNotificationOutbox,
 } from '../ports';
 
 export interface VerifyMagicLinkInput {
@@ -36,6 +37,8 @@ export interface VerifyMagicLinkDeps {
   readonly tokenWriter: MagicLinkTokenWriter;
   readonly audit: IntakeAuditLogWriter;
   readonly outbox: IntakeOutboxWriter;
+  /** Optionnel (017 US2) — accusé d'activation au voyageur ; no-op si absent. */
+  readonly voyageurNotificationOutbox?: VoyageurNotificationOutbox;
 }
 
 @Injectable()
@@ -117,6 +120,24 @@ export class VerifyMagicLinkUseCase {
         familiarity: brief.familiarity,
       },
     });
+
+    // Accusé d'activation au voyageur (017 US2) — idempotent (clé activation:{briefId}),
+    // best-effort : un échec ne doit jamais bloquer l'activation du brief (Principe X).
+    if (this.deps.voyageurNotificationOutbox) {
+      try {
+        await this.deps.voyageurNotificationOutbox.enqueue({
+          id: this.deps.uuid.generate(),
+          briefId: brief.id,
+          type: 'accuse_activation',
+          idempotencyKey: `activation:${brief.id}`,
+          outcome: null,
+          conseillerIds: [],
+          createdAt: now,
+        });
+      } catch {
+        // best-effort — l'activation reste effective.
+      }
+    }
 
     return { kind: 'ok', briefId: brief.id, status: 'active' };
   }

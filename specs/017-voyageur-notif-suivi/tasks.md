@@ -47,9 +47,9 @@ plan.md, data-model.md, contracts/ports.md, research.md, docs/adr/0029.
 **Goal** : à l'activation du brief (post-vérification 008), un accusé distinct est envoyé.
 **Independent Test** : activer un brief → 1 notification `accuse_activation`, distincte du courriel de vérification.
 
-- [ ] T020 [US2] Enqueue de l'accusé dans le use case d'activation 008 (`verify-magic-link.use-case.ts`) : `VoyageurNotificationOutbox.enqueue(type=accuse_activation, key=activation:{briefId})`
-- [ ] T021 [P] [US2] Template react-email FR-CA/EN `voyageur-activation-ack.tsx` (« demande confirmée, on cherche ») + lien de suivi
-- [ ] T022 [US2] Test intégration : activation → 1 accusé enqueue/envoyé (idempotent), distinct du verify
+- [x] T020 [US2] Enqueue de l'accusé dans le use case d'activation 008 (`verify-magic-link.use-case.ts`) : `VoyageurNotificationOutbox.enqueue(type=accuse_activation, key=activation:{briefId})`
+- [x] T021 [P] [US2] Template react-email FR-CA/EN `voyageur-activation-ack.tsx` (« demande confirmée, on cherche ») + lien de suivi
+- [x] T022 [US2] Test intégration : activation → 1 accusé enqueue/envoyé (idempotent), distinct du verify
 
 ## Phase 5 : User Story 3 — Lien de suivi durable / renvoyable (P2)
 

@@ -212,8 +212,9 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
         MAGIC_LINK_TOKEN_WRITER,
         INTAKE_AUDIT_LOG_WRITER,
         INTAKE_OUTBOX_WRITER,
+        VOYAGEUR_NOTIFICATION_OUTBOX, // 017 US2 — accusé d'activation
       ],
-      useFactory: (clock, uuid, briefReader, briefWriter, tokenWriter, audit, outbox) => ({
+      useFactory: (
         clock,
         uuid,
         briefReader,
@@ -221,6 +222,16 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
         tokenWriter,
         audit,
         outbox,
+        voyageurNotificationOutbox,
+      ) => ({
+        clock,
+        uuid,
+        briefReader,
+        briefWriter,
+        tokenWriter,
+        audit,
+        outbox,
+        voyageurNotificationOutbox,
       }),
     },
     VerifyMagicLinkUseCase,

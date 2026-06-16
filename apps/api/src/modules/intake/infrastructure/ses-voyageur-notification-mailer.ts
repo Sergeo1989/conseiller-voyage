@@ -12,6 +12,7 @@
 
 import { SendEmailCommand } from '@aws-sdk/client-sesv2';
 import {
+  VoyageurActivationAckEmail,
   VoyageurAdvisorsReadyEmail,
   VoyageurStillSearchingEmail,
 } from '@cv/email-templates/intake';
@@ -47,6 +48,7 @@ const LOCALE = 'fr-CA' as const;
 const SUBJECTS: Record<string, string> = {
   conseillers_prets: 'Vos conseillers vérifiés sont prêts',
   recherche_en_cours: 'Votre demande de voyage est en bonne main',
+  accuse_activation: 'Votre demande de voyage est confirmée',
 };
 
 @Injectable()
@@ -143,6 +145,13 @@ export class SesVoyageurNotificationMailer implements VoyageurNotificationMailer
       return {
         html: await render(VoyageurAdvisorsReadyEmail(props)),
         text: await render(VoyageurAdvisorsReadyEmail(props), { plainText: true }),
+      };
+    }
+    if (input.type === 'accuse_activation') {
+      const props = { trackingUrl, locale: LOCALE };
+      return {
+        html: await render(VoyageurActivationAckEmail(props)),
+        text: await render(VoyageurActivationAckEmail(props), { plainText: true }),
       };
     }
     // recherche_en_cours (+ fallback)
