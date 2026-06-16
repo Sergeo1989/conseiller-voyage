@@ -5,3 +5,6 @@
 //   Phase 8 — expiration-reminder (T132) + erasure-confirmation (N6)
 
 export * from './magic-link';
+// 017 — notifications voyageur (issue de matching).
+export * from './voyageur-advisors-ready';
+export * from './voyageur-still-searching';

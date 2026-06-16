@@ -20,7 +20,8 @@
 
 import { CONFORMITE_QUERY_PORT } from '@cv/shared/conformite';
 import { VOYAGEUR_MATCH_NOTIFIER } from '@cv/shared/intake';
-import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { Module, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import { CryptoUuidGenerator } from '../../common/infrastructure/crypto-uuid-generator';
 import { SystemClock } from '../../common/infrastructure/system-clock';
@@ -47,6 +48,7 @@ import {
   VOYAGEUR_CONTACT_WRITER,
   VOYAGEUR_NOTIFICATION_OUTBOX,
 } from './application/ports';
+import { VOYAGEUR_NOTIFICATION_MAILER } from './application/ports';
 import { EnrichBriefUseCase } from './application/use-cases/enrich-brief.use-case';
 import { EraseAllVoyageurDataUseCase } from './application/use-cases/erase-all-voyageur-data.use-case';
 import { ListBriefsByEmailUseCase } from './application/use-cases/list-briefs-by-email.use-case';
@@ -65,6 +67,12 @@ import { IntakeBriefExpirationSweepJob } from './infrastructure/jobs/intake-brie
 import { IntakeDisposableEmailsRefreshJob } from './infrastructure/jobs/intake-disposable-emails-refresh.job';
 import { IntakeExpirationReminderJob } from './infrastructure/jobs/intake-expiration-reminder.job';
 import { IntakeMagicLinkRetryJob } from './infrastructure/jobs/intake-magic-link-retry.job';
+import {
+  VOYAGEUR_NOTIFICATIONS_QUEUE,
+  VoyageurNotificationDispatcher,
+  VoyageurNotificationSender,
+  VoyageurNotificationWorker,
+} from './infrastructure/jobs/voyageur-notification.job';
 import { DegradedLlmProvider } from './infrastructure/llm/degraded-llm-provider';
 import { OtelEnrichmentMetricsRecorder } from './infrastructure/otel-enrichment-metrics-recorder';
 import { PrismaBriefEnrichmentQuery } from './infrastructure/prisma-brief-enrichment-query';
@@ -77,6 +85,7 @@ import { PrismaVoyageurContactRepository } from './infrastructure/prisma-voyageu
 import { PrismaVoyageurNotificationOutbox } from './infrastructure/prisma-voyageur-notification-outbox';
 import { RedisIntakeRateLimiter } from './infrastructure/redis-intake-rate-limiter';
 import { SesMagicLinkMailer } from './infrastructure/ses-magic-link-mailer';
+import { SesVoyageurNotificationMailer } from './infrastructure/ses-voyageur-notification-mailer';
 import { AdminIntakeController } from './interface/http/admin-intake.controller';
 import { IntakeAuthGuard } from './interface/http/intake-auth.guard';
 import { RollingSessionCookieInterceptor } from './interface/http/rolling-session-cookie.interceptor';
@@ -85,8 +94,10 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
 @Module({
   imports: [
     BullMqModule, // expose REDIS_CLIENT pour RedisIntakeRateLimiter + DisposableEmailCheckerImpl
-    IdentiteModule, // expose AuthGuard + AUTH_SESSION_READER pour admin endpoints US5
+    IdentiteModule, // expose AuthGuard + AUTH_SESSION_READER + CONSEILLER_PUBLIC_DISPLAY_READER (017)
     ConformiteModule, // expose CONFORMITE_QUERY_PORT pour push manuel US5 FR-027
+    // 017 — file des notifications voyageur (1 job/notification).
+    BullModule.registerQueue({ name: VOYAGEUR_NOTIFICATIONS_QUEUE }),
   ],
   controllers: [VoyageurIntakeController, AdminIntakeController],
   providers: [
@@ -388,6 +399,12 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
     },
     NotifyBriefOutcomeUseCase,
     { provide: VOYAGEUR_MATCH_NOTIFIER, useExisting: NotifyBriefOutcomeUseCase },
+    // Envoi (mailer SES + magic-link suivi) + job 1/notification.
+    SesVoyageurNotificationMailer,
+    { provide: VOYAGEUR_NOTIFICATION_MAILER, useExisting: SesVoyageurNotificationMailer },
+    VoyageurNotificationDispatcher,
+    VoyageurNotificationSender,
+    VoyageurNotificationWorker,
 
     // ---------------------------------------------------------------
     // BullMQ jobs (Phase 5+)
@@ -400,4 +417,23 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
   // Ports publics consommés par le matching (011) : enrichi (T025) + notifier voyageur (017 T018).
   exports: [BRIEF_ENRICHMENT_QUERY_PORT, VOYAGEUR_MATCH_NOTIFIER],
 })
-export class IntakeModule {}
+export class IntakeModule implements OnModuleInit, OnModuleDestroy {
+  private voyageurDispatchInterval?: NodeJS.Timeout;
+
+  constructor(private readonly voyageurDispatcher: VoyageurNotificationDispatcher) {}
+
+  onModuleInit(): void {
+    // Drain des notifications voyageur en attente (résilience : couvre les
+    // notifications enfilées hors flux temps réel + reprise après SES HS).
+    // 5 s en prod, 30 s en dev (réduit le bruit), aligné sur 012.
+    this.voyageurDispatchInterval = setInterval(() => {
+      void this.voyageurDispatcher.dispatchPending();
+    }, VOYAGEUR_DISPATCH_INTERVAL_MS);
+  }
+
+  onModuleDestroy(): void {
+    if (this.voyageurDispatchInterval) clearInterval(this.voyageurDispatchInterval);
+  }
+}
+
+const VOYAGEUR_DISPATCH_INTERVAL_MS = process.env.NODE_ENV === 'development' ? 30_000 : 5_000;

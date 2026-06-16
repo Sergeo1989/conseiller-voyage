@@ -111,6 +111,7 @@ import { LegalAcceptanceFacade } from './interface/public-api/legal-acceptance.f
 import { RoleGuard } from './interface/role.guard';
 import { StepUpGuard } from './interface/step-up.guard';
 
+import { CONSEILLER_PUBLIC_DISPLAY_READER } from '@cv/shared/profil-public';
 import { ConformiteStatusChangedListener } from './application/listeners/conformite-status-changed.listener';
 import { ProfilCacheInvalidator } from './application/listeners/profil-cache-invalidation.listener';
 // Feature 007 (profil conseiller) — ports + adaptateurs
@@ -143,6 +144,7 @@ import { AwsCloudFrontCacheInvalidator } from './infrastructure/cloudfront-cache
 import { HttpNextjsRevalidator } from './infrastructure/http-nextjs-revalidator';
 import { CleanupOrphanPhotosJob } from './infrastructure/jobs/cleanup-orphan-photos.job';
 import { PrismaAuthUserLegalNameReader } from './infrastructure/prisma-auth-user-legal-name-reader';
+import { PrismaConseillerPublicDisplayReader } from './infrastructure/prisma-conseiller-public-display-reader';
 import { PrismaEstProfilPublic } from './infrastructure/prisma-est-profil-public';
 import { PrismaPhotoHistoriqueRepository } from './infrastructure/prisma-photo-historique-repository';
 import { PrismaProfilConseillerRepository } from './infrastructure/prisma-profil-conseiller-repository';
@@ -312,6 +314,12 @@ import { ProfilPublicController } from './interface/profil-public.controller';
     { provide: AUTH_USER_LEGAL_NAME_READER, useClass: PrismaAuthUserLegalNameReader },
     { provide: PROFIL_PUBLIC_READER, useClass: PrismaProfilPublicReader },
     { provide: EST_PROFIL_PUBLIC_PORT, useClass: PrismaEstProfilPublic },
+    // 017 — affichage public (prénom + spécialités) consommé par les
+    // notifications voyageur (intake) via @cv/shared/profil-public.
+    {
+      provide: CONSEILLER_PUBLIC_DISPLAY_READER,
+      useClass: PrismaConseillerPublicDisplayReader,
+    },
 
     // Guards
     AuthGuard,
@@ -343,6 +351,9 @@ import { ProfilPublicController } from './interface/profil-public.controller';
     // EST_PROFIL_PUBLIC_PORT est l'interface stable consommée par les
     // modules matching (011) et SEO (016) via @cv/shared/profil-public.
     EST_PROFIL_PUBLIC_PORT,
+    // 017 — affichage public minimal (prénom + spécialités) pour les
+    // notifications voyageur (intake).
+    CONSEILLER_PUBLIC_DISPLAY_READER,
     // Les autres ports profil sont internes au module — non exportés.
   ],
 })

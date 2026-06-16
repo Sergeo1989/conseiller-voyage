@@ -12,16 +12,16 @@ plan.md, data-model.md, contracts/ports.md, research.md, docs/adr/0029.
 
 - [x] T001 [P] Types partagés : enums `VoyageurNotificationType` / `VoyageurNotificationStatus` / `MatchOutcome` dans `packages/shared/src/intake/notification.ts` (+ barrel)
 - [x] T002 [P] Port public `VoyageurMatchNotifier` (interface + symbole) dans `packages/shared/src/intake/` (consommé par matching, cf. contracts/ports.md)
-- [ ] T003 [P] Port `ConseillerPublicDisplayReader` (interface + symbole : `getPublicDisplay(ids) → [{conseillerId, prenom, specialites}]`) dans `packages/shared/src/profil-public/`
+- [x] T003 [P] Port `ConseillerPublicDisplayReader` (interface + symbole : `getPublicDisplay(ids) → [{conseillerId, prenom, specialites}]`) dans `packages/shared/src/profil-public/`
 - [x] T004 [P] Modèle Prisma `VoyageurNotification` (`idempotencyKey` UNIQUE, briefId, type, status, outcome, conseillerIds jsonb, attempts, lastError) + enums dans `packages/db/prisma/schema/intake.prisma` + **migration** `migrate dev`
-- [ ] T005 Scaffolding : dossiers `apps/api/src/modules/intake/{domain/services,application/ports,application/use-cases,infrastructure/jobs}` + `packages/email-templates/src/intake/`
+- [x] T005 Scaffolding : dossiers `apps/api/src/modules/intake/{domain/services,application/ports,application/use-cases,infrastructure/jobs}` + `packages/email-templates/src/intake/`
 
 ## Phase 2 : Foundational (bloque les user stories)
 
 - [x] T006 Port interne `VoyageurNotificationOutbox` (`enqueue`/`scanPending`/`markSent`/`markFailed`/`cancelPendingForBrief`) + symbole dans `application/ports/` (mirroir `LeadNotificationOutbox` de 012)
 - [x] T007 `PrismaVoyageurNotificationOutbox` (`infrastructure/prisma-voyageur-notification-outbox.ts`) : enqueue idempotent (`ON CONFLICT (idempotencyKey)`), scan pending
-- [ ] T008 [P] Adapter `PrismaConseillerPublicDisplayReader` (`infrastructure/`) : lit prénom + spécialités via la surface publique profil 007 ; ne retourne que les conseillers **publics+vérifiés** (re-check)
-- [ ] T009 Enregistrement file BullMQ `intake.voyageur-notifications` (module) + DI des ports (T006/T008)
+- [x] T008 [P] Adapter `PrismaConseillerPublicDisplayReader` (`infrastructure/`) : lit prénom + spécialités via la surface publique profil 007 ; ne retourne que les conseillers **publics+vérifiés** (re-check)
+- [x] T009 Enregistrement file BullMQ `intake.voyageur-notifications` (module) + DI des ports (T006/T008)
 
 ## Phase 3 : User Story 1 — Notification « conseillers prêts / on cherche » (P1) 🎯 MVP
 
@@ -30,17 +30,17 @@ plan.md, data-model.md, contracts/ports.md, research.md, docs/adr/0029.
 
 ### Tests d'abord (TDD — commit AVANT impl)
 - [x] T010 [P] [US1] **(TDD)** Tests `selectNotificationForOutcome` dans `domain/services/__tests__/select-notification-for-outcome.test.ts` : matched/partiel → `conseillers_prets` ; unmatched → `recherche_en_cours` ; issue inchangée → **supprimée** (anti-spam). **Commit avant impl.**
-- [ ] T011 [P] [US1] **(TDD)** Test invariant anti-PII/anti-marketplace du rendu courriel (0 contact/0 montant ; prénom+spécialité seulement) dans `__tests__/voyageur-notification-anti-transaction.invariant.test.ts`.
+- [x] T011 [P] [US1] **(TDD)** Test invariant anti-PII/anti-marketplace du rendu courriel (0 contact/0 montant ; prénom+spécialité seulement) dans `__tests__/voyageur-notification-anti-transaction.invariant.test.ts`.
 
 ### Implémentation
 - [x] T012 [US1] Implémenter `selectNotificationForOutcome` (pure) dans `domain/services/select-notification-for-outcome.ts` (fait passer T010)
 - [x] T013 [US1] `VoyageurMatchNotifier` (impl du port public T002) = use case `NotifyBriefOutcomeUseCase` (`application/use-cases/`) : applique `selectNotificationForOutcome`, enqueue idempotent (anti-spam si issue inchangée) ; best-effort (ne throw pas vers matching)
 - [x] T014 [US1] Brancher le **consumer matching** (`matching/application/use-cases/consume-matching-event.use-case.ts`) pour appeler `VoyageurMatchNotifier.onBriefOutcome(...)` après son traitement (cross-module via port public ; MatchingModule importe déjà IntakeModule)
-- [ ] T015 [P] [US1] Templates react-email FR-CA/EN `voyageur-advisors-ready.tsx` + `voyageur-still-searching.tsx` dans `packages/email-templates/src/intake/` (prénoms+spécialités, CTA lien suivi, **aucun contact**)
-- [ ] T016 [US1] `SesVoyageurNotificationMailer` (`infrastructure/`) : au send → résout prénom/spécialité (`ConseillerPublicDisplayReader`), génère un magic-link `view_brief_status` (008), rend le template, envoie SES ca-central-1 ; **skip si brief anonymisé**
-- [ ] T017 [US1] `VoyageurNotificationDispatcher` + `Sender` + `Worker` (`infrastructure/jobs/voyageur-notification.job.ts`, mirroir 012) : 1 job/notification (`jobId=id`), re-throw sur échec SES → backoff
-- [ ] T018 [US1] Enregistrement DI complet (module) : notifier, use case, mailer, jobs ; export du port public `VoyageurMatchNotifier` (consommé par matching)
-- [ ] T019 [US1] Test intégration Testcontainers : event matched → notification persistée + (stub mailer) envoyée, 0 doublon au rejeu (SC-001) ; unmatched → `recherche_en_cours` ; SES stub HS → reste `en_attente` (SC-003)
+- [x] T015 [P] [US1] Templates react-email FR-CA/EN `voyageur-advisors-ready.tsx` + `voyageur-still-searching.tsx` dans `packages/email-templates/src/intake/` (prénoms+spécialités, CTA lien suivi, **aucun contact**)
+- [x] T016 [US1] `SesVoyageurNotificationMailer` (`infrastructure/`) : au send → résout prénom/spécialité (`ConseillerPublicDisplayReader`), génère un magic-link `view_brief_status` (008), rend le template, envoie SES ca-central-1 ; **skip si brief anonymisé**
+- [x] T017 [US1] `VoyageurNotificationDispatcher` + `Sender` + `Worker` (`infrastructure/jobs/voyageur-notification.job.ts`, mirroir 012) : 1 job/notification (`jobId=id`), re-throw sur échec SES → backoff
+- [x] T018 [US1] Enregistrement DI complet (module) : notifier, use case, mailer, jobs ; export du port public `VoyageurMatchNotifier` (consommé par matching)
+- [x] T019 [US1] Test intégration Testcontainers : event matched → notification persistée + (stub mailer) envoyée, 0 doublon au rejeu (SC-001) ; unmatched → `recherche_en_cours` ; SES stub HS → reste `en_attente` (SC-003)
 
 ## Phase 4 : User Story 2 — Accusé d'activation (P2)
 
