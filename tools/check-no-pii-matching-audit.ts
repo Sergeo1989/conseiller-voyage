@@ -125,6 +125,10 @@ async function main(): Promise<void> {
       // Aucun texte libre n'y est persisté, mais on scanne en défense (SC-004).
       // PK = briefId (pas de colonne `id`).
       ...(await scanColumn('intake_brief_enrichments', 'enrichedDestinations', 'briefId')),
+      // Feature 017 — notifications voyageur : `lastError` (message d'échec SES,
+      // jamais de PII) + `conseillerIds` (UUIDs techniques uniquement) — SC-004.
+      ...(await scanColumn('intake_voyageur_notifications', 'lastError')),
+      ...(await scanColumn('intake_voyageur_notifications', 'conseillerIds')),
     ];
   } catch (err) {
     if (isAbsentDbError(err)) {

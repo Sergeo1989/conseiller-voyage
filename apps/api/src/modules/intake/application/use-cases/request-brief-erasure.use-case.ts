@@ -18,6 +18,7 @@ import type {
   IntakeOutboxWriter,
   VoyageurBriefReader,
   VoyageurBriefWriter,
+  VoyageurNotificationOutbox,
 } from '../ports';
 
 export interface RequestBriefErasureInput {
@@ -40,6 +41,8 @@ export interface RequestBriefErasureDeps {
   readonly briefWriter: VoyageurBriefWriter;
   readonly audit: IntakeAuditLogWriter;
   readonly outbox: IntakeOutboxWriter;
+  /** Optionnel (017 FR-010) — annule les notifications voyageur en attente. */
+  readonly voyageurNotificationOutbox?: VoyageurNotificationOutbox;
 }
 
 @Injectable()
@@ -93,6 +96,16 @@ export class RequestBriefErasureUseCase {
         reason: 'voyageur_request',
       },
     });
+
+    // Loi 25 (FR-010) : un brief effacé ne déclenche plus de notification ; on
+    // annule celles en attente. Best-effort — l'effacement reste effectif.
+    if (this.deps.voyageurNotificationOutbox) {
+      try {
+        await this.deps.voyageurNotificationOutbox.cancelPendingForBrief(input.briefId);
+      } catch {
+        // best-effort
+      }
+    }
 
     return { kind: 'ok' };
   }

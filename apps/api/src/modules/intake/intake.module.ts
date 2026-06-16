@@ -288,14 +288,24 @@ import { VoyageurIntakeController } from './interface/http/voyageur-intake.contr
         VOYAGEUR_BRIEF_WRITER,
         INTAKE_AUDIT_LOG_WRITER,
         INTAKE_OUTBOX_WRITER,
+        VOYAGEUR_NOTIFICATION_OUTBOX, // 017 FR-010 — annulation notifications
       ],
-      useFactory: (clock, uuid, briefReader, briefWriter, audit, outbox) => ({
+      useFactory: (
         clock,
         uuid,
         briefReader,
         briefWriter,
         audit,
         outbox,
+        voyageurNotificationOutbox,
+      ) => ({
+        clock,
+        uuid,
+        briefReader,
+        briefWriter,
+        audit,
+        outbox,
+        voyageurNotificationOutbox,
       }),
     },
     RequestBriefErasureUseCase,
