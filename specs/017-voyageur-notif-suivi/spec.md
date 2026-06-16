@@ -21,8 +21,11 @@ dégradé courriel. FR-CA + i18n. Le contenu de l'espace voyageur reste à 015."
 
 ## Clarifications
 
-*(Aucune pour l'instant — `/speckit.clarify` à exécuter si souhaité. Les points sensibles
-sont documentés en Assumptions avec un défaut raisonnable.)*
+### Session 2026-06-16
+
+- Q: Contenu du courriel « conseillers prêts » — quelles infos conseiller ? → A: **Prénoms + spécialités** (sans coordonnée de contact). Ce sont des informations **publiques** (profil conseiller 007) ; le courriel les affiche pour engager, **jamais** de coordonnée de contact ni de CTA hors plateforme.
+- Q: Cas « non matché » — quand notifier ? → A: **Immédiatement** un message rassurant « on continue de chercher », puis un courriel « prêts » si un appariement survient plus tard (transparent, jamais de silence).
+- Q: Accusé d'activation (US2) ? → A: **Oui**, l'envoyer (pose les attentes entre activation et appariement). US2 reste au périmètre.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -44,7 +47,7 @@ pour partiellement/non matché (ton rassurant). Couper le canal courriel → auc
 
 **Acceptance Scenarios**:
 
-1. **Given** un brief activé qui devient **matché**, **When** l'événement de matching survient, **Then** le voyageur reçoit **un** courriel « conseillers prêts » avec un lien de suivi, sans coordonnée conseiller ni montant.
+1. **Given** un brief activé qui devient **matché**, **When** l'événement de matching survient, **Then** le voyageur reçoit **un** courriel « conseillers prêts » avec les prénoms/spécialités des conseillers appariés + un lien de suivi, **sans** coordonnée de contact ni montant.
 2. **Given** un brief **partiellement matché** (1–2 conseillers), **When** l'événement survient, **Then** le voyageur reçoit un courriel adapté (conseillers disponibles + suivi), sans ton d'échec.
 3. **Given** un brief **non matché** (0 conseiller), **When** l'événement survient, **Then** le voyageur reçoit un message **rassurant** (« on continue de chercher »), jamais une erreur.
 4. **Given** le même événement de matching rejoué (livraison at-least-once), **When** il est traité une 2e fois, **Then** **aucun** courriel en double n'est envoyé (idempotence).
@@ -104,14 +107,15 @@ Lien expiré → possibilité d'en redemander un et d'accéder à nouveau.
 ### Functional Requirements
 
 - **FR-001**: À chaque transition d'appariement d'un brief (**matché** / **partiellement matché** / **non matché**, issue de 011/012), le système DOIT envoyer au voyageur **une** notification transactionnelle FR-CA, via le canal de notification existant (003).
-- **FR-002**: La notification « conseillers prêts » DOIT contenir un **lien de suivi** ramenant le voyageur à son récap/espace, et NE DOIT **jamais** exposer de coordonnée de contact d'un conseiller ni inviter à un contact hors plateforme (anti-marketplace ADR-0002). Aucun montant/paiement/réservation.
+- **FR-002**: La notification « conseillers prêts » DOIT contenir un **lien de suivi** ramenant le voyageur à son récap/espace. Elle PEUT afficher, pour engager, les **prénoms + spécialités** des conseillers appariés (informations **publiques** du profil 007, clarification 2026-06-16), mais NE DOIT **jamais** exposer de **coordonnée de contact** (courriel/téléphone/lien direct) ni inviter à un contact hors plateforme (anti-marketplace ADR-0002). Aucun montant/paiement/réservation. Le seul CTA renvoie au récap/espace.
 - **FR-003**: Le cas **non matché** DOIT être communiqué comme un message **rassurant** (« on continue de chercher »), jamais comme un échec ou une erreur.
 - **FR-004**: À l'**activation** du brief (post-vérification 008), le système DOIT envoyer au voyageur un **accusé** de prise en charge, **distinct** du courriel de vérification de 008.
 - **FR-005**: Chaque notification DOIT être émise via **un envoi par destinataire**, **idempotent** : un même événement source ne produit **jamais** de notification en double (livraison at-least-once).
 - **FR-006**: Si le canal courriel est indisponible, la notification DOIT être **mise en file et réessayée** ; la soumission et l'appariement NE DOIVENT **jamais** être bloqués par un échec de notification (mode dégradé).
 - **FR-007**: Le **lien de suivi** DOIT être **durable et renvoyable** : le voyageur peut demander un nouveau lien si le précédent a expiré. Il est **distinct** du lien de vérification à usage unique (008).
 - **FR-008**: Tout contenu et tout envoi de notification DOIVENT rester en **région canadienne** (Loi 25).
-- **FR-009**: Les notifications NE DOIVENT PAS inclure de **PII de conseiller** au-delà du strict nécessaire, et **jamais** de coordonnée de contact.
+- **FR-009**: Les seules informations conseiller autorisées dans une notification sont **publiques et non identifiantes au sens contact** : **prénom** et **spécialité(s)** (issues du profil public 007). **Jamais** de coordonnée de contact (courriel/téléphone/adresse), ni de nom complet/identifiant technique au-delà de ce qui est public.
+- **FR-015**: La notification « conseillers prêts » DOIT lire les prénoms/spécialités des conseillers appariés via la **surface publique du profil conseiller (007)** ; seuls les conseillers **vérifiés** appariés (012) sont concernés.
 - **FR-010**: Lorsqu'un brief est **anonymisé/effacé** (Loi 25), les notifications en attente pour ce brief DOIVENT être **annulées** et **aucune** notification ultérieure ne DOIT être envoyée.
 - **FR-011**: La copie des notifications DOIT être **FR-CA** par défaut, **EN** via catalogues i18n.
 - **FR-012**: Depuis un lien de suivi **valide**, le voyageur DOIT atteindre son récapitulatif ; un lien **expiré** DOIT permettre d'en **redemander** un (jamais de cul-de-sac).
@@ -120,7 +124,8 @@ Lien expiré → possibilité d'en redemander un et d'accéder à nouveau.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Notification voyageur** : intention d'envoi rattachée à un brief — **type** (`accuse_activation` / `conseillers_prets` / `recherche_en_cours`), destinataire (le voyageur, via 008), **statut** (`en_attente` / `envoyée` / `échouée` / `annulée`), **clé d'idempotence** (événement source), horodatages. Append-only pour l'audit.
+- **Notification voyageur** : intention d'envoi rattachée à un brief — **type** (`accuse_activation` / `conseillers_prets` / `recherche_en_cours`), destinataire (le voyageur, via 008), **statut** (`en_attente` / `envoyée` / `échouée` / `annulée`), **clé d'idempotence** (événement source), horodatages. Append-only pour l'audit. Le contenu « prêts » compose les **prénoms + spécialités publics** des conseillers appariés (lus via le profil 007, FR-015).
+- **Infos publiques conseiller** *(lecture via 007)* : prénom + spécialité(s) des conseillers vérifiés appariés — seules données conseiller autorisées dans un courriel (jamais de contact).
 - **Lien de suivi** *(réutilise l'infra magic-link de 008)* : jeton durable de `purpose` « suivi/consultation », renvoyable, distinct du jeton de vérification one-time.
 - **Événement source** *(011/012, existant)* : `voyageur.brief.matched` / `partially_matched` / `unmatched` — déclencheurs des notifications.
 
@@ -129,7 +134,7 @@ Lien expiré → possibilité d'en redemander un et d'accéder à nouveau.
 ### Measurable Outcomes
 
 - **SC-001**: **100 %** des événements d'appariement (matché/partiel/non matché) produisent **exactement une** notification voyageur (0 doublon).
-- **SC-002**: **0** coordonnée de contact de conseiller (ni montant/paiement) dans une notification — vérifiable (invariant anti-marketplace).
+- **SC-002**: **0** coordonnée de contact de conseiller (courriel/téléphone/lien direct) ni montant/paiement dans une notification — vérifiable (invariant anti-marketplace). Seuls prénom + spécialité (publics) sont autorisés (FR-009).
 - **SC-003**: **100 %** des soumissions et appariements aboutissent même si le canal courriel est HS (mode dégradé, non bloquant).
 - **SC-004**: **100 %** des voyageurs peuvent atteindre leur récap via le lien de suivi (lien expiré → renvoi fonctionnel).
 - **SC-005**: Après anonymisation d'un brief, **0** notification ultérieure et **100 %** des notifications en attente annulées.
@@ -140,7 +145,7 @@ Lien expiré → possibilité d'en redemander un et d'accéder à nouveau.
 
 ## Assumptions
 
-- **Contenu de la notification « prêts » (défaut, à confirmer en revue)** : la copie indique **un nombre** de conseillers vérifiés prêts (p. ex. « jusqu'à 3 ») et renvoie au récap/espace, **sans nommer** les conseillers ni exposer leurs détails — minimisation Loi 25 + anti-marketplace. Le détail (mes 3 conseillers) vit dans l'**espace voyageur (015)**.
+- **Contenu de la notification « prêts » (résolu, clarification 2026-06-16)** : la copie affiche les **prénoms + spécialités** des conseillers appariés (infos publiques 007) pour engager, et renvoie au récap/espace — **jamais** de coordonnée de contact (FR-002/009). Le détail complet (mes 3 conseillers, conversation) vit dans l'**espace voyageur (015)**.
 - **Déclenchement** : 010 **consomme** les événements d'appariement déjà publiés par 011/012 (bus `matching.events`) ; aucune nouvelle logique de matching.
 - **Réutilise 003** : outbox + envoi SES ca-central-1 + pattern « un job par destinataire » (comme les notifications conseiller de 012), et **008** pour l'infra magic-link (lien de suivi) + la page récap (cible du lien).
 - **Accusé d'activation** : envoyé **après** la vérification (activation), distinct du courriel de **vérification** de 008 (pas de double envoi à la soumission).
