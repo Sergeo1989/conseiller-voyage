@@ -1,0 +1,101 @@
+# T146a — Scan hebdo de l'adoption profil conseiller (SC-005).
+# Préfigure la feature 021 (observabilité boucle économique) sans
+# dupliquer son outillage : un cron simple émet un JSON versionné
+# dans docs/dashboards/, suivable par git blame.
+#
+# Cf. docs/runbooks/profile-adoption-monitoring.md pour interprétation
+# et procédure d'investigation en cas de ratio < SC-005 target.
+
+name: Scan profile adoption (SC-005)
+
+on:
+  schedule:
+    # Lundis 9h UTC = 5h ET (heure normale Québec) = 6h ET (heure d'été).
+    # Choisi en début de semaine ouvrable pour qu'un ratio dégradé soit
+    # vu et investigué le lundi matin.
+    - cron: '0 9 * * MON'
+  workflow_dispatch:
+    inputs:
+      window_days:
+        description: 'Fenêtre temporelle de la cohorte (jours)'
+        required: false
+        default: '30'
+
+permissions:
+  contents: write # commit du dashboard JSON
+  pull-requests: write # ouverture PR si commit direct main bloqué
+
+env:
+  NODE_VERSION: '22.11.0'
+
+jobs:
+  scan:
+    name: Scan adoption profil
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Garde-fou : ne tente le scan que si DATABASE_URL est configuré
+    # (production deploy fait). Sinon le job affiche un skip lisible.
+    steps:
+      - name: Skip if DATABASE_URL not configured
+        if: ${{ vars.PRODUCTION_DEPLOYED != 'true' }}
+        run: |
+          echo "PRODUCTION_DEPLOYED != true (var GitHub Actions)"
+          echo "Le scan d'adoption requiert un environnement production déployé."
+          echo "Configurer la variable PRODUCTION_DEPLOYED=true + le secret DATABASE_URL"
+          echo "côté Settings → Actions → Variables/Secrets pour activer."
+          exit 0
+
+      - name: Checkout
+        if: ${{ vars.PRODUCTION_DEPLOYED == 'true' }}
+        uses: actions/checkout@v4
+
+      - name: Enable corepack
+        if: ${{ vars.PRODUCTION_DEPLOYED == 'true' }}
+        run: corepack enable
+
+      - name: Setup Node
+        if: ${{ vars.PRODUCTION_DEPLOYED == 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        if: ${{ vars.PRODUCTION_DEPLOYED == 'true' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        if: ${{ vars.PRODUCTION_DEPLOYED == 'true' }}
+        run: pnpm --filter @cv/db prisma generate
+
+      - name: Run scan
+        if: ${{ vars.PRODUCTION_DEPLOYED == 'true' }}
+        id: scan
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_READONLY }}
+        run: |
+          mkdir -p docs/dashboards
+          WINDOW_DAYS="${{ github.event.inputs.window_days || '30' }}"
+          pnpm exec tsx apps/api/src/cli/scan-profile-adoption.ts \
+            --window-days "${WINDOW_DAYS}" > docs/dashboards/profile-adoption.json
+          echo "ratio=$(jq -r '.adoptionRatio' docs/dashboards/profile-adoption.json)" >> "$GITHUB_OUTPUT"
+          echo "ok=$(jq -r '.ok' docs/dashboards/profile-adoption.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Commit dashboard update
+        if: ${{ vars.PRODUCTION_DEPLOYED == 'true' }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet docs/dashboards/profile-adoption.json; then
+            echo "Aucun changement à committer."
+            exit 0
+          fi
+          git add docs/dashboards/profile-adoption.json
+          git commit -m "chore(metrics): scan adoption profil — ratio ${{ steps.scan.outputs.ratio }} (SC-005 ${{ steps.scan.outputs.ok }})"
+          git push origin HEAD:main
+
+      - name: Alert if SC-005 missed
+        if: ${{ vars.PRODUCTION_DEPLOYED == 'true' && steps.scan.outputs.ok == 'false' }}
+        run: |
+          echo "::warning::SC-005 missed — adoption ratio ${{ steps.scan.outputs.ratio }} < target 0.80"
+          echo "Suivre docs/runbooks/profile-adoption-monitoring.md pour investigation."
